@@ -3,6 +3,7 @@ package com.template
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
+import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
@@ -161,8 +162,9 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         assertThat(transactions.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
+        val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -172,7 +174,12 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
-        unlockReIssuedTokens(aliceNode, attachmentSecureHash)
+        val indicesList = tokens.indices.toList()
+        unlockReIssuedState<FungibleToken>(
+            aliceNode,
+            attachmentSecureHash,
+            MoveTokenCommand(issuedTokenType, indicesList, indicesList)
+        )
 
         transferTokens(aliceNode, debbieParty, 50)
 
@@ -197,8 +204,9 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         assertThat(transactions.size, equalTo(7))
 
         val tokens = listOf(getTokens(aliceNode)[1]) // 30 tokens
+        val indicesList = listOf(0)
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, listOf(0)))
+        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, indicesList))
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -208,7 +216,11 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
-        unlockReIssuedTokens(aliceNode, attachmentSecureHash)
+        unlockReIssuedState<FungibleToken>(
+            aliceNode,
+            attachmentSecureHash,
+            MoveTokenCommand(issuedTokenType, indicesList, indicesList)
+        )
 
         transferTokens(aliceNode, debbieParty, 35)
 
@@ -233,8 +245,9 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         assertThat(transactions.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
+        val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -244,7 +257,11 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
-        unlockReIssuedTokens(aliceNode, attachmentSecureHash)
+        unlockReIssuedState<FungibleToken>(
+            aliceNode,
+            attachmentSecureHash,
+            MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices)
+        )
 
         transferTokens(aliceNode, debbieParty, 35)
 

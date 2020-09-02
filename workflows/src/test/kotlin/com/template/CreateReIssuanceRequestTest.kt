@@ -10,6 +10,7 @@ import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.contracts.TransactionVerificationException
 import org.junit.Test
 
 class CreateReIssuanceRequestTest: AbstractFlowTest() {
@@ -104,4 +105,12 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
     }
 
+    @Test(expected = TransactionVerificationException::class)
+    fun `Request re-issuance of 0 states can't be created`() {
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(),
+            SimpleStateContract.Commands.Create()
+        )
+    }
 }

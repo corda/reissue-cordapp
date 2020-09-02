@@ -219,6 +219,12 @@ abstract class AbstractFlowTest {
 
     // tokens
 
+    fun getTokenQuantity(
+        node: TestStartedNode
+    ): Int {
+        return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
+    }
+
     fun issueTokens(
         holder: Party,
         tokenAmount: Long
@@ -238,41 +244,11 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun getTokenQuantity(
-        node: TestStartedNode
-    ): Int {
-        return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
-    }
-
-//    fun createTokenReIssuanceRequest(
-//        node: TestStartedNode,
-//        statesToReIssue: List<StateAndRef<FungibleToken>>
-//    ) {
-//        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-//        val flowLogic = CreateReIssuanceRequest(issuerParty, statesToReIssue, IssueTokenCommand(issuedTokenType, statesToReIssue.indices.toList()))
-//        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-//        mockNet.runNetwork()
-//        flowFuture.getOrThrow()
-//    }
-
     fun redeemTokens(
         node: TestStartedNode,
         tokens: List<StateAndRef<FungibleToken>>
     ) {
         val flowFuture = node.services.startFlow(RedeemTokens(tokens, issuerParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
-    fun unlockReIssuedTokens(
-        node: TestStartedNode,
-        attachmentSecureHash: SecureHash
-    ) {
-        val reIssuedStateAndRefs = getTokens(node, true)
-        val lockStateAndRef = getLockStateAndRefs<FungibleToken>(node)[0]
-        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-        val indicesList = reIssuedStateAndRefs.indices.toList()
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, MoveTokenCommand(issuedTokenType, indicesList, indicesList))).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -324,9 +300,9 @@ abstract class AbstractFlowTest {
         command: CommandData,
         commandSigners: List<Party> = listOf(node.info.singleIdentity())
     ) {
-        val reIssuedStateAndRef = getStateAndRefs<T>(node, true)[0]
+        val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getLockStateAndRefs<T>(node)[0]
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(listOf(reIssuedStateAndRef), lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
+        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
