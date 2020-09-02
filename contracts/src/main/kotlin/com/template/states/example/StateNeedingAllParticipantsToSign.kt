@@ -1,19 +1,19 @@
 package com.template.states.example
 
-import com.template.contracts.example.SimpleStateContract
+import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 
-@BelongsToContract(SimpleStateContract::class)
+@BelongsToContract(StateNeedingAllParticipantsToSignContract::class)
 class StateNeedingAllParticipantsToSign(
-    val owner: Party,
-    val party1: Party,
-    val party2: Party
+    var owner: Party,
+    val issuer: Party,
+    val other: Party
 ): ContractState {
     override val participants: List<AbstractParty>
-        get() = listOf(owner, party1, party2)
+        get() = listOf(owner, issuer, other)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -22,16 +22,16 @@ class StateNeedingAllParticipantsToSign(
         other as StateNeedingAllParticipantsToSign
 
         if (owner != other.owner) return false
-        if (party1 != other.party1) return false
-        if (party2 != other.party2) return false
+        if (issuer != other.issuer) return false
+        if (this.other != other.other) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = owner.hashCode()
-        result = 31 * result + party1.hashCode()
-        result = 31 * result + party2.hashCode()
+        result = 31 * result + issuer.hashCode()
+        result = 31 * result + other.hashCode()
         return result
     }
 
