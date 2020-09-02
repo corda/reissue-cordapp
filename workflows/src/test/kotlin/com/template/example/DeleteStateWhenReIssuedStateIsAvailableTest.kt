@@ -2,6 +2,7 @@ package com.template.example
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.AbstractFlowTest
 import com.template.contracts.example.SimpleStateContract
@@ -30,7 +31,7 @@ class DeleteStateWhenReIssuedStateIsAvailableTest: AbstractFlowTest() {
 
         createReIssuanceRequest(
             aliceNode,
-            simpleStateStateAndRef,
+            listOf(simpleStateStateAndRef),
             SimpleStateContract.Commands.Create()
         )
 
@@ -58,7 +59,7 @@ class DeleteStateWhenReIssuedStateIsAvailableTest: AbstractFlowTest() {
 
         val tokens = getTokens(aliceNode)
 
-        createTokenReIssuanceRequest(aliceNode, tokens)
+        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 

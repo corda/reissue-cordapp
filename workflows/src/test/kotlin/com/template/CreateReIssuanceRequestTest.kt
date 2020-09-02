@@ -2,6 +2,7 @@ package com.template
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
@@ -31,7 +32,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
         createReIssuanceRequest(
             aliceNode,
-            simpleStateStateAndRef,
+            listOf(simpleStateStateAndRef),
             SimpleStateContract.Commands.Create()
         )
     }
@@ -54,7 +55,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
         createReIssuanceRequest(
             aliceNode,
-            stateNeedingAcceptanceStateAndRef,
+            listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
             listOf(issuerParty, acceptorParty)
         )
@@ -78,7 +79,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
         createReIssuanceRequest(
             aliceNode,
-            stateNeedingAllParticipantsToSignStateAndRef,
+            listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
             listOf(aliceParty, issuerParty, acceptorParty)
         )
@@ -100,7 +101,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
         val tokens = getTokens(aliceNode)
 
-        createTokenReIssuanceRequest(aliceNode, tokens)
+        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
     }
 
 }

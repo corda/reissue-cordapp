@@ -73,6 +73,8 @@ abstract class AbstractFlowTest {
 
     lateinit var allNotaries: List<TestStartedNode>
 
+    lateinit var issuedTokenType: IssuedTokenType
+
     @Before
     fun setup() {
         mockNet = InternalMockNetwork(
@@ -116,6 +118,8 @@ abstract class AbstractFlowTest {
         debbieLegalName = CordaX500Name(organisation = "DEBBIE", locality = "London", country = "GB")
         debbieNode = mockNet.createNode(InternalMockNodeParameters(legalName = debbieLegalName))
         debbieParty = debbieNode.info.singleIdentity()
+
+        issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
     }
 
     @After
@@ -240,16 +244,16 @@ abstract class AbstractFlowTest {
         return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
     }
 
-    fun createTokenReIssuanceRequest(
-        node: TestStartedNode,
-        statesToReIssue: List<StateAndRef<FungibleToken>>
-    ) {
-        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-        val flowLogic = CreateReIssuanceRequest(issuerParty, statesToReIssue, IssueTokenCommand(issuedTokenType, statesToReIssue.indices.toList()))
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
+//    fun createTokenReIssuanceRequest(
+//        node: TestStartedNode,
+//        statesToReIssue: List<StateAndRef<FungibleToken>>
+//    ) {
+//        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+//        val flowLogic = CreateReIssuanceRequest(issuerParty, statesToReIssue, IssueTokenCommand(issuedTokenType, statesToReIssue.indices.toList()))
+//        val flowFuture = node.services.startFlow(flowLogic).resultFuture
+//        mockNet.runNetwork()
+//        flowFuture.getOrThrow()
+//    }
 
     fun redeemTokens(
         node: TestStartedNode,
@@ -304,11 +308,11 @@ abstract class AbstractFlowTest {
 
     fun <T> createReIssuanceRequest(
         node: TestStartedNode,
-        stateToReIssue: StateAndRef<T>,
+        stateToReIssue: List<StateAndRef<T>>,
         command: CommandData,
         commandSigners: List<Party> = listOf(issuerParty)
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuerParty, listOf(stateToReIssue), command, commandSigners)
+        val flowLogic = CreateReIssuanceRequest(issuerParty, stateToReIssue, command, commandSigners)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
