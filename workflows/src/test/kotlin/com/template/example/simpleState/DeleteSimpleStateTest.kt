@@ -10,4 +10,10 @@ class DeleteSimpleStateTest: AbstractFlowTest() {
         createSimpleState(aliceParty)
         deleteSimpleState(aliceNode)
     }
+
+    @Test
+    fun `Delete simple state for account`() {
+        createSimpleStateForAccount(employeeAliceParty)
+        deleteSimpleStateForAccount()
+    }
 }

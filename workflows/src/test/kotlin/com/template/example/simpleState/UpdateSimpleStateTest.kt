@@ -21,4 +21,10 @@ class UpdateSimpleStateTest: AbstractFlowTest() {
         updateSimpleState(charlieNode, bobParty)
         updateSimpleState(bobNode, aliceParty)
     }
+
+    @Test
+    fun `Update simple state for account`() {
+        createSimpleStateForAccount(employeeAliceParty)
+        updateSimpleStateForAccount(employeeBobParty)
+    }
 }

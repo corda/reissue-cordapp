@@ -1,5 +1,11 @@
 package com.template
 
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.accountService
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccountFlow
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfoHandlerFlow
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -8,9 +14,7 @@ import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
 import com.template.flows.*
-import com.template.flows.example.simpleState.CreateSimpleState
-import com.template.flows.example.simpleState.DeleteSimpleState
-import com.template.flows.example.simpleState.UpdateSimpleState
+import com.template.flows.example.simpleState.*
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.UpdateStateNeedingAcceptance
@@ -30,6 +34,8 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -42,6 +48,7 @@ import net.corda.testing.node.MockNetworkNotarySpec
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
+import java.util.*
 
 
 abstract class AbstractFlowTest {
@@ -55,6 +62,7 @@ abstract class AbstractFlowTest {
     lateinit var bobNode: TestStartedNode
     lateinit var charlieNode: TestStartedNode
     lateinit var debbieNode: TestStartedNode
+    lateinit var employeeNode: TestStartedNode
 
     lateinit var notaryParty: Party
     lateinit var issuerParty: Party
@@ -63,6 +71,25 @@ abstract class AbstractFlowTest {
     lateinit var bobParty: Party
     lateinit var charlieParty: Party
     lateinit var debbieParty: Party
+    lateinit var employeeParty: Party
+
+    lateinit var employeeIssuerParty: AbstractParty
+    lateinit var employeeAliceParty: AbstractParty
+    lateinit var employeeBobParty: AbstractParty
+    lateinit var employeeCharlieParty: AbstractParty
+    lateinit var employeeDebbieParty: AbstractParty
+
+    lateinit var employeeIssuerAccount: AccountInfo
+    lateinit var employeeAliceAccount: AccountInfo
+    lateinit var employeeBobAccount: AccountInfo
+    lateinit var employeeCharlieAccount: AccountInfo
+    lateinit var employeeDebbieAccount: AccountInfo
+
+    lateinit var employeeIssuerUUID: UUID
+    lateinit var employeeAliceUUID: UUID
+    lateinit var employeeBobUUID: UUID
+    lateinit var employeeCharlieUUID: UUID
+    lateinit var employeeDebbieUUID: UUID
 
     lateinit var issuerLegalName: CordaX500Name
     lateinit var acceptorLegalName: CordaX500Name
@@ -70,6 +97,7 @@ abstract class AbstractFlowTest {
     lateinit var bobLegalName: CordaX500Name
     lateinit var charlieLegalName: CordaX500Name
     lateinit var debbieLegalName: CordaX500Name
+    lateinit var employeeLegalName: CordaX500Name
 
     lateinit var allNotaries: List<TestStartedNode>
 
@@ -119,6 +147,28 @@ abstract class AbstractFlowTest {
         debbieNode = mockNet.createNode(InternalMockNodeParameters(legalName = debbieLegalName))
         debbieParty = debbieNode.info.singleIdentity()
 
+        employeeLegalName = CordaX500Name(organisation = "EMPLOYEE", locality = "London", country = "GB")
+        employeeNode = mockNet.createNode(InternalMockNodeParameters(legalName = employeeLegalName))
+        employeeParty = employeeNode.info.singleIdentity()
+
+        employeeIssuerAccount = createAccount("Issuer")
+        employeeAliceAccount = createAccount("Alice")
+        employeeBobAccount = createAccount("Bob")
+        employeeCharlieAccount = createAccount("Charlie")
+        employeeDebbieAccount = createAccount("Debbie")
+
+        employeeIssuerUUID = employeeIssuerAccount.identifier.id
+        employeeAliceUUID = employeeAliceAccount.identifier.id
+        employeeBobUUID = employeeBobAccount.identifier.id
+        employeeCharlieUUID = employeeCharlieAccount.identifier.id
+        employeeDebbieUUID = employeeDebbieAccount.identifier.id
+
+        employeeIssuerParty = getPartyForAccount(employeeIssuerAccount)
+        employeeAliceParty = getPartyForAccount(employeeAliceAccount)
+        employeeBobParty = getPartyForAccount(employeeBobAccount)
+        employeeCharlieParty = getPartyForAccount(employeeCharlieAccount)
+        employeeDebbieParty = getPartyForAccount(employeeDebbieAccount)
+
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
     }
 
@@ -128,12 +178,34 @@ abstract class AbstractFlowTest {
         System.setProperty("net.corda.node.dbtransactionsresolver.InMemoryResolutionLimit", "0")
     }
 
+    // accounts
+
+    fun createAccount(accountName: String): AccountInfo {
+        val accountFuture = employeeNode.services.accountService.createAccount(name = accountName)
+        mockNet.runNetwork()
+        return accountFuture.getOrThrow().state.data
+    }
+
+    fun getPartyForAccount(account: AccountInfo): AnonymousParty {
+        val flowFuture = issuerNode.services.startFlow(RequestKeyForAccount(account)).resultFuture
+        mockNet.runNetwork()
+        return flowFuture.getOrThrow()
+    }
+
     // simple state
 
     fun createSimpleState(
         owner: Party
     ) {
         val flowFuture = issuerNode.services.startFlow(CreateSimpleState(owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun createSimpleStateForAccount(
+        owner: AbstractParty
+    ) {
+        val flowFuture = issuerNode.services.startFlow(CreateSimpleStateForAccount(employeeParty, issuerParty, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -148,11 +220,28 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
+    fun updateSimpleStateForAccount(
+        owner: AbstractParty
+    ) {
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        val flowFuture = employeeNode.services.startFlow(UpdateSimpleStateForAccount(simpleStateStateAndRef, owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
     fun deleteSimpleState(
         node: TestStartedNode
     ) {
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
         val flowFuture = node.services.startFlow(DeleteSimpleState(simpleStateStateAndRef, issuerParty)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun deleteSimpleStateForAccount(
+    ) {
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        val flowFuture = employeeNode.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
