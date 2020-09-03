@@ -375,9 +375,10 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         stateToReIssue: List<StateAndRef<T>>,
         command: CommandData,
-        commandSigners: List<Party> = listOf(issuerParty)
+        issuer: AbstractParty = issuerParty,
+        commandSigners: List<AbstractParty> = listOf(issuer)
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuerParty, stateToReIssue, command, commandSigners)
+        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()

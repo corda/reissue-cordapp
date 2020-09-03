@@ -62,26 +62,26 @@ class ReIssueState<T>(
 
         val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
-        val signersSessions = signers.filter { it != ourIdentity }.map { initiateFlow(it) }
-        val otherParticipantsSessions = otherParticipants.filter { it != ourIdentity }.map { initiateFlow(it as Party) }
-
-        signersSessions.forEach {
-            it.send(true)
-        }
-        otherParticipantsSessions.forEach {
-            it.send(false)
-        }
-
-        if(signersSessions.isNotEmpty()) {
-            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
-        }
-
-        subFlow(
-            FinalityFlow(
-                transaction = signedTransaction,
-                sessions = signersSessions + otherParticipantsSessions
-            )
-        )
+//        val signersSessions = signers.filter { it != ourIdentity }.map { initiateFlow(it) }
+//        val otherParticipantsSessions = otherParticipants.filter { it != ourIdentity }.map { initiateFlow(it as Party) }
+//
+//        signersSessions.forEach {
+//            it.send(true)
+//        }
+//        otherParticipantsSessions.forEach {
+//            it.send(false)
+//        }
+//
+//        if(signersSessions.isNotEmpty()) {
+//            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
+//        }
+//
+//        subFlow(
+//            FinalityFlow(
+//                transaction = signedTransaction,
+//                sessions = signersSessions + otherParticipantsSessions
+//            )
+//        )
     }
 }
 

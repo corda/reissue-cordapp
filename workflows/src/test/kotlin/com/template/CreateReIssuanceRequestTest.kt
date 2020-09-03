@@ -33,7 +33,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
-            listOf(issuerParty, acceptorParty)
+            commandSigners = listOf(issuerParty, acceptorParty)
         )
     }
 
@@ -46,7 +46,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
-            listOf(aliceParty, issuerParty, acceptorParty)
+            commandSigners = listOf(aliceParty, issuerParty, acceptorParty)
         )
     }
 
@@ -56,6 +56,18 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
         val tokens = getTokens(aliceNode)
         createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+    }
+
+    @Test
+    fun `SimpleState re-issuance request is created when holder is an account`() {
+        createSimpleStateForAccount(employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        createReIssuanceRequest(
+            employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create()
+        )
     }
 
     @Test(expected = TransactionVerificationException::class)

@@ -64,7 +64,7 @@ class ReIssueStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
-            listOf(issuerParty, acceptorParty)
+            commandSigners = listOf(issuerParty, acceptorParty)
         )
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
 
@@ -91,7 +91,7 @@ class ReIssueStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
-            listOf(aliceParty, issuerParty, acceptorParty)
+            commandSigners = listOf(aliceParty, issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAllParticipantsToSign>>().states[0]
