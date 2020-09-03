@@ -14,6 +14,9 @@ import com.template.flows.example.simpleState.UpdateSimpleState
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.UpdateStateNeedingAcceptance
+import com.template.flows.example.stateNeedingAllParticipantsToSign.CreateStateNeedingAllParticipantsToSign
+import com.template.flows.example.stateNeedingAllParticipantsToSign.DeleteStateNeedingAllParticipantsToSign
+import com.template.flows.example.stateNeedingAllParticipantsToSign.UpdateStateNeedingAllParticipantsToSign
 import com.template.flows.example.tokens.IssueTokens
 import com.template.flows.example.tokens.ListTokensFlow
 import com.template.flows.example.tokens.RedeemTokens
@@ -22,6 +25,8 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
+import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
@@ -68,6 +73,8 @@ abstract class AbstractFlowTest {
 
     lateinit var allNotaries: List<TestStartedNode>
 
+    lateinit var issuedTokenType: IssuedTokenType
+
     @Before
     fun setup() {
         mockNet = InternalMockNetwork(
@@ -111,6 +118,8 @@ abstract class AbstractFlowTest {
         debbieLegalName = CordaX500Name(organisation = "DEBBIE", locality = "London", country = "GB")
         debbieNode = mockNet.createNode(InternalMockNodeParameters(legalName = debbieLegalName))
         debbieParty = debbieNode.info.singleIdentity()
+
+        issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
     }
 
     @After
@@ -139,32 +148,11 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun createSimpleStateReIssuanceRequest(
-        node: TestStartedNode,
-        stateToReIssue: StateAndRef<SimpleState>
-    ) {
-        val flowLogic = CreateReIssuanceRequest(issuerParty, listOf(stateToReIssue), SimpleStateContract.Commands.Create())
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
     fun deleteSimpleState(
         node: TestStartedNode
     ) {
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
         val flowFuture = node.services.startFlow(DeleteSimpleState(simpleStateStateAndRef, issuerParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
-    fun unlockReIssuedSimpleState(
-        node: TestStartedNode,
-        attachmentSecureHash: SecureHash
-    ) {
-        val reIssuedStateAndRef = getStateAndRefs<SimpleState>(node, true)[0]
-        val lockStateAndRef = getLockStateAndRefs<SimpleState>(node)[0]
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(listOf(reIssuedStateAndRef), lockStateAndRef, attachmentSecureHash, SimpleStateContract.Commands.Update())).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -190,16 +178,6 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun createStateNeedingAcceptanceReIssuanceRequest(
-        node: TestStartedNode,
-        stateToReIssue: StateAndRef<StateNeedingAcceptance>
-    ) {
-        val flowLogic = CreateReIssuanceRequest(issuerParty, listOf(stateToReIssue), StateNeedingAcceptanceContract.Commands.Create(), listOf(issuerParty, acceptorParty))
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
     fun deleteStateNeedingAcceptance(
         node: TestStartedNode
     ) {
@@ -209,19 +187,43 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun unlockReIssuedStateNeedingAcceptance(
-        node: TestStartedNode,
-        attachmentSecureHash: SecureHash
+    // state needing all participants to sign
+
+    fun createStateNeedingAllParticipantsToSign(
+        owner: Party
     ) {
-        val party = node.info.singleIdentity()
-        val reIssuedStateAndRef = getStateAndRefs<StateNeedingAcceptance>(node, true)[0]
-        val lockStateAndRef = getLockStateAndRefs<StateNeedingAcceptance>(node)[0]
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(listOf(reIssuedStateAndRef), lockStateAndRef, attachmentSecureHash, StateNeedingAcceptanceContract.Commands.Update(), listOf(party, issuerParty, acceptorParty))).resultFuture
+        val flowFuture = issuerNode.services.startFlow(CreateStateNeedingAllParticipantsToSign(owner, acceptorParty)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun updateStateNeedingAllParticipantsToSign(
+        node: TestStartedNode,
+        owner: Party
+    ) {
+        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(node)[0]
+        val flowFuture = node.services.startFlow(
+            UpdateStateNeedingAllParticipantsToSign(stateNeedingAllParticipantsToSignStateAndRef, owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun deleteStateNeedingAllParticipantsToSign(
+        node: TestStartedNode
+    ) {
+        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteStateNeedingAllParticipantsToSign(stateNeedingAllParticipantsToSignStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
     // tokens
+
+    fun getTokenQuantity(
+        node: TestStartedNode
+    ): Int {
+        return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
+    }
 
     fun issueTokens(
         holder: Party,
@@ -242,41 +244,11 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun getTokenQuantity(
-        node: TestStartedNode
-    ): Int {
-        return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
-    }
-
-    fun createTokenReIssuanceRequest(
-        node: TestStartedNode,
-        statesToReIssue: List<StateAndRef<FungibleToken>>
-    ) {
-        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-        val flowLogic = CreateReIssuanceRequest(issuerParty, statesToReIssue, IssueTokenCommand(issuedTokenType, statesToReIssue.indices.toList()))
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
     fun redeemTokens(
         node: TestStartedNode,
         tokens: List<StateAndRef<FungibleToken>>
     ) {
         val flowFuture = node.services.startFlow(RedeemTokens(tokens, issuerParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
-    fun unlockReIssuedTokens(
-        node: TestStartedNode,
-        attachmentSecureHash: SecureHash
-    ) {
-        val reIssuedStateAndRefs = getTokens(node, true)
-        val lockStateAndRef = getLockStateAndRefs<FungibleToken>(node)[0]
-        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-        val indicesList = reIssuedStateAndRefs.indices.toList()
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, MoveTokenCommand(issuedTokenType, indicesList, indicesList))).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -310,10 +282,29 @@ abstract class AbstractFlowTest {
         return states.filter { it.state.encumbrance == null }
     }
 
-    fun <T> getLockStateAndRefs(
-        node: TestStartedNode
-    ): List<StateAndRef<ReIssuanceLock<T>>> where T: ContractState{
-        return node.services.vaultService.queryBy<ReIssuanceLock<T>>().states
+    fun <T> createReIssuanceRequest(
+        node: TestStartedNode,
+        stateToReIssue: List<StateAndRef<T>>,
+        command: CommandData,
+        commandSigners: List<Party> = listOf(issuerParty)
+    ) where T: ContractState {
+        val flowLogic = CreateReIssuanceRequest(issuerParty, stateToReIssue, command, commandSigners)
+        val flowFuture = node.services.startFlow(flowLogic).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    inline fun <reified T : ContractState> unlockReIssuedState(
+        node: TestStartedNode,
+        attachmentSecureHash: SecureHash,
+        command: CommandData,
+        commandSigners: List<Party> = listOf(node.info.singleIdentity())
+    ) {
+        val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
+        val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
+        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
     }
 
     fun <T> reIssueRequestedStates(

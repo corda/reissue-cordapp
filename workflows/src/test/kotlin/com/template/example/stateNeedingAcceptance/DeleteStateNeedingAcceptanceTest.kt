@@ -3,11 +3,12 @@ package com.template.example.stateNeedingAcceptance
 import com.template.AbstractFlowTest
 import org.junit.Test
 
-class CreateStateNeedingAcceptanceTest: AbstractFlowTest() {
+class DeleteStateNeedingAcceptanceTest: AbstractFlowTest() {
 
     @Test
-    fun `Create state needing acceptance`() {
+    fun `Delete state needing acceptance`() {
         createStateNeedingAcceptance(aliceParty)
+        deleteStateNeedingAcceptance(aliceNode)
     }
 
 }
