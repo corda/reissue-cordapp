@@ -12,6 +12,7 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
@@ -267,5 +268,35 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         val transactionsAfterReIssuance = getTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Only requester can unlock re-issued state`() {
+        createStateNeedingAcceptance(aliceParty)
+
+        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
+
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(stateNeedingAcceptanceStateAndRef),
+            StateNeedingAcceptanceContract.Commands.Create(),
+            listOf(issuerParty, acceptorParty)
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
+
+        reIssueRequestedStates(reIssuanceRequest)
+
+        deleteStateNeedingAcceptance(aliceNode)
+
+        // issuer creates attachment and tries to unlock state
+        val attachmentSecureHash = uploadDeletedStateAttachment(issuerNode)
+
+        unlockReIssuedState<StateNeedingAcceptance>(
+            issuerNode,
+            attachmentSecureHash,
+            StateNeedingAcceptanceContract.Commands.Update(),
+            listOf(aliceParty, issuerParty, acceptorParty)
+        )
     }
 }

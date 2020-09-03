@@ -301,16 +301,10 @@ abstract class AbstractFlowTest {
         commandSigners: List<Party> = listOf(node.info.singleIdentity())
     ) {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
-        val lockStateAndRef = getLockStateAndRefs<T>(node)[0]
+        val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
-    }
-
-    fun <T> getLockStateAndRefs(
-        node: TestStartedNode
-    ): List<StateAndRef<ReIssuanceLock<T>>> where T: ContractState {
-        return node.services.vaultService.queryBy<ReIssuanceLock<T>>().states
     }
 
     fun <T> reIssueRequestedStates(
