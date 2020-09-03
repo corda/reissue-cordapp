@@ -32,7 +32,8 @@ class DeleteStateWhenReIssuedStateIsAvailableTest: AbstractFlowTest() {
         createReIssuanceRequest(
             aliceNode,
             listOf(simpleStateStateAndRef),
-            SimpleStateContract.Commands.Create()
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
@@ -59,7 +60,12 @@ class DeleteStateWhenReIssuedStateIsAvailableTest: AbstractFlowTest() {
 
         val tokens = getTokens(aliceNode)
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 

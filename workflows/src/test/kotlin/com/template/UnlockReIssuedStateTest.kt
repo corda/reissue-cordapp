@@ -37,7 +37,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         createReIssuanceRequest(
             aliceNode,
             listOf(simpleStateStateAndRef),
-            SimpleStateContract.Commands.Create()
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
@@ -80,7 +81,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
-            commandSigners = listOf(issuerParty, acceptorParty)
+            issuerParty,
+            listOf(issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
@@ -123,7 +125,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
-            commandSigners = listOf(aliceParty, issuerParty, acceptorParty)
+            issuerParty,
+            listOf(aliceParty, issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAllParticipantsToSign>>().states[0]
@@ -165,7 +168,12 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokenIndices),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -207,7 +215,12 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         val tokens = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, indicesList))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, indicesList),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -248,7 +261,12 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokenIndices),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
@@ -280,7 +298,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
-            commandSigners = listOf(issuerParty, acceptorParty)
+            issuerParty,
+            listOf(issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]

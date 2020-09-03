@@ -205,7 +205,7 @@ abstract class AbstractFlowTest {
     fun createSimpleStateForAccount(
         owner: AbstractParty
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateSimpleStateForAccount(employeeParty, issuerParty, owner)).resultFuture
+        val flowFuture = employeeNode.services.startFlow(CreateSimpleStateForAccount(employeeIssuerParty, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -375,10 +375,11 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         stateToReIssue: List<StateAndRef<T>>,
         command: CommandData,
-        issuer: AbstractParty = issuerParty,
-        commandSigners: List<AbstractParty> = listOf(issuer)
+        issuer: AbstractParty,
+        commandSigners: List<AbstractParty> = listOf(issuer),
+        requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners)
+        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -398,9 +399,10 @@ abstract class AbstractFlowTest {
     }
 
     fun <T> reIssueRequestedStates(
-        reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>
+        reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>,
+        node: TestStartedNode = issuerNode
     ) where T: ContractState {
-        val flowFuture = issuerNode.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
+        val flowFuture = node.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

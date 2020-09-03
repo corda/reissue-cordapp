@@ -57,7 +57,6 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState { // TODO: c
 //            "Requester is one of participants" using (reIssuanceRequest.participants.contains(reIssuanceRequest.requester))
 //            "Issuer is one of participants" using (reIssuanceRequest.participants.contains(reIssuanceRequest.issuer))
 
-            "There is exactly one signer" using (command.signers.size == 1)
             "Requester is required signer" using (command.signers.contains(reIssuanceRequest.requester.owningKey))
         }
     }
