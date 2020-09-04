@@ -60,8 +60,11 @@ class ReIssueState<T>(
             encumbrance = 0)
         transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Create(), lockSigners)
 
+        val localSigners = (lockSigners + reIssuedStatesSigners)
+            .distinct()
+            .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
         transactionBuilder.verify(serviceHub)
-        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
+        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
         val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
