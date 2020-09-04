@@ -7,11 +7,13 @@ class CreateSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Create simple state`() {
+        initialiseParties()
         createSimpleState(aliceParty)
     }
 
     @Test
     fun `Create simple state - accounts`() {
+        initialiseForAccounts()
         createSimpleStateForAccount(employeeAliceParty)
     }
 }

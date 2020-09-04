@@ -7,6 +7,7 @@ class DeleteStateNeedingAllParticipantsToSignTest: AbstractFlowTest() {
 
     @Test
     fun `Delete state needing all participants to sign`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
         deleteStateNeedingAllParticipantsToSign(aliceNode)
     }

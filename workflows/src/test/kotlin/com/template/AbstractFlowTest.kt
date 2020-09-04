@@ -123,6 +123,15 @@ abstract class AbstractFlowTest {
         notaryNode = mockNet.notaryNodes.first()
         notaryParty = notaryNode.info.singleIdentity()
 
+    }
+
+    @After
+    fun tearDown() {
+        mockNet.stopNodes()
+        System.setProperty("net.corda.node.dbtransactionsresolver.InMemoryResolutionLimit", "0")
+    }
+
+    fun initialiseParties() {
         issuerLegalName = CordaX500Name(organisation = "ISSUER", locality = "London", country = "GB")
         issuerNode = mockNet.createNode(InternalMockNodeParameters(legalName = issuerLegalName))
         issuerParty = issuerNode.info.singleIdentity()
@@ -147,6 +156,11 @@ abstract class AbstractFlowTest {
         debbieNode = mockNet.createNode(InternalMockNodeParameters(legalName = debbieLegalName))
         debbieParty = debbieNode.info.singleIdentity()
 
+        issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+
+    }
+
+    fun initialiseForAccounts() {
         employeeLegalName = CordaX500Name(organisation = "EMPLOYEE", locality = "London", country = "GB")
         employeeNode = mockNet.createNode(InternalMockNodeParameters(legalName = employeeLegalName))
         employeeParty = employeeNode.info.singleIdentity()
@@ -168,14 +182,6 @@ abstract class AbstractFlowTest {
         employeeBobParty = getPartyForAccount(employeeBobAccount)
         employeeCharlieParty = getPartyForAccount(employeeCharlieAccount)
         employeeDebbieParty = getPartyForAccount(employeeDebbieAccount)
-
-        issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-    }
-
-    @After
-    fun tearDown() {
-        mockNet.stopNodes()
-        System.setProperty("net.corda.node.dbtransactionsresolver.InMemoryResolutionLimit", "0")
     }
 
     // accounts
@@ -187,7 +193,7 @@ abstract class AbstractFlowTest {
     }
 
     fun getPartyForAccount(account: AccountInfo): AnonymousParty {
-        val flowFuture = issuerNode.services.startFlow(RequestKeyForAccount(account)).resultFuture
+        val flowFuture = employeeNode.services.startFlow(RequestKeyForAccount(account)).resultFuture
         mockNet.runNetwork()
         return flowFuture.getOrThrow()
     }

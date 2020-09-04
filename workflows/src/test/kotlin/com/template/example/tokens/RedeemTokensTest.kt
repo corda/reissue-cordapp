@@ -9,6 +9,7 @@ class RedeemTokensTest: AbstractFlowTest() {
 
     @Test
     fun `All tokens are redeemed`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
         val tokens = getTokens(aliceNode)
         redeemTokens(aliceNode, tokens)
@@ -17,6 +18,7 @@ class RedeemTokensTest: AbstractFlowTest() {
 
     @Test
     fun `Some of tokens are redeemed`() {
+        initialiseParties()
         issueTokens(aliceParty, 10)
         issueTokens(aliceParty, 10)
         val tokens = getTokens(aliceNode)

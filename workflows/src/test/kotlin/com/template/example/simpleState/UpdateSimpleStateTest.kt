@@ -7,12 +7,14 @@ class UpdateSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Update simple state`() {
+        initialiseParties()
         createSimpleState(aliceParty)
         updateSimpleState(aliceNode, bobParty)
     }
 
     @Test
     fun `Update simple state many times`() {
+        initialiseParties()
         createSimpleState(aliceParty)
         updateSimpleState(aliceNode, bobParty)
         updateSimpleState(bobNode, charlieParty)
@@ -24,6 +26,7 @@ class UpdateSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Update simple state for account`() {
+        initialiseForAccounts()
         createSimpleStateForAccount(employeeAliceParty)
         updateSimpleStateForAccount(employeeBobParty)
     }

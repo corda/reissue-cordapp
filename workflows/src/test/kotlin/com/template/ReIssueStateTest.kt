@@ -16,6 +16,7 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState is re-issued`() {
+        initialiseParties()
         createSimpleState(aliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode) // a list of 1 SimpleState
@@ -35,6 +36,7 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAcceptance is re-issued`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode) // a list of 1 SimpleState
@@ -53,6 +55,7 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
 
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
@@ -72,6 +75,7 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `Tokens are re-issued`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         val tokens = getTokens(aliceNode)
@@ -90,6 +94,7 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issued for an account`() {
+        initialiseForAccounts()
         createSimpleStateForAccount(employeeAliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]

@@ -14,6 +14,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issuance request is created`() {
+        initialiseParties()
         createSimpleState(aliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode) // a list of 1 SimpleState
@@ -27,6 +28,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAcceptance re-issuance request is created`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode) // a list of 1 SimpleState
@@ -41,6 +43,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAllParticipantsToSign re-issuance request is created`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
 
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode) // a list of 1 SimpleState
@@ -55,6 +58,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `Tokens re-issuance request is created`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         val tokens = getTokens(aliceNode)
@@ -68,6 +72,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issuance request is created when holder is an account`() {
+        initialiseForAccounts()
         createSimpleStateForAccount(employeeAliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
@@ -82,6 +87,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test(expected = TransactionVerificationException::class)
     fun `Request re-issuance of 0 states can't be created`() {
+        initialiseParties()
         createReIssuanceRequest(
             aliceNode,
             listOf(),

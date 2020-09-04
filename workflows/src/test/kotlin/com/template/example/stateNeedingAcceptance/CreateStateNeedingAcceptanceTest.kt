@@ -7,6 +7,7 @@ class CreateStateNeedingAcceptanceTest: AbstractFlowTest() {
 
     @Test
     fun `Create state needing acceptance`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
     }
 

@@ -9,6 +9,7 @@ class TransferTokensTest: AbstractFlowTest() {
 
     @Test
     fun `Transfer a given quantity of tokens`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
         transferTokens(aliceNode, bobParty, 10)
         assertThat(getTokenQuantity(aliceNode), equalTo(40))
@@ -17,6 +18,7 @@ class TransferTokensTest: AbstractFlowTest() {
 
     @Test
     fun `Transfer a given quantity of token from states`() {
+        initialiseParties()
         issueTokens(aliceParty, 10)
         issueTokens(aliceParty, 10)
         transferTokens(aliceNode, bobParty, 15)
@@ -26,6 +28,7 @@ class TransferTokensTest: AbstractFlowTest() {
 
     @Test
     fun `Transfer tokens many times`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 50)

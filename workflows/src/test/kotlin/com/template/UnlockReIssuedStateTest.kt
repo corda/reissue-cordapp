@@ -20,6 +20,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {
+        initialiseParties()
         createSimpleState(aliceParty)
         updateSimpleState(aliceNode, bobParty)
         updateSimpleState(bobNode, charlieParty)
@@ -62,6 +63,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued StateNeedingAcceptance is unencumbered after the original state is deleted`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
         updateStateNeedingAcceptance(aliceNode, bobParty)
         updateStateNeedingAcceptance(bobNode, charlieParty)
@@ -105,6 +107,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
         updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
         updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
@@ -149,6 +152,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued token is unencumbered after the original state is deleted`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 50)
@@ -195,6 +199,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issue just part of tokens`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 40)
@@ -240,6 +245,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued tokens are unencumbered after the original state is deleted`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 40)
@@ -284,6 +290,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test(expected = TransactionVerificationException::class)
     fun `Only requester can unlock re-issued state`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
@@ -315,6 +322,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issued for an account`() {
+        initialiseForAccounts()
         createSimpleStateForAccount(employeeAliceParty)
         updateSimpleStateForAccount(employeeBobParty)
         updateSimpleStateForAccount(employeeCharlieParty)
