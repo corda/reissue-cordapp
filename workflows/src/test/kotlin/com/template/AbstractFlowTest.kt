@@ -425,7 +425,7 @@ abstract class AbstractFlowTest {
         node: TestStartedNode
     ): List<LedgerTransaction> {
         return node.services.validatedTransactions.track().snapshot.map {
-            it.toLedgerTransaction(aliceNode.services)
+            it.toLedgerTransaction(node.services)
         }
     }
 }

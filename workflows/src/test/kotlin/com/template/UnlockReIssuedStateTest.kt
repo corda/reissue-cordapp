@@ -29,7 +29,6 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateSimpleState(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getTransactions(aliceNode)
-
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
@@ -71,9 +70,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateStateNeedingAcceptance(bobNode, charlieParty)
         updateStateNeedingAcceptance(charlieNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
 
@@ -115,9 +113,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
         updateStateNeedingAllParticipantsToSign(charlieNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
 
@@ -161,9 +158,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 50)
         transferTokens(charlieNode, aliceParty, 50)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
@@ -208,9 +204,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 30)
         transferTokens(charlieNode, aliceParty, 30)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
@@ -254,9 +249,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 30)
         transferTokens(charlieNode, aliceParty, 30)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
@@ -317,5 +311,46 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             StateNeedingAcceptanceContract.Commands.Update(),
             listOf(aliceParty, issuerParty, acceptorParty)
         )
+    }
+
+    @Test
+    fun `SimpleState re-issued for an account`() {
+        createSimpleStateForAccount(employeeAliceParty)
+        updateSimpleStateForAccount(employeeBobParty)
+        updateSimpleStateForAccount(employeeCharlieParty)
+        updateSimpleStateForAccount(employeeAliceParty)
+        updateSimpleStateForAccount(employeeBobParty)
+        updateSimpleStateForAccount(employeeCharlieParty)
+        updateSimpleStateForAccount(employeeAliceParty)
+
+        val transactionsBeforeReIssuance = getTransactions(employeeNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        createReIssuanceRequest(
+            employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty
+        )
+
+        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+
+        reIssueRequestedStates(reIssuanceRequest, employeeNode)
+
+        deleteSimpleStateForAccount()
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(employeeNode)
+
+        unlockReIssuedState<SimpleState>(
+            employeeNode,
+            attachmentSecureHash,
+            SimpleStateContract.Commands.Update()
+        )
+
+        updateSimpleStateForAccount(employeeDebbieParty)
+
+        val transactionsAfterReIssuance = getTransactions(employeeNode) // TODO: figure out how to get back-chain for a given account
+//        assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
 }

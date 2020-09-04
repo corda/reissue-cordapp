@@ -10,7 +10,6 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
-import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
@@ -44,31 +43,43 @@ class UnlockReIssuedState<T>(
 
         transactionBuilder.addAttachment(deletedStateTransactionHash)
 
+        val localSigners = (lockSigners + reIssuedStatesSigners)
+            .distinct()
+            .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
         transactionBuilder.verify(serviceHub)
-        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
+        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-//        val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
-//        val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
-//        val signersSessions = signers.filter { it != ourIdentity }.map { initiateFlow(it) }
-//        val otherParticipantsSessions = otherParticipants.filter { it != ourIdentity }.map { initiateFlow(it as Party) }
-//
-//        signersSessions.forEach {
-//            it.send(true)
-//        }
-//        otherParticipantsSessions.forEach {
-//            it.send(false)
-//        }
-//
-//        if(signersSessions.isNotEmpty()) {
-//            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
-//        }
-//
-//        subFlow(
-//            FinalityFlow(
-//                transaction = signedTransaction,
-//                sessions = signersSessions + otherParticipantsSessions
-//            )
-//        )
+        val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
+        val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
+
+        val signersSessions = initiateFlows(signers)
+        val otherParticipantsSessions = initiateFlows(otherParticipants)
+
+        signersSessions.forEach {
+            it.send(true)
+        }
+        otherParticipantsSessions.forEach {
+            it.send(false)
+        }
+
+        if(signersSessions.isNotEmpty()) {
+            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
+        }
+
+        subFlow(
+            FinalityFlow(
+                transaction = signedTransaction,
+                sessions = signersSessions + otherParticipantsSessions
+            )
+        )
+    }
+
+    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> { // TODO: this function is a duplicate
+        return parties
+            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
+            .filter { it != ourIdentity }
+            .distinct()
+            .map { initiateFlow(it) }
     }
 
 }
