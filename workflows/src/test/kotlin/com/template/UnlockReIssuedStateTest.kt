@@ -329,12 +329,12 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
     fun `SimpleState re-issued for an account`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleStateForAccount(employeeBobParty)
-        updateSimpleStateForAccount(employeeCharlieParty)
-        updateSimpleStateForAccount(employeeAliceParty)
-        updateSimpleStateForAccount(employeeBobParty)
-        updateSimpleStateForAccount(employeeCharlieParty)
-        updateSimpleStateForAccount(employeeAliceParty)
+        updateSimpleStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
+        updateSimpleStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
 
         val transactionsBeforeReIssuance = getTransactions(employeeNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
@@ -361,7 +361,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
-        updateSimpleStateForAccount(employeeDebbieParty)
+        updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
 
         val transactionsAfterReIssuance = getTransactions(employeeNode) // TODO: figure out how to get back-chain for a given account
 //        assertThat(transactionsAfterReIssuance.size, equalTo(4))

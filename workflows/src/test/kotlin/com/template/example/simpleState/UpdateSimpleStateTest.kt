@@ -25,9 +25,16 @@ class UpdateSimpleStateTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `Update simple state for account`() {
+    fun `Update simple state - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleStateForAccount(employeeBobParty)
+        updateSimpleStateForAccount(employeeNode, employeeBobParty)
+    }
+
+    @Test
+    fun `Update simple state - accounts on different hosts`() {
+        initialisePartiesForAccountOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+        updateSimpleStateForAccount(aliceNode, employeeBobParty)
     }
 }
