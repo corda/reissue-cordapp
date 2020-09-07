@@ -6,6 +6,7 @@ import com.template.contracts.example.SimpleStateContract
 import com.template.states.example.SimpleState
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.TransactionBuilder
 
@@ -17,9 +18,10 @@ class CreateSimpleStateForAccount(
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val host = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
+        val signers = listOf(ourIdentity.owningKey, issuer.owningKey)
 
-        val signers = listOf(host.owningKey, issuer.owningKey)
+        val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
+        require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addOutputState(SimpleState(owner))
@@ -28,10 +30,13 @@ class CreateSimpleStateForAccount(
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
+        val ownerHost = serviceHub.identityService.partyFromKey(owner.owningKey)!!
+        val sessions = if(ownerHost != ourIdentity) listOf( initiateFlow(ownerHost) ) else listOf()
+
         subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
-                sessions = listOf()
+                sessions = sessions
             )
         )
     }

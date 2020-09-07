@@ -94,8 +94,8 @@ class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issued for an account`() {
-        initialiseForAccounts()
-        createSimpleStateForAccount(employeeAliceParty)
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
         createReIssuanceRequest(

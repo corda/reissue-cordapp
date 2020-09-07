@@ -12,8 +12,14 @@ class CreateSimpleStateTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `Create simple state - accounts`() {
-        initialiseForAccounts()
-        createSimpleStateForAccount(employeeAliceParty)
+    fun `Create simple state - accounts on the same host`() {
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+    }
+
+    @Test
+    fun `Create simple state - accounts on different hosts`() {
+        initialisePartiesForAccountOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
     }
 }

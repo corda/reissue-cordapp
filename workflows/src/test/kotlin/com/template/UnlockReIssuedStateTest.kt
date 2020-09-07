@@ -20,6 +20,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {
+        // generate back-chain
         initialiseParties()
         createSimpleState(aliceParty)
         updateSimpleState(aliceNode, bobParty)
@@ -29,9 +30,11 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateSimpleState(bobNode, charlieParty)
         updateSimpleState(charlieNode, aliceParty)
 
+        // get transaction history, not a back-chain
         val transactionsBeforeReIssuance = getTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
+        // re-issue state
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
 
         createReIssuanceRequest(
@@ -54,8 +57,10 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
+        // change state holder
         updateSimpleState(aliceNode, debbieParty)
 
+        // check transaction history again
         val transactionsAfterReIssuance = getTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
 
@@ -322,8 +327,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issued for an account`() {
-        initialiseForAccounts()
-        createSimpleStateForAccount(employeeAliceParty)
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
         updateSimpleStateForAccount(employeeBobParty)
         updateSimpleStateForAccount(employeeCharlieParty)
         updateSimpleStateForAccount(employeeAliceParty)
