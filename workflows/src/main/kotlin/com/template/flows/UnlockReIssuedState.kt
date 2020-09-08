@@ -4,9 +4,11 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.ReIssuanceLockContract
 import com.template.states.ReIssuanceLock
+import com.template.states.example.SimpleState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.Base58
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
@@ -25,9 +27,13 @@ class UnlockReIssuedState<T>(
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
     override fun call() {
+        val requester = reIssuanceLock.state.data.requester
+        val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
+        require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
+
         val notary = getPreferredNotary(serviceHub)
-        val lockSigners = listOf(ourIdentity.owningKey)
-        val issuer = reIssuanceLock.state.data.issuer
+        val lockSigners = listOf(requester.owningKey)
+
         val reIssuedStatesSigners = updateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
@@ -46,6 +52,7 @@ class UnlockReIssuedState<T>(
         val localSigners = (lockSigners + reIssuedStatesSigners)
             .distinct()
             .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
+
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 

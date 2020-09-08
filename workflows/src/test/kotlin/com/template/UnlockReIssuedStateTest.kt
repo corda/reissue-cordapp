@@ -293,7 +293,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
 
-    @Test(expected = TransactionVerificationException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `Only requester can unlock re-issued state`() {
         initialiseParties()
         createStateNeedingAcceptance(aliceParty)
@@ -344,7 +344,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             employeeNode,
             listOf(simpleStateStateAndRef),
             SimpleStateContract.Commands.Create(),
-            employeeIssuerParty
+            employeeIssuerParty,
+            requester = employeeAliceParty
         )
 
         val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
@@ -363,8 +364,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
 
-        val transactionsAfterReIssuance = getTransactions(employeeNode) // TODO: figure out how to get back-chain for a given account
-//        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        // TODO: figure out how to get back-chain for a given account
     }
 
     @Test

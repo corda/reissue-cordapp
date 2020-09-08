@@ -463,11 +463,12 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         attachmentSecureHash: SecureHash,
         command: CommandData,
-        commandSigners: List<Party> = listOf(node.info.singleIdentity())
+        commandSigners: List<AbstractParty>? = null
     ) {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
+        val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
+        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
