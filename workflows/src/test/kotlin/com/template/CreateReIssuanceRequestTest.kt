@@ -71,13 +71,28 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `SimpleState re-issuance request is created when holder is an account`() {
+    fun `SimpleState re-issuance request is created - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
         createReIssuanceRequest(
             employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
+    }
+
+    @Test
+    fun `SimpleState re-issuance request is created - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        createReIssuanceRequest(
+            aliceNode,
             listOf(simpleStateStateAndRef),
             SimpleStateContract.Commands.Create(),
             employeeIssuerParty,

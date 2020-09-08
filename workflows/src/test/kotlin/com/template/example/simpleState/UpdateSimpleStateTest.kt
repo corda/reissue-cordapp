@@ -33,7 +33,7 @@ class UpdateSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Update simple state - accounts on different hosts`() {
-        initialisePartiesForAccountOnDifferentHosts()
+        initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
         updateSimpleStateForAccount(aliceNode, employeeBobParty)
     }

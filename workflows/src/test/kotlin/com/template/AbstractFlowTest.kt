@@ -182,7 +182,7 @@ abstract class AbstractFlowTest {
         employeeDebbieParty = getPartyForAccount(employeeNode, employeeDebbieAccount)
     }
 
-    fun initialisePartiesForAccountOnDifferentHosts() {
+    fun initialisePartiesForAccountsOnDifferentHosts() {
         initialiseParties()
 
 //        val flowFuture = issuerNode.services.startFlow(CreateAndShareAccount("issuer", listOf(aliceParty))).resultFuture

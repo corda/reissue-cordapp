@@ -19,7 +19,7 @@ class CreateSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Create simple state - accounts on different hosts`() {
-        initialisePartiesForAccountOnDifferentHosts()
+        initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
     }
 }
