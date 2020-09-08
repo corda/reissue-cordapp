@@ -28,15 +28,15 @@ class ReIssueState<T>(
             reIssuanceRequest.statesToReIssue)
 
         val notary = getPreferredNotary(serviceHub)
+
         val issuer = reIssuanceRequest.issuer
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
-        val lockSigners = listOf(ourIdentity.owningKey, issuer.owningKey).distinct()
-        val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
-
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
-        val transactionBuilder = TransactionBuilder(notary = notary)
+        val lockSigners = listOf(issuer.owningKey)
+        val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
 
+        val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
         transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Accept(), lockSigners)
 

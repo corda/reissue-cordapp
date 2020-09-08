@@ -26,17 +26,13 @@ class CreateReIssuanceRequest<T>(
 
     @Suspendable
     override fun call() {
-        val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
-        val signers: List<PublicKey>
         if(requester != null) {
             val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
             require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
-            signers = listOf(requesterHost.owningKey, requesterAbstractParty.owningKey).distinct()
-        } else {
-            signers = listOf(requesterAbstractParty.owningKey).distinct()
         }
+        val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
 
-        val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
+        val signers = listOf(requesterAbstractParty.owningKey).distinct()
 
         val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, statesToReIssue, issuanceCommand, issuanceSigners)
 
@@ -47,9 +43,11 @@ class CreateReIssuanceRequest<T>(
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
+        val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         val sessions = listOfNotNull(
             if(ourIdentity != issuerHost) initiateFlow(issuerHost) else null
         )
+
         subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
