@@ -7,12 +7,14 @@ class UpdateStateNeedingAcceptanceTest: AbstractFlowTest() {
 
     @Test
     fun `Update state needing acceptance`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
         updateStateNeedingAcceptance(aliceNode, bobParty)
     }
 
     @Test
     fun `Update state needing acceptance many times`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
         updateStateNeedingAcceptance(aliceNode, bobParty)
         updateStateNeedingAcceptance(bobNode, charlieParty)

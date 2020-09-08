@@ -12,7 +12,6 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
-import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
@@ -20,6 +19,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {
+        // generate back-chain
+        initialiseParties()
         createSimpleState(aliceParty)
         updateSimpleState(aliceNode, bobParty)
         updateSimpleState(bobNode, charlieParty)
@@ -28,21 +29,23 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateSimpleState(bobNode, charlieParty)
         updateSimpleState(charlieNode, aliceParty)
 
+        // get transaction history, not a back-chain
         val transactionsBeforeReIssuance = getTransactions(aliceNode)
-
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
+        // re-issue state
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
 
         createReIssuanceRequest(
             aliceNode,
             listOf(simpleStateStateAndRef),
-            SimpleStateContract.Commands.Create()
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         deleteSimpleState(aliceNode)
 
@@ -53,8 +56,10 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
+        // change state holder
         updateSimpleState(aliceNode, debbieParty)
 
+        // check transaction history again
         val transactionsAfterReIssuance = getTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
 
@@ -62,6 +67,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued StateNeedingAcceptance is unencumbered after the original state is deleted`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
         updateStateNeedingAcceptance(aliceNode, bobParty)
         updateStateNeedingAcceptance(bobNode, charlieParty)
@@ -70,9 +76,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateStateNeedingAcceptance(bobNode, charlieParty)
         updateStateNeedingAcceptance(charlieNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
 
@@ -80,12 +85,13 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
             listOf(issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         deleteStateNeedingAcceptance(aliceNode)
 
@@ -105,6 +111,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
         updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
         updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
@@ -113,9 +120,8 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
         updateStateNeedingAllParticipantsToSign(charlieNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
 
@@ -123,12 +129,13 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
+            issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAllParticipantsToSign>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         deleteStateNeedingAllParticipantsToSign(aliceNode)
 
@@ -149,6 +156,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued token is unencumbered after the original state is deleted`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 50)
@@ -158,18 +166,22 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 50)
         transferTokens(charlieNode, aliceParty, 50)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokenIndices),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         redeemTokens(aliceNode, tokens)
 
@@ -191,6 +203,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issue just part of tokens`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 40)
@@ -200,18 +213,22 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 30)
         transferTokens(charlieNode, aliceParty, 30)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, indicesList))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, indicesList),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         redeemTokens(aliceNode, tokens)
 
@@ -232,6 +249,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued tokens are unencumbered after the original state is deleted`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
         transferTokens(aliceNode, bobParty, 40)
@@ -241,18 +259,22 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         transferTokens(bobNode, charlieParty, 30)
         transferTokens(charlieNode, aliceParty, 30)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
+        val transactionsBeforeReIssuance = getTransactions(aliceNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokenIndices))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokenIndices),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         redeemTokens(aliceNode, tokens)
 
@@ -270,8 +292,9 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
 
-    @Test(expected = TransactionVerificationException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `Only requester can unlock re-issued state`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
@@ -280,12 +303,13 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAcceptanceStateAndRef),
             StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
             listOf(issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
         deleteStateNeedingAcceptance(aliceNode)
 
@@ -298,5 +322,84 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
             StateNeedingAcceptanceContract.Commands.Update(),
             listOf(aliceParty, issuerParty, acceptorParty)
         )
+    }
+
+    @Test
+    fun `SimpleState re-issued - accounts on the same host`() {
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+        updateSimpleStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
+        updateSimpleStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
+
+        val transactionsBeforeReIssuance = getTransactions(employeeNode)
+        assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        createReIssuanceRequest(
+            employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
+
+        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+
+        reIssueRequestedStates(employeeNode, reIssuanceRequest)
+
+        deleteSimpleStateForAccount(employeeNode)
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(employeeNode)
+
+        unlockReIssuedState<SimpleState>(
+            employeeNode,
+            attachmentSecureHash,
+            SimpleStateContract.Commands.Update()
+        )
+
+        updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
+
+        // TODO: figure out how to get back-chain for a given account
+    }
+
+    @Test
+    fun `SimpleState re-issued - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+        updateSimpleStateForAccount(aliceNode, employeeBobParty)
+        updateSimpleStateForAccount(bobNode, employeeCharlieParty)
+        updateSimpleStateForAccount(charlieNode, employeeAliceParty)
+        updateSimpleStateForAccount(aliceNode, employeeBobParty)
+        updateSimpleStateForAccount(bobNode, employeeCharlieParty)
+        updateSimpleStateForAccount(charlieNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
+
+        val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
+
+        deleteSimpleStateForAccount(aliceNode)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<SimpleState>(
+            aliceNode,
+            attachmentSecureHash,
+            SimpleStateContract.Commands.Update()
+        )
+
+        updateSimpleStateForAccount(aliceNode, employeeDebbieParty)
+
+        // TODO: figure out how to get back-chain for a given account
     }
 }

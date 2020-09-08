@@ -9,8 +9,8 @@ import net.corda.core.identity.Party
 
 @BelongsToContract(ReIssuanceLockContract::class)
 class ReIssuanceLock<T>(
-    val issuer: Party,
-    val requester: Party,
+    val issuer: AbstractParty,
+    val requester: AbstractParty,
     val lockedStates: List<StateAndRef<T>> // we need state as well to get participants
 ): ContractState where T: ContractState {
 

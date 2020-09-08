@@ -7,6 +7,7 @@ class DeleteStateNeedingAcceptanceTest: AbstractFlowTest() {
 
     @Test
     fun `Delete state needing acceptance`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
         deleteStateNeedingAcceptance(aliceNode)
     }

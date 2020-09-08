@@ -7,7 +7,22 @@ class DeleteSimpleStateTest: AbstractFlowTest() {
 
     @Test
     fun `Delete simple state`() {
+        initialiseParties()
         createSimpleState(aliceParty)
         deleteSimpleState(aliceNode)
+    }
+
+    @Test
+    fun `Delete simple state - accounts on the same host`() {
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+        deleteSimpleStateForAccount(employeeNode)
+    }
+
+    @Test
+    fun `Delete simple state - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+        deleteSimpleStateForAccount(aliceNode)
     }
 }

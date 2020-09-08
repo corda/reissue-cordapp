@@ -9,11 +9,11 @@ import net.corda.core.serialization.CordaSerializable
 @BelongsToContract(ReIssuanceRequestContract::class)
 @CordaSerializable
 class ReIssuanceRequest<T>(
-    val issuer: Party,
-    val requester: Party,
+    val issuer: AbstractParty,
+    val requester: AbstractParty,
     val statesToReIssue: List<StateAndRef<T>>,
     val issuanceCommand: CommandData,
-    val issuanceSigners: List<Party>
+    val issuanceSigners: List<AbstractParty>
 ): ContractState where T: ContractState {
 
     override val participants: List<AbstractParty>

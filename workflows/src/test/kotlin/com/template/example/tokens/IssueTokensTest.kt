@@ -9,6 +9,7 @@ class IssueTokensTest: AbstractFlowTest() {
 
     @Test
     fun `Issued number of issued token type is in holder's vault`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
         assertThat(getTokenQuantity(aliceNode), equalTo(50))
     }

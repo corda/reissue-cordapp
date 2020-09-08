@@ -7,6 +7,7 @@ class UpdateStateNeedingAllParticipantsToSignTest: AbstractFlowTest() {
 
     @Test
     fun `Update state needing all participants to sign`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
         updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
     }
@@ -14,6 +15,7 @@ class UpdateStateNeedingAllParticipantsToSignTest: AbstractFlowTest() {
 
     @Test
     fun `Update state needing all participants to sign many times`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
         updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
         updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)

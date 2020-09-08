@@ -1,16 +1,19 @@
 package com.template
 
-import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
-import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.r3.corda.lib.accounts.workflows.services.AccountService
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
-import com.template.contracts.example.SimpleStateContract
-import com.template.contracts.example.StateNeedingAcceptanceContract
-import com.template.flows.*
-import com.template.flows.example.simpleState.CreateSimpleState
-import com.template.flows.example.simpleState.DeleteSimpleState
-import com.template.flows.example.simpleState.UpdateSimpleState
+import com.template.flows.CreateReIssuanceRequest
+import com.template.flows.GenerateTransactionByteArray
+import com.template.flows.ReIssueState
+import com.template.flows.UnlockReIssuedState
+import com.template.flows.example.simpleState.*
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.UpdateStateNeedingAcceptance
@@ -26,10 +29,13 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
@@ -39,9 +45,13 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.MockNetworkNotarySpec
+import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
+import java.security.PublicKey
+import java.util.*
 
 
 abstract class AbstractFlowTest {
@@ -55,6 +65,7 @@ abstract class AbstractFlowTest {
     lateinit var bobNode: TestStartedNode
     lateinit var charlieNode: TestStartedNode
     lateinit var debbieNode: TestStartedNode
+    lateinit var employeeNode: TestStartedNode
 
     lateinit var notaryParty: Party
     lateinit var issuerParty: Party
@@ -63,6 +74,19 @@ abstract class AbstractFlowTest {
     lateinit var bobParty: Party
     lateinit var charlieParty: Party
     lateinit var debbieParty: Party
+    lateinit var employeeParty: Party
+
+    lateinit var employeeIssuerParty: AbstractParty
+    lateinit var employeeAliceParty: AbstractParty
+    lateinit var employeeBobParty: AbstractParty
+    lateinit var employeeCharlieParty: AbstractParty
+    lateinit var employeeDebbieParty: AbstractParty
+
+    lateinit var employeeIssuerAccount: AccountInfo
+    lateinit var employeeAliceAccount: AccountInfo
+    lateinit var employeeBobAccount: AccountInfo
+    lateinit var employeeCharlieAccount: AccountInfo
+    lateinit var employeeDebbieAccount: AccountInfo
 
     lateinit var issuerLegalName: CordaX500Name
     lateinit var acceptorLegalName: CordaX500Name
@@ -70,6 +94,7 @@ abstract class AbstractFlowTest {
     lateinit var bobLegalName: CordaX500Name
     lateinit var charlieLegalName: CordaX500Name
     lateinit var debbieLegalName: CordaX500Name
+    lateinit var employeeLegalName: CordaX500Name
 
     lateinit var allNotaries: List<TestStartedNode>
 
@@ -79,6 +104,13 @@ abstract class AbstractFlowTest {
     fun setup() {
         mockNet = InternalMockNetwork(
             cordappsForAllNodes = listOf(
+                findCordapp("com.r3.corda.lib.tokens.contracts"),
+                findCordapp("com.r3.corda.lib.tokens.workflows"),
+                findCordapp("com.r3.corda.lib.tokens.money"),
+                findCordapp("com.r3.corda.lib.tokens.selection"),
+                findCordapp("com.r3.corda.lib.accounts.contracts"),
+                findCordapp("com.r3.corda.lib.accounts.workflows"),
+                findCordapp("com.r3.corda.lib.ci.workflows"),
                 findCordapp("com.template.flows"),
                 findCordapp("com.template.contracts"),
                 findCordapp("com.r3.corda.lib.accounts.workflows"),
@@ -95,6 +127,15 @@ abstract class AbstractFlowTest {
         notaryNode = mockNet.notaryNodes.first()
         notaryParty = notaryNode.info.singleIdentity()
 
+    }
+
+    @After
+    fun tearDown() {
+        mockNet.stopNodes()
+        System.setProperty("net.corda.node.dbtransactionsresolver.InMemoryResolutionLimit", "0")
+    }
+
+    fun initialiseParties() {
         issuerLegalName = CordaX500Name(organisation = "ISSUER", locality = "London", country = "GB")
         issuerNode = mockNet.createNode(InternalMockNodeParameters(legalName = issuerLegalName))
         issuerParty = issuerNode.info.singleIdentity()
@@ -120,12 +161,106 @@ abstract class AbstractFlowTest {
         debbieParty = debbieNode.info.singleIdentity()
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+
     }
 
-    @After
-    fun tearDown() {
-        mockNet.stopNodes()
-        System.setProperty("net.corda.node.dbtransactionsresolver.InMemoryResolutionLimit", "0")
+    fun initialisePartiesForAccountsOnTheSameHost() {
+        employeeLegalName = CordaX500Name(organisation = "EMPLOYEE", locality = "London", country = "GB")
+        employeeNode = mockNet.createNode(InternalMockNodeParameters(legalName = employeeLegalName))
+        employeeParty = employeeNode.info.singleIdentity()
+
+        employeeIssuerAccount = createAccount(employeeNode, "Issuer")
+        employeeAliceAccount = createAccount(employeeNode, "Alice")
+        employeeBobAccount = createAccount(employeeNode, "Bob")
+        employeeCharlieAccount = createAccount(employeeNode, "Charlie")
+        employeeDebbieAccount = createAccount(employeeNode, "Debbie")
+
+        employeeIssuerParty = getPartyForAccount(employeeNode, employeeIssuerAccount)
+        employeeAliceParty = getPartyForAccount(employeeNode, employeeAliceAccount)
+        employeeBobParty = getPartyForAccount(employeeNode, employeeBobAccount)
+        employeeCharlieParty = getPartyForAccount(employeeNode, employeeCharlieAccount)
+        employeeDebbieParty = getPartyForAccount(employeeNode, employeeDebbieAccount)
+    }
+
+    fun initialisePartiesForAccountsOnDifferentHosts() {
+        initialiseParties()
+
+//        val flowFuture = issuerNode.services.startFlow(CreateAndShareAccount("issuer", listOf(aliceParty))).resultFuture
+//        mockNet.runNetwork()
+//        flowFuture.getOrThrow()
+
+        employeeIssuerAccount = createAccount(issuerNode, "Issuer")
+        employeeAliceAccount = createAccount(aliceNode, "Alice")
+        employeeBobAccount = createAccount(bobNode, "Bob")
+        employeeCharlieAccount = createAccount(charlieNode, "Charlie")
+        employeeDebbieAccount = createAccount(debbieNode, "Debbie")
+
+        employeeIssuerParty = getPartyForAccount(issuerNode, employeeIssuerAccount)
+        employeeAliceParty = getPartyForAccount(aliceNode, employeeAliceAccount)
+        employeeBobParty = getPartyForAccount(bobNode, employeeBobAccount)
+        employeeCharlieParty = getPartyForAccount(charlieNode, employeeCharlieAccount)
+        employeeDebbieParty = getPartyForAccount(debbieNode, employeeDebbieAccount)
+
+        shareAccountInfo(issuerNode, employeeIssuerAccount, listOf(aliceParty, bobParty, charlieParty, debbieParty))
+        shareAccountInfo(aliceNode, employeeAliceAccount, listOf(issuerParty, bobParty, charlieParty, debbieParty))
+        shareAccountInfo(bobNode, employeeBobAccount, listOf(issuerParty, aliceParty, charlieParty, debbieParty))
+        shareAccountInfo(charlieNode, employeeCharlieAccount, listOf(issuerParty, aliceParty, bobParty, debbieParty))
+        shareAccountInfo(debbieNode, employeeDebbieAccount, listOf(issuerParty, aliceParty, bobParty, charlieParty))
+
+        inform(issuerNode, employeeIssuerAccount, employeeIssuerParty, listOf(aliceNode, bobNode, charlieNode, debbieNode))
+        inform(aliceNode, employeeAliceAccount, employeeAliceParty, listOf(issuerNode, bobNode, charlieNode, debbieNode))
+        inform(bobNode, employeeBobAccount, employeeBobParty, listOf(issuerNode, aliceNode, charlieNode, debbieNode))
+        inform(charlieNode, employeeCharlieAccount, employeeCharlieParty, listOf(issuerNode, aliceNode, bobNode, debbieNode))
+        inform(debbieNode, employeeDebbieAccount, employeeDebbieParty, listOf(issuerNode, aliceNode, bobNode, charlieNode))
+
+    }
+
+    // accounts
+
+    fun createAccount(
+        node: TestStartedNode,
+        accountName: String
+    ): AccountInfo {
+        val accountFuture = node.services.accountService.createAccount(name = accountName)
+        mockNet.runNetwork()
+        return accountFuture.getOrThrow().state.data
+    }
+
+    fun getPartyForAccount(
+        node: TestStartedNode,
+        account: AccountInfo
+    ): AnonymousParty {
+        val flowFuture = node.services.startFlow(RequestKeyForAccount(account)).resultFuture
+        mockNet.runNetwork()
+        return flowFuture.getOrThrow()
+    }
+
+    fun shareAccountInfo(
+        node: TestStartedNode,
+        account: AccountInfo,
+        parties: List<Party>
+    ) {
+        parties.forEach {
+            node.services.accountService.shareAccountInfoWithParty(account.identifier.id, it)
+        }
+    }
+
+    fun inform(
+        host: TestStartedNode,
+        accountInfo: AccountInfo,
+        accountParty: AbstractParty,
+        others: List<TestStartedNode>
+    ) {
+        if (!host.info.legalIdentities[0].equals(accountInfo!!.host)) {
+            throw IllegalArgumentException("hosts do not match")
+        }
+        for (other in others) {
+            val future: CordaFuture<*> = host.services.startFlow(SyncKeyMappingInitiator(
+                other.info.legalIdentities[0],
+                Collections.singletonList(accountParty))).resultFuture
+            mockNet.runNetwork()
+            future.get()
+        }
     }
 
     // simple state
@@ -134,6 +269,15 @@ abstract class AbstractFlowTest {
         owner: Party
     ) {
         val flowFuture = issuerNode.services.startFlow(CreateSimpleState(owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun createSimpleStateForAccount(
+        node: TestStartedNode,
+        owner: AbstractParty
+    ) {
+        val flowFuture = node.services.startFlow(CreateSimpleStateForAccount(employeeIssuerParty, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -148,11 +292,30 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
+    fun updateSimpleStateForAccount(
+        node: TestStartedNode,
+        owner: AbstractParty
+    ) {
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateSimpleStateForAccount(simpleStateStateAndRef, owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
     fun deleteSimpleState(
         node: TestStartedNode
     ) {
         val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
         val flowFuture = node.services.startFlow(DeleteSimpleState(simpleStateStateAndRef, issuerParty)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun deleteSimpleStateForAccount(
+        node: TestStartedNode
+    ) {
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -286,9 +449,11 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         stateToReIssue: List<StateAndRef<T>>,
         command: CommandData,
-        commandSigners: List<Party> = listOf(issuerParty)
+        issuer: AbstractParty,
+        commandSigners: List<AbstractParty> = listOf(issuer),
+        requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuerParty, stateToReIssue, command, commandSigners)
+        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -298,19 +463,21 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         attachmentSecureHash: SecureHash,
         command: CommandData,
-        commandSigners: List<Party> = listOf(node.info.singleIdentity())
+        commandSigners: List<AbstractParty>? = null
     ) {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, commandSigners)).resultFuture
+        val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
+        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
     fun <T> reIssueRequestedStates(
+        node: TestStartedNode,
         reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>
     ) where T: ContractState {
-        val flowFuture = issuerNode.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
+        val flowFuture = node.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -333,7 +500,7 @@ abstract class AbstractFlowTest {
         node: TestStartedNode
     ): List<LedgerTransaction> {
         return node.services.validatedTransactions.track().snapshot.map {
-            it.toLedgerTransaction(aliceNode.services)
+            it.toLedgerTransaction(node.services)
         }
     }
 }

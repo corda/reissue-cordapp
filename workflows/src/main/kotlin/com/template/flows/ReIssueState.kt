@@ -9,7 +9,7 @@ import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
+import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -28,12 +28,15 @@ class ReIssueState<T>(
             reIssuanceRequest.statesToReIssue)
 
         val notary = getPreferredNotary(serviceHub)
-        val issuer = ourIdentity
+
+        val issuer = reIssuanceRequest.issuer
+        val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
+        require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
+
         val lockSigners = listOf(issuer.owningKey)
         val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary = notary)
-
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
         transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Accept(), lockSigners)
 
@@ -57,13 +60,17 @@ class ReIssueState<T>(
             encumbrance = 0)
         transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Create(), lockSigners)
 
+        val localSigners = (lockSigners + reIssuedStatesSigners)
+            .distinct()
+            .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
         transactionBuilder.verify(serviceHub)
-        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
+        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
         val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
-        val signersSessions = signers.filter { it != ourIdentity }.map { initiateFlow(it) }
-        val otherParticipantsSessions = otherParticipants.filter { it != ourIdentity }.map { initiateFlow(it as Party) }
+
+        val signersSessions = initiateFlows(signers)
+        val otherParticipantsSessions = initiateFlows(otherParticipants)
 
         signersSessions.forEach {
             it.send(true)
@@ -82,6 +89,14 @@ class ReIssueState<T>(
                 sessions = signersSessions + otherParticipantsSessions
             )
         )
+    }
+
+    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> {
+        return parties
+            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
+            .filter { it != ourIdentity }
+            .distinct()
+            .map { initiateFlow(it) }
     }
 }
 

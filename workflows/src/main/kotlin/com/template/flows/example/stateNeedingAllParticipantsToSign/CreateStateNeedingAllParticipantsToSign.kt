@@ -1,6 +1,7 @@
 package com.template.flows.example.stateNeedingAllParticipantsToSign
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
 import com.template.states.example.StateNeedingAllParticipantsToSign

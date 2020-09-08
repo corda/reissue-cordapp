@@ -1,9 +1,6 @@
 package com.template
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
 import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
@@ -17,100 +14,100 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issuance request is created`() {
+        initialiseParties()
         createSimpleState(aliceParty)
-        updateSimpleState(aliceNode, bobParty)
-        updateSimpleState(bobNode, charlieParty)
-        updateSimpleState(charlieNode, debbieParty)
-        updateSimpleState(debbieNode, charlieParty)
-        updateSimpleState(charlieNode, bobParty)
-        updateSimpleState(bobNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
-
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
-
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode) // a list of 1 SimpleState
         createReIssuanceRequest(
             aliceNode,
-            listOf(simpleStateStateAndRef),
-            SimpleStateContract.Commands.Create()
+            simpleStateStateAndRef,
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
     }
 
     @Test
     fun `StateNeedingAcceptance re-issuance request is created`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
-        updateStateNeedingAcceptance(aliceNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, debbieParty)
-        updateStateNeedingAcceptance(debbieNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
-
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
-
+        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode) // a list of 1 SimpleState
         createReIssuanceRequest(
             aliceNode,
-            listOf(stateNeedingAcceptanceStateAndRef),
+            stateNeedingAcceptanceStateAndRef,
             StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
             listOf(issuerParty, acceptorParty)
         )
     }
 
     @Test
     fun `StateNeedingAllParticipantsToSign re-issuance request is created`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
-        updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, debbieParty)
-        updateStateNeedingAllParticipantsToSign(debbieNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
-
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
-
+        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode) // a list of 1 SimpleState
         createReIssuanceRequest(
             aliceNode,
-            listOf(stateNeedingAllParticipantsToSignStateAndRef),
+            stateNeedingAllParticipantsToSignStateAndRef,
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
+            issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
         )
     }
 
     @Test
     fun `Tokens re-issuance request is created`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
 
-        transferTokens(aliceNode, bobParty, 50)
-        transferTokens(bobNode, charlieParty, 50)
-        transferTokens(charlieNode, debbieParty, 50)
-        transferTokens(debbieNode, bobParty, 50)
-        transferTokens(bobNode, aliceParty, 50)
-
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(6))
-
         val tokens = getTokens(aliceNode)
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            issuerParty
+        )
+    }
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+    @Test
+    fun `SimpleState re-issuance request is created - accounts on the same host`() {
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        createReIssuanceRequest(
+            employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
+    }
+
+    @Test
+    fun `SimpleState re-issuance request is created - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
     }
 
     @Test(expected = TransactionVerificationException::class)
     fun `Request re-issuance of 0 states can't be created`() {
+        initialiseParties()
         createReIssuanceRequest(
             aliceNode,
             listOf(),
-            SimpleStateContract.Commands.Create()
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
     }
 }

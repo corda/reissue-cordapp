@@ -4,13 +4,14 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.ReIssuanceLockContract
 import com.template.states.ReIssuanceLock
+import com.template.states.example.SimpleState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.Base58
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
-import net.corda.core.node.StatesToRecord
+import net.corda.core.identity.AbstractParty
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
@@ -22,13 +23,17 @@ class UnlockReIssuedState<T>(
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
     private val deletedStateTransactionHash: SecureHash,
     private val updateCommand: CommandData,
-    private val updateSigners: List<Party> =  listOf(reIssuanceLock.state.data.requester)
+    private val updateSigners: List<AbstractParty> = listOf(reIssuanceLock.state.data.requester)
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
     override fun call() {
+        val requester = reIssuanceLock.state.data.requester
+        val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
+        require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
+
         val notary = getPreferredNotary(serviceHub)
-        val lockSigners = listOf(ourIdentity.owningKey)
-        val issuer = reIssuanceLock.state.data.issuer
+        val lockSigners = listOf(requester.owningKey)
+
         val reIssuedStatesSigners = updateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
@@ -44,13 +49,18 @@ class UnlockReIssuedState<T>(
 
         transactionBuilder.addAttachment(deletedStateTransactionHash)
 
+        val localSigners = (lockSigners + reIssuedStatesSigners)
+            .distinct()
+            .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
+
         transactionBuilder.verify(serviceHub)
-        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
+        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
         val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
         val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
-        val signersSessions = signers.filter { it != ourIdentity }.map { initiateFlow(it) }
-        val otherParticipantsSessions = otherParticipants.filter { it != ourIdentity }.map { initiateFlow(it as Party) }
+
+        val signersSessions = initiateFlows(signers)
+        val otherParticipantsSessions = initiateFlows(otherParticipants)
 
         signersSessions.forEach {
             it.send(true)
@@ -60,7 +70,7 @@ class UnlockReIssuedState<T>(
         }
 
         if(signersSessions.isNotEmpty()) {
-            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
+            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
         }
 
         subFlow(
@@ -69,6 +79,14 @@ class UnlockReIssuedState<T>(
                 sessions = signersSessions + otherParticipantsSessions
             )
         )
+    }
+
+    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> { // TODO: this function is a duplicate
+        return parties
+            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
+            .filter { it != ourIdentity }
+            .distinct()
+            .map { initiateFlow(it) }
     }
 
 }

@@ -1,7 +1,5 @@
 package com.template
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
@@ -12,78 +10,54 @@ import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
 import net.corda.core.node.services.queryBy
+import org.junit.Ignore
 import org.junit.Test
 
 class ReIssueStateTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState is re-issued`() {
+        initialiseParties()
         createSimpleState(aliceParty)
-        updateSimpleState(aliceNode, bobParty)
-        updateSimpleState(bobNode, charlieParty)
-        updateSimpleState(charlieNode, debbieParty)
-        updateSimpleState(debbieNode, charlieParty)
-        updateSimpleState(charlieNode, bobParty)
-        updateSimpleState(bobNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
-
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode) // a list of 1 SimpleState
 
         createReIssuanceRequest(
             aliceNode,
-            listOf(simpleStateStateAndRef),
-            SimpleStateContract.Commands.Create()
+            simpleStateStateAndRef,
+            SimpleStateContract.Commands.Create(),
+            issuerParty
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
 
     }
 
     @Test
     fun `StateNeedingAcceptance is re-issued`() {
+        initialiseParties()
         createStateNeedingAcceptance(aliceParty)
-        updateStateNeedingAcceptance(aliceNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, debbieParty)
-        updateStateNeedingAcceptance(debbieNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, aliceParty)
 
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
-
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
+        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode) // a list of 1 SimpleState
 
         createReIssuanceRequest(
             aliceNode,
-            listOf(stateNeedingAcceptanceStateAndRef),
+            stateNeedingAcceptanceStateAndRef,
             StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
             listOf(issuerParty, acceptorParty)
         )
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAcceptance>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
     }
 
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
-        updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, debbieParty)
-        updateStateNeedingAllParticipantsToSign(debbieNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, aliceParty)
-
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(7))
 
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
 
@@ -91,35 +65,67 @@ class ReIssueStateTest: AbstractFlowTest() {
             aliceNode,
             listOf(stateNeedingAllParticipantsToSignStateAndRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
+            issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<StateNeedingAllParticipantsToSign>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
     }
 
     @Test
     fun `Tokens are re-issued`() {
+        initialiseParties()
         issueTokens(aliceParty, 50)
-
-        transferTokens(aliceNode, bobParty, 50)
-        transferTokens(bobNode, charlieParty, 50)
-        transferTokens(charlieNode, debbieParty, 50)
-        transferTokens(debbieNode, bobParty, 50)
-        transferTokens(bobNode, aliceParty, 50)
-
-        val transactions = getTransactions(aliceNode)
-
-        assertThat(transactions.size, equalTo(6))
 
         val tokens = getTokens(aliceNode)
 
-        createReIssuanceRequest(aliceNode, tokens, IssueTokenCommand(issuedTokenType, tokens.indices.toList()))
+        createReIssuanceRequest(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            issuerParty
+        )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<FungibleToken>>().states[0]
 
-        reIssueRequestedStates(reIssuanceRequest)
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
     }
 
+    @Test
+    fun `SimpleState re-issued - accounts on the same host`() {
+        initialisePartiesForAccountsOnTheSameHost()
+        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
+        createReIssuanceRequest(
+            employeeNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty
+        )
+
+        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+
+        reIssueRequestedStates(employeeNode, reIssuanceRequest)
+    }
+
+    @Test
+    fun `SimpleState re-issued - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
+
+        val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
+    }
 }

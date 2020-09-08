@@ -7,6 +7,7 @@ class CreateStateNeedingAllParticipantsToSignTest: AbstractFlowTest() {
 
     @Test
     fun `Create state needing all participants to sign`() {
+        initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
     }
 

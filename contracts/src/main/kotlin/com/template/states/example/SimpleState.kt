@@ -4,11 +4,10 @@ import com.template.contracts.example.SimpleStateContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.Party
 
 @BelongsToContract(SimpleStateContract::class)
 class SimpleState(
-    val owner: Party
+    val owner: AbstractParty
 ): ContractState {
     override val participants: List<AbstractParty>
         get() = listOf(owner)
