@@ -70,7 +70,7 @@ class UnlockReIssuedState<T>(
         }
 
         if(signersSessions.isNotEmpty()) {
-            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
+            signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
         }
 
         subFlow(

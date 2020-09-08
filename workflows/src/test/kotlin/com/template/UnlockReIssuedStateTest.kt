@@ -12,7 +12,6 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
-import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
