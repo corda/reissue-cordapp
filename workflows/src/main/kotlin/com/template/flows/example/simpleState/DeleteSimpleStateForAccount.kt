@@ -6,8 +6,6 @@ import com.template.contracts.example.SimpleStateContract
 import com.template.states.example.SimpleState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
-import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.TransactionBuilder
 
@@ -18,8 +16,11 @@ class DeleteSimpleStateForAccount(
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val employeeHost = ourIdentity
-        val signers = listOf(employeeHost.owningKey, originalStateAndRef.state.data.owner.owningKey)
+        val owner = originalStateAndRef.state.data.owner
+        val ownerHost = serviceHub.identityService.partyFromKey(owner.owningKey)!!
+        require(ownerHost == ourIdentity) { "Owner is not a valid account for the host" }
+
+        val signers = listOf(owner.owningKey)
         val notary = getPreferredNotary(serviceHub)
 
         val transactionBuilder = TransactionBuilder(notary = notary)

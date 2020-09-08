@@ -312,9 +312,10 @@ abstract class AbstractFlowTest {
     }
 
     fun deleteSimpleStateForAccount(
+        node: TestStartedNode
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
-        val flowFuture = employeeNode.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

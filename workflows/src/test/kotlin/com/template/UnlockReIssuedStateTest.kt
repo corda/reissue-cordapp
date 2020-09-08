@@ -351,7 +351,7 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
 
         reIssueRequestedStates(reIssuanceRequest, employeeNode)
 
-        deleteSimpleStateForAccount()
+        deleteSimpleStateForAccount(employeeNode)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(employeeNode)
 
