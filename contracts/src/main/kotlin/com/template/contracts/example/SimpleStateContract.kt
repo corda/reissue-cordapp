@@ -41,6 +41,10 @@ class SimpleStateContract: Contract {
         requireThat {
             "Exactly one input is expected" using (simpleStateInputs.size == 1)
             "Exactly one output is expected" using (simpleStateOutputs.size == 1)
+            val inputSimpleState = simpleStateInputs[0]
+            val outputSimpleState = simpleStateOutputs[0]
+            "Owner in input state is required signer" using command.signers.contains(inputSimpleState.owner.owningKey)
+            "Owner in output state is required signer" using command.signers.contains(outputSimpleState.owner.owningKey)
         }
     }
 
@@ -53,6 +57,8 @@ class SimpleStateContract: Contract {
         requireThat {
             "Exactly one input is expected" using (simpleStateInputs.size == 1)
             "No simpleStateOutputs are allowed" using simpleStateOutputs.isEmpty()
+            val inputSimpleState = simpleStateInputs[0]
+            "Owner in input state is required signer" using command.signers.contains(inputSimpleState.owner.owningKey)
         }
     }
 

@@ -18,35 +18,37 @@ class UpdateSimpleStateForAccount(
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val ownerHost = serviceHub.identityService.partyFromKey(simpleStateStateAndRef.state.data.owner.owningKey)!!
+        val owner = simpleStateStateAndRef.state.data.owner
+
+        val ownerHost = serviceHub.identityService.partyFromKey(owner.owningKey)!!
         require(ownerHost == ourIdentity) { "Owner is not a valid account for the host" }
 
         val newOwnerHost = serviceHub.identityService.partyFromKey(newOwner.owningKey)!!
 
+        val signers = setOf(owner.owningKey, newOwner.owningKey).toList() // old and new owner might be the same
         val localSigners = listOfNotNull(
             simpleStateStateAndRef.state.data.owner.owningKey,
-            if(newOwnerHost == ourIdentity) newOwner.owningKey else null
-        )
-        val otherSigners = listOfNotNull(
-            if(newOwnerHost != ourIdentity) newOwner.owningKey else null
+            if(newOwnerHost == ourIdentity && owner != newOwner) newOwner.owningKey else null
         )
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addInputState(simpleStateStateAndRef)
         transactionBuilder.addOutputState(SimpleState(newOwner))
-        transactionBuilder.addCommand(SimpleStateContract.Commands.Update(), localSigners)
+        transactionBuilder.addCommand(SimpleStateContract.Commands.Update(), signers)
 
         transactionBuilder.verify(serviceHub)
-        val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
+        var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-        val otherSignersSessions = listOfNotNull(
+        val signersSessions = listOfNotNull(
             if(newOwnerHost != ourIdentity) initiateFlow(newOwnerHost) else null
         )
+
+        signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
 
         subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
-                sessions = otherSignersSessions
+                sessions = signersSessions
             )
         )
     }
