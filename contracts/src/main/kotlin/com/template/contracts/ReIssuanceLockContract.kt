@@ -58,8 +58,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
                 reIssuanceRequest.issuer == reIssuanceLock.issuer)
 
             // verify participants
-//            val lockParticipants = reIssuanceLock.participants
-//            val stateParticipants = reIssuanceLock.lockedStates[0].state.data.participants
             "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
                 reIssuanceLock.participants.containsAll(reIssuanceLock.lockedStates[0].state.data.participants))
 
@@ -106,6 +104,9 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
                 attachedSignedTransaction.inputs.containsAll(lockedStatesRef))
             "Attached transaction doesn't have any outputs" using (
                 attachedSignedTransaction.coreTransaction.outputs.isEmpty())
+            "Notary is provided for attached transaction" using(attachedSignedTransaction.notary != null)
+            "Attached transaction is notarised" using(attachedSignedTransaction.sigs.map { it.by }.contains(
+                attachedSignedTransaction.notary!!.owningKey))
 
             // verify encumbrance
             otherInputs.forEach {

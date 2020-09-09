@@ -12,8 +12,15 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.contracts.*
 import net.corda.core.node.services.queryBy
+import net.corda.core.serialization.serialize
+import net.corda.core.transactions.TransactionBuilder
+import net.corda.testing.core.singleIdentity
 import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class UnlockReIssuedStateTest: AbstractFlowTest() {
 
@@ -401,5 +408,47 @@ class UnlockReIssuedStateTest: AbstractFlowTest() {
         updateSimpleStateForAccount(aliceNode, employeeDebbieParty)
 
         // TODO: figure out how to get back-chain for a given account
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Attached transaction needs to be notarised`() {
+        initialiseParties()
+        createSimpleState(aliceParty)
+
+        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        createReIssuanceRequest(
+            aliceNode,
+            listOf(simpleStateStateAndRef),
+            SimpleStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest<SimpleState>>().states[0]
+        reIssueRequestedStates(issuerNode, reIssuanceRequest)
+
+        val originalStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
+        val transactionBuilder = TransactionBuilder(notary = notaryParty)
+        transactionBuilder.addInputState(originalStateAndRef)
+        transactionBuilder.addCommand(SimpleStateContract.Commands.Delete(), listOf(aliceParty.owningKey))
+        var signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+
+        val serializedLedgerTransactionBytes = signedTransaction.serialize().bytes
+
+        val baos = ByteArrayOutputStream()
+        ZipOutputStream(baos).use { zos ->
+            val entry = ZipEntry("SignedTransaction")
+            zos.putNextEntry(entry)
+            zos.write(serializedLedgerTransactionBytes)
+            zos.closeEntry()
+        }
+        baos.close()
+
+        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(baos.toByteArray().inputStream(), aliceNode.info.singleIdentity().toString(), null)
+
+        unlockReIssuedState<SimpleState>(
+            aliceNode, attachmentSecureHash,
+            SimpleStateContract.Commands.Update()
+        )
+
     }
 }
