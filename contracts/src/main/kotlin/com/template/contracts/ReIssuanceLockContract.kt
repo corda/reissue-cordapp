@@ -7,6 +7,7 @@ import net.corda.core.contracts.Requirements.using
 import net.corda.core.internal.castIfPossible
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.transactions.SignedTransaction
 
 class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: contract validation
 
@@ -97,28 +98,14 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
             "The same number of inputs and outputs other than lock is expected" using (otherInputs.size == otherOutputs.size)
 
             val reIssuanceLock = reIssuanceLockInputs[0]
-            val stateClass = otherInputs[0].state.data::class.java
-            val attachedLedgerTransaction = getAttachedLedgerTransaction(tx)
+            val attachedSignedTransaction = getAttachedLedgerTransaction(tx)
 
-            // verify requested states to be re-issued
+            val lockedStatesRef = reIssuanceLock.lockedStates.map { it.ref }
 
-            // re-issued states
-            val encumberedStates = otherInputs.map { it.state.data }.toSet()
-            val unlockedStates = otherOutputs.map { it.data }.toSet()
-            // original states
-            val lockedStates = reIssuanceLock.lockedStates.map { it.state.data }.toSet()
-            val attachedTransactionStateInputs = attachedLedgerTransaction.inputs.filter { stateClass.castIfPossible(it.state.data) != null }
-            val attachedTransactionStateOutputs = attachedLedgerTransaction.outputsOfType(stateClass)
-
-            "Unlocked states must be the same as encumbered (re-issued) states" using (
-                unlockedStates == encumberedStates)
-            "States in ReIssuanceLock object must be the same as encumbered (re-issued) states" using (
-                lockedStates == unlockedStates)
-            "Inputs of type ${stateClass} in attached transaction must be the same as states in ReIssuanceLock" using (
-                attachedTransactionStateInputs == reIssuanceLock.lockedStates)
-            "No outputs of type $stateClass are allowed in the attached transaction" using
-                attachedTransactionStateOutputs.isEmpty()
-
+            "All locked states are inputs of attached transaction" using (
+                attachedSignedTransaction.inputs.containsAll(lockedStatesRef))
+            "Attached transaction doesn't have any outputs" using (
+                attachedSignedTransaction.coreTransaction.outputs.isEmpty())
 
             // verify encumbrance
             otherInputs.forEach {
@@ -134,19 +121,19 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
 
     }
 
-    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): LedgerTransaction {
+    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): SignedTransaction {
         // Constraints on the included attachments.
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
         "The transaction should have a single non-contract attachment" using (nonContractAttachments.size == 1)
         val attachment = nonContractAttachments.single()
 
         val attachmentJar = attachment.openAsJAR()
-        while (attachmentJar.nextEntry.name != "ledgerTransaction") {
+        while (attachmentJar.nextEntry.name != "SignedTransaction") {
             // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
         }
 
         val transactionBytes = attachmentJar.readBytes()
-        return transactionBytes.deserialize<LedgerTransaction>()
+        return transactionBytes.deserialize<SignedTransaction>()
     }
 
     interface Commands : CommandData {

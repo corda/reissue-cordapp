@@ -15,14 +15,13 @@ class GenerateTransactionByteArray(
 ): FlowLogic<ByteArray>()  {
     @Suspendable
     override fun call(): ByteArray {
-        val ledgerTransaction = serviceHub.validatedTransactions.track().snapshot
+        val signedTransaction = serviceHub.validatedTransactions.track().snapshot
             .findLast { it.tx.id == ledgerTransactionId }!!
-            .toLedgerTransaction(serviceHub)
-        val serializedLedgerTransactionBytes = ledgerTransaction.serialize().bytes
+        val serializedLedgerTransactionBytes = signedTransaction.serialize().bytes
 
         val baos = ByteArrayOutputStream()
         ZipOutputStream(baos).use { zos ->
-            val entry = ZipEntry("ledgerTransaction")
+            val entry = ZipEntry("SignedTransaction")
             zos.putNextEntry(entry)
             zos.write(serializedLedgerTransactionBytes)
             zos.closeEntry()
