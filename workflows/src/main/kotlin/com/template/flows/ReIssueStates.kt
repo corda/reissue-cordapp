@@ -1,6 +1,8 @@
 package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.ReIssuanceLockContract
 import com.template.contracts.ReIssuanceRequestContract
@@ -11,6 +13,8 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
@@ -18,20 +22,34 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class ReIssueStates<T>(
-    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest<T>>
+    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>
 ): FlowLogic<Unit>() where T: ContractState {
 
     @Suspendable
     override fun call() {
         val reIssuanceRequest = reIssuanceRequestStateAndRef.state.data
-        val reIssuanceLock = ReIssuanceLock(reIssuanceRequest.issuer, reIssuanceRequest.requester,
-            reIssuanceRequest.statesToReIssue)
-
-        val notary = getPreferredNotary(serviceHub)
 
         val issuer = reIssuanceRequest.issuer
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
+
+        val criteria = if(issuer.owningKey != issuerHost.owningKey) {
+            val stateRefCriteria = QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+            val issuerAccountUUID = serviceHub.accountService.accountIdForKey(issuer.owningKey)!!
+            val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(issuerAccountUUID))
+            stateRefCriteria.and(accountCriteria)
+        } else {
+            QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+        }
+        @Suppress("UNCHECKED_CAST")
+        val statesToReIssue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
+            criteria=criteria).states as List<StateAndRef<T>>
+
+        require(statesToReIssue.size == reIssuanceRequest.stateRefsToReIssue.size) { "Cannot validate states to re-issue" }
+
+        val reIssuanceLock = ReIssuanceLock(reIssuanceRequest.issuer, reIssuanceRequest.requester, statesToReIssue)
+
+        val notary = getPreferredNotary(serviceHub)
 
         val lockSigners = listOf(issuer.owningKey)
         val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
@@ -41,7 +59,7 @@ class ReIssueStates<T>(
         transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Accept(), lockSigners)
 
         var encumbrance = 1
-        reIssuanceRequest.statesToReIssue
+        statesToReIssue
             .map { it.state.data }
             .forEach {
                 transactionBuilder.addOutputState(

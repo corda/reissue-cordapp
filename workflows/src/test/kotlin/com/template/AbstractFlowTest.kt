@@ -31,6 +31,7 @@ import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
@@ -442,13 +443,13 @@ abstract class AbstractFlowTest {
 
     fun <T> createReIssuanceRequest(
         node: TestStartedNode,
-        stateToReIssue: List<StateAndRef<T>>,
+        stateRefsToReIssue: List<StateRef>,
         command: CommandData,
         issuer: AbstractParty,
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = RequestReIssuance(issuer, stateToReIssue, command, commandSigners, requester)
+        val flowLogic = RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -470,9 +471,9 @@ abstract class AbstractFlowTest {
 
     fun <T> reIssueRequestedStates(
         node: TestStartedNode,
-        reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>
+        reIssuanceRequest: StateAndRef<ReIssuanceRequest>
     ) where T: ContractState {
-        val flowFuture = node.services.startFlow(ReIssueStates(reIssuanceRequest)).resultFuture
+        val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

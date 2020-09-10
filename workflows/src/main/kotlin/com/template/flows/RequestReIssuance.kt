@@ -6,7 +6,7 @@ import com.template.contracts.ReIssuanceRequestContract
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.StateRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
@@ -17,7 +17,7 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByRPC
 class RequestReIssuance<T>(
     private val issuer: AbstractParty,
-    private val statesToReIssue: List<StateAndRef<T>>,
+    private val stateRefsToReIssue: List<StateRef>,
     private val issuanceCommand: CommandData,
     private val issuanceSigners: List<AbstractParty> = listOf(issuer),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
@@ -33,7 +33,7 @@ class RequestReIssuance<T>(
 
         val signers = listOf(requesterAbstractParty.owningKey).distinct()
 
-        val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, statesToReIssue, issuanceCommand, issuanceSigners)
+        val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, stateRefsToReIssue, issuanceCommand, issuanceSigners)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addOutputState(reIssuanceRequest)

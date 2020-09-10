@@ -7,7 +7,8 @@ import net.corda.core.identity.AbstractParty
 
 @BelongsToContract(SimpleStateContract::class)
 class SimpleState(
-    val owner: AbstractParty
+    val owner: AbstractParty,
+    val quantity: Int = 5
 ): ContractState {
     override val participants: List<AbstractParty>
         get() = listOf(owner)
@@ -19,11 +20,15 @@ class SimpleState(
         other as SimpleState
 
         if (owner != other.owner) return false
+        if (quantity != other.quantity) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return owner.hashCode()
+        var result = owner.hashCode()
+        result = 31 * result + quantity
+        return result
     }
+
 }
