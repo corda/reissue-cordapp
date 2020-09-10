@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-class UnlockReIssuedStateTest: AbstractFlowTest() {
+class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
     @Test
     fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {

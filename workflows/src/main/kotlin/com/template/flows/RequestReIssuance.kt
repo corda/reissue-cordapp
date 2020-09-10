@@ -12,11 +12,10 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.TransactionBuilder
-import java.security.PublicKey
 
 @InitiatingFlow
 @StartableByRPC
-class CreateReIssuanceRequest<T>(
+class RequestReIssuance<T>(
     private val issuer: AbstractParty,
     private val statesToReIssue: List<StateAndRef<T>>,
     private val issuanceCommand: CommandData,
@@ -57,8 +56,8 @@ class CreateReIssuanceRequest<T>(
     }
 }
 
-@InitiatedBy(CreateReIssuanceRequest::class)
-class CreateReIssuanceRequestResponder(
+@InitiatedBy(RequestReIssuance::class)
+class RequestReIssuanceResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

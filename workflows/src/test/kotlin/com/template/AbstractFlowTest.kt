@@ -3,16 +3,14 @@ package com.template
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.AccountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
-import com.template.flows.CreateReIssuanceRequest
+import com.template.flows.RequestReIssuance
 import com.template.flows.GenerateTransactionByteArray
-import com.template.flows.ReIssueState
-import com.template.flows.UnlockReIssuedState
+import com.template.flows.ReIssueStates
+import com.template.flows.UnlockReIssuedStates
 import com.template.flows.example.simpleState.*
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
@@ -45,12 +43,9 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.MockNetworkNotarySpec
-import net.corda.testing.node.StartedMockNode
-import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
-import java.security.PublicKey
 import java.util.*
 
 
@@ -453,7 +448,7 @@ abstract class AbstractFlowTest {
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners, requester)
+        val flowLogic = RequestReIssuance(issuer, stateToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -468,7 +463,7 @@ abstract class AbstractFlowTest {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
+        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -477,7 +472,7 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>
     ) where T: ContractState {
-        val flowFuture = node.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
+        val flowFuture = node.services.startFlow(ReIssueStates(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
