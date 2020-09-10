@@ -11,14 +11,15 @@ import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
 import net.corda.core.node.services.queryBy
 import org.junit.Test
-import java.lang.IllegalArgumentException
 
 class ReIssueStatesTest: AbstractFlowTest() {
 
-    @Test(expected = IllegalArgumentException::class) // TODO: delete expected exception once issuer can accesses requested states
+    @Test
     fun `SimpleState is re-issued`() {
         initialiseParties()
         createSimpleState(aliceParty)
+
+        val lastSimpleStateTransaction = getSignedTransactions(aliceNode).last()
 
         val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
         createReIssuanceRequest<SimpleState>(
@@ -27,6 +28,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Create(),
             issuerParty
         )
+
+        sendSignedTransaction(aliceNode, issuerParty, lastSimpleStateTransaction)
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
@@ -69,13 +72,14 @@ class ReIssueStatesTest: AbstractFlowTest() {
         reIssueRequestedStates<StateNeedingAllParticipantsToSign>(issuerNode, reIssuanceRequest)
     }
 
-    @Test(expected = IllegalArgumentException::class) // TODO: delete expected exception once issuer can accesses requested states
+    @Test
     fun `Tokens are re-issued`() {
         initialiseParties()
         issueTokens(aliceParty, 50)
 
         val tokenRefs = getTokens(aliceNode).map { it.ref }
-        val issuerTokenRefs = getTokens(issuerNode).map { it.ref }
+
+        val lastTokensTransaction = getSignedTransactions(aliceNode).last()
 
         createReIssuanceRequest<FungibleToken>(
             aliceNode,
@@ -84,14 +88,20 @@ class ReIssueStatesTest: AbstractFlowTest() {
             issuerParty
         )
 
+        sendSignedTransaction(aliceNode, issuerParty, lastTokensTransaction)
+
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
     }
 
-    @Test(expected = IllegalArgumentException::class) // TODO: delete expected exception once issuer can accesses requested states
+    // TODO: many tokens are re-issued
+
+    @Test
     fun `SimpleState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
+
+        val createSimpleStateTransaction = getSignedTransactions(employeeNode).last()
 
         val simpleStateRef = getStateAndRefs<SimpleState>(employeeNode)[0].ref
         createReIssuanceRequest<SimpleState>(
@@ -101,14 +111,18 @@ class ReIssueStatesTest: AbstractFlowTest() {
             employeeIssuerParty
         )
 
+        sendSignedTransaction(employeeNode, employeeIssuerParty, createSimpleStateTransaction)
+
         val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(employeeNode, reIssuanceRequest)
     }
 
-    @Test(expected = IllegalArgumentException::class) // TODO: delete expected exception once issuer can accesses requested states
+    @Test
     fun `SimpleState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
+
+        val createSimpleStateTransaction = getSignedTransactions(aliceNode).last()
 
         val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
         createReIssuanceRequest<SimpleState>(
@@ -118,6 +132,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
             employeeIssuerParty,
             requester = employeeAliceParty
         )
+
+        sendSignedTransaction(aliceNode, issuerParty, createSimpleStateTransaction)
 
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)

@@ -33,14 +33,8 @@ class ReIssueStates<T>(
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
-        val criteria = if(issuer.owningKey != issuerHost.owningKey) {
-            val stateRefCriteria = QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
-            val issuerAccountUUID = serviceHub.accountService.accountIdForKey(issuer.owningKey)!!
-            val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(issuerAccountUUID))
-            stateRefCriteria.and(accountCriteria)
-        } else {
-            QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
-        }
+        // we don't use withExternalIds as transaction can be only shared with a host
+        val criteria = QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
         @Suppress("UNCHECKED_CAST")
         val statesToReIssue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
             criteria=criteria).states as List<StateAndRef<T>>

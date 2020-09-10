@@ -7,10 +7,7 @@ import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
-import com.template.flows.RequestReIssuance
-import com.template.flows.GenerateTransactionByteArray
-import com.template.flows.ReIssueStates
-import com.template.flows.UnlockReIssuedStates
+import com.template.flows.*
 import com.template.flows.example.simpleState.*
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
@@ -39,6 +36,7 @@ import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
@@ -424,6 +422,16 @@ abstract class AbstractFlowTest {
 
     // common
 
+    fun sendSignedTransaction(
+        node: TestStartedNode,
+        sendTo: AbstractParty,
+        signedTransaction: SignedTransaction
+    ) {
+        val flowFuture = node.services.startFlow(SendSignedTransaction(sendTo, signedTransaction)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
         encumbered: Boolean = false
@@ -483,7 +491,7 @@ abstract class AbstractFlowTest {
     ): SecureHash {
         val party = node.info.singleIdentity()
 
-        val deleteStateTransaction = getTransactions(node).last()
+        val deleteStateTransaction = getLedgerTransactions(node).last()
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()
@@ -492,10 +500,16 @@ abstract class AbstractFlowTest {
         return node.services.attachments.importAttachment(transactionInputStream.inputStream(), party.toString(), null)
     }
 
-    fun getTransactions(
+    fun getSignedTransactions(
+        node: TestStartedNode
+    ): List<SignedTransaction> {
+        return node.services.validatedTransactions.track().snapshot
+    }
+
+    fun getLedgerTransactions(
         node: TestStartedNode
     ): List<LedgerTransaction> {
-        return node.services.validatedTransactions.track().snapshot.map {
+        return getSignedTransactions(node).map {
             it.toLedgerTransaction(node.services)
         }
     }
