@@ -4,7 +4,6 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
-import net.corda.core.internal.castIfPossible
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
@@ -38,42 +37,56 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
         val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*>  && it.data !is ReIssuanceRequest }
 
         requireThat {
-//            // verify number of inputs and outputs of a given type
-//            "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
-//            "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
-//
-//            "No inputs of type ReIssuanceLock are allowed" using (reIssuanceLockInputs.isEmpty())
-//            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
-//
-//            "No inputs other than ReIssuanceRequest and ReIssuanceLock are expected" using otherInputs.isEmpty()
-//            "At least one output other than ReIssuanceRequest and ReIssuanceLock is expected" using otherOutputs.isNotEmpty() // redundant
-//
-//            val reIssuanceRequest = reIssuanceRequestInputs[0]
-//            val reIssuanceLock = reIssuanceLockOutputs[0]
-//
-//            // verify requester & issuer
-//            "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
-//                reIssuanceRequest.requester == reIssuanceLock.requester)
-//            "Issuer is the same in both ReIssuanceRequest and ReIssuanceLock" using (
-//                reIssuanceRequest.issuer == reIssuanceLock.issuer)
-//
-//            // verify participants
-//            "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
-//                reIssuanceLock.participants.containsAll(reIssuanceLock.lockedStates[0].state.data.participants))
-//
-//            // verify requested states to be re-issued
-////            "Re-issued states must be exactly the same as requested states to be re-issued (make sure equals method is implemented for state to be re-issued)" using (
-////                reIssuanceRequest.statesToReIssue.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet()) // compare only states
-////            "StatesAndRef objects in ReIssuanceLock must be the same as requested states to be re-issued (make sure equals method is implemented for state to be re-issued)" using (
-////                reIssuanceLock.lockedStates == reIssuanceRequest.statesToReIssue) // compare StateAndRef objects
-//
-//            // verify encumbrance
-//            otherOutputs.forEach {
-//                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
-//            }
-//
-//            // verify signers
-//            "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
+            // verify number of inputs and outputs of a given type
+            "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
+            "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
+
+            "No inputs of type ReIssuanceLock are allowed" using (reIssuanceLockInputs.isEmpty())
+            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
+
+            "No inputs other than ReIssuanceRequest and ReIssuanceLock are expected" using otherInputs.isEmpty()
+            "At least one output other than ReIssuanceRequest and ReIssuanceLock is expected" using otherOutputs.isNotEmpty() // redundant
+
+            val reIssuanceRequest = reIssuanceRequestInputs[0]
+            val reIssuanceLock = reIssuanceLockOutputs[0]
+
+            // verify requester & issuer
+            "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
+                reIssuanceRequest.requester == reIssuanceLock.requester)
+            "Issuer is the same in both ReIssuanceRequest and ReIssuanceLock" using (
+                reIssuanceRequest.issuer == reIssuanceLock.issuer)
+
+            // verify participants
+            "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
+                reIssuanceLock.participants.containsAll(reIssuanceLock.lockedStates[0].state.data.participants))
+
+            // verify state data
+            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
+                reIssuanceLock.lockedStates.map { it.state.data } == otherOutputs.map { it.data })
+
+            // verify encumbrance
+            reIssuanceLock.lockedStates.forEach {
+                "States referenced in lock object must be unencumbered" using (it.state.encumbrance  == null)
+            }
+            otherOutputs.forEach {
+                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
+            }
+
+            val firstReIssuedState = reIssuanceLock.lockedStates[0]
+            (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
+                val reIssuedState = reIssuanceLock.lockedStates[it]
+
+                // participants for all re-issued states must be the same
+                "Participants in state to be re-issued ${reIssuedState.ref} must be the same as participants in the first state to be re-issued ${reIssuedState.ref}" using (
+                    reIssuedState.state.data.participants.equals(firstReIssuedState.state.data.participants))
+
+                // all re-issued states must be of the same type
+                "State to be re-issued ${reIssuedState.ref} must be of the same type as the first state to be re-issued ${reIssuedState.ref}" using (
+                    reIssuedState.state.data::class.java == firstReIssuedState.state.data::class.java)
+            }
+
+            // verify signers
+            "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
         }
     }
 

@@ -5,7 +5,6 @@ import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.Party
 
 @BelongsToContract(ReIssuanceLockContract::class)
 class ReIssuanceLock<T>(
@@ -17,6 +16,5 @@ class ReIssuanceLock<T>(
     override val participants: List<AbstractParty>
         // participants are the same for every locked state (contract requirement)
         get() = lockedStates[0].state.data.participants
-//        get() = lockedStates.flatMap { it.state.data.participants }.distinct()
 
 }
