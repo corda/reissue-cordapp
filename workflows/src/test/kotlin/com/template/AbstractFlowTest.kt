@@ -427,7 +427,7 @@ abstract class AbstractFlowTest {
         sendTo: AbstractParty,
         signedTransaction: SignedTransaction
     ) {
-        val flowFuture = node.services.startFlow(SendSignedTransaction(sendTo, signedTransaction)).resultFuture
+        val flowFuture = node.services.startFlow(SendSignedTransactions(sendTo, listOf(signedTransaction))).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -458,6 +458,21 @@ abstract class AbstractFlowTest {
         requester: AbstractParty? = null
     ) where T: ContractState {
         val flowLogic = RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
+        val flowFuture = node.services.startFlow(flowLogic).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun <T> createReIssuanceRequestAndShareRequiredTransactions(
+        node: TestStartedNode,
+        stateRefsToReIssue: List<StateRef>,
+        command: CommandData,
+        issuer: AbstractParty,
+        commandSigners: List<AbstractParty> = listOf(issuer),
+        requester: AbstractParty? = null
+    ) where T: ContractState {
+        val flowLogic = RequestReIssuanceAndShareRequiredTransactions<T>(
+            issuer, stateRefsToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()

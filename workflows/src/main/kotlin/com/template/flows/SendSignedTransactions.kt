@@ -8,21 +8,23 @@ import net.corda.core.transactions.SignedTransaction
 
 @InitiatingFlow
 @StartableByRPC
-class SendSignedTransaction(
+class SendSignedTransactions(
     val sendTo: AbstractParty,
-    val signedTransaction: SignedTransaction
+    val signedTransactions: List<SignedTransaction>
 ) : FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
         val sendToHost = serviceHub.identityService.partyFromKey(sendTo.owningKey)!!
-        val sendToSession = initiateFlow(sendToHost)
-        subFlow(SendTransactionFlow(sendToSession, signedTransaction))
+        signedTransactions.forEach { signedTransaction ->
+            val sendToSession = initiateFlow(sendToHost)
+            subFlow(SendTransactionFlow(sendToSession, signedTransaction))
+        }
     }
 
 }
 
-@InitiatedBy(SendSignedTransaction::class)
+@InitiatedBy(SendSignedTransactions::class)
 class ReceiveSignedTransaction(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
