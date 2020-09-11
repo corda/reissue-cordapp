@@ -4,11 +4,9 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.ReIssuanceLockContract
 import com.template.states.ReIssuanceLock
-import com.template.states.example.SimpleState
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.Base58
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
@@ -18,7 +16,7 @@ import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
-class UnlockReIssuedState<T>(
+class UnlockReIssuedStates<T>(
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
     private val deletedStateTransactionHash: SecureHash,
@@ -91,8 +89,8 @@ class UnlockReIssuedState<T>(
 
 }
 
-@InitiatedBy(UnlockReIssuedState::class)
-class UnlockReIssuedStateResponder(
+@InitiatedBy(UnlockReIssuedStates::class)
+class UnlockReIssuedStatesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

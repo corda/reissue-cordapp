@@ -1,6 +1,7 @@
 package com.template
 
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
 import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
@@ -10,17 +11,17 @@ import com.template.states.example.StateNeedingAllParticipantsToSign
 import net.corda.core.contracts.TransactionVerificationException
 import org.junit.Test
 
-class CreateReIssuanceRequestTest: AbstractFlowTest() {
+class RequestReIssuanceTest: AbstractFlowTest() {
 
     @Test
     fun `SimpleState re-issuance request is created`() {
         initialiseParties()
         createSimpleState(aliceParty)
 
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode) // a list of 1 SimpleState
-        createReIssuanceRequest(
+        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+        createReIssuanceRequest<SimpleState>(
             aliceNode,
-            simpleStateStateAndRef,
+            listOf(simpleStateRef),
             SimpleStateContract.Commands.Create(),
             issuerParty
         )
@@ -31,10 +32,10 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode) // a list of 1 SimpleState
-        createReIssuanceRequest(
+        val stateNeedingAcceptanceRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0].ref
+        createReIssuanceRequest<StateNeedingAcceptance>(
             aliceNode,
-            stateNeedingAcceptanceStateAndRef,
+            listOf(stateNeedingAcceptanceRef),
             StateNeedingAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
@@ -46,10 +47,10 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
 
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode) // a list of 1 SimpleState
-        createReIssuanceRequest(
+        val stateNeedingAllParticipantsToSignRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0].ref
+        createReIssuanceRequest<StateNeedingAllParticipantsToSign>(
             aliceNode,
-            stateNeedingAllParticipantsToSignStateAndRef,
+            listOf(stateNeedingAllParticipantsToSignRef),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
             issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
@@ -61,11 +62,11 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         initialiseParties()
         issueTokens(aliceParty, 50)
 
-        val tokens = getTokens(aliceNode)
-        createReIssuanceRequest(
+        val tokenRefs = getTokens(aliceNode).map { it.ref }
+        createReIssuanceRequest<FungibleToken>(
             aliceNode,
-            tokens,
-            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            tokenRefs,
+            IssueTokenCommand(issuedTokenType, tokenRefs.indices.toList()),
             issuerParty
         )
     }
@@ -75,10 +76,10 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(employeeNode)[0]
-        createReIssuanceRequest(
+        val simpleStateRef = getStateAndRefs<SimpleState>(employeeNode)[0].ref
+        createReIssuanceRequest<SimpleState>(
             employeeNode,
-            listOf(simpleStateStateAndRef),
+            listOf(simpleStateRef),
             SimpleStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -90,10 +91,10 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
 
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(aliceNode)[0]
-        createReIssuanceRequest(
+        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+        createReIssuanceRequest<SimpleState>(
             aliceNode,
-            listOf(simpleStateStateAndRef),
+            listOf(simpleStateRef),
             SimpleStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -103,7 +104,7 @@ class CreateReIssuanceRequestTest: AbstractFlowTest() {
     @Test(expected = TransactionVerificationException::class)
     fun `Request re-issuance of 0 states can't be created`() {
         initialiseParties()
-        createReIssuanceRequest(
+        createReIssuanceRequest<SimpleState>(
             aliceNode,
             listOf(),
             SimpleStateContract.Commands.Create(),

@@ -3,16 +3,11 @@ package com.template
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.AccountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
-import com.template.flows.CreateReIssuanceRequest
-import com.template.flows.GenerateTransactionByteArray
-import com.template.flows.ReIssueState
-import com.template.flows.UnlockReIssuedState
+import com.template.flows.*
 import com.template.flows.example.simpleState.*
 import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
 import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
@@ -33,6 +28,7 @@ import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
@@ -40,17 +36,15 @@ import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.MockNetworkNotarySpec
-import net.corda.testing.node.StartedMockNode
-import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
-import java.security.PublicKey
 import java.util.*
 
 
@@ -428,6 +422,16 @@ abstract class AbstractFlowTest {
 
     // common
 
+    fun sendSignedTransaction(
+        node: TestStartedNode,
+        sendTo: AbstractParty,
+        signedTransaction: SignedTransaction
+    ) {
+        val flowFuture = node.services.startFlow(SendSignedTransaction(sendTo, signedTransaction)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
         encumbered: Boolean = false
@@ -447,13 +451,13 @@ abstract class AbstractFlowTest {
 
     fun <T> createReIssuanceRequest(
         node: TestStartedNode,
-        stateToReIssue: List<StateAndRef<T>>,
+        stateRefsToReIssue: List<StateRef>,
         command: CommandData,
         issuer: AbstractParty,
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = CreateReIssuanceRequest(issuer, stateToReIssue, command, commandSigners, requester)
+        val flowLogic = RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -468,16 +472,16 @@ abstract class AbstractFlowTest {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        val flowFuture = node.services.startFlow(UnlockReIssuedState(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
+        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
     fun <T> reIssueRequestedStates(
         node: TestStartedNode,
-        reIssuanceRequest: StateAndRef<ReIssuanceRequest<T>>
+        reIssuanceRequest: StateAndRef<ReIssuanceRequest>
     ) where T: ContractState {
-        val flowFuture = node.services.startFlow(ReIssueState(reIssuanceRequest)).resultFuture
+        val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -487,7 +491,7 @@ abstract class AbstractFlowTest {
     ): SecureHash {
         val party = node.info.singleIdentity()
 
-        val deleteStateTransaction = getTransactions(node).last()
+        val deleteStateTransaction = getLedgerTransactions(node).last()
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()
@@ -496,10 +500,16 @@ abstract class AbstractFlowTest {
         return node.services.attachments.importAttachment(transactionInputStream.inputStream(), party.toString(), null)
     }
 
-    fun getTransactions(
+    fun getSignedTransactions(
+        node: TestStartedNode
+    ): List<SignedTransaction> {
+        return node.services.validatedTransactions.track().snapshot
+    }
+
+    fun getLedgerTransactions(
         node: TestStartedNode
     ): List<LedgerTransaction> {
-        return node.services.validatedTransactions.track().snapshot.map {
+        return getSignedTransactions(node).map {
             it.toLedgerTransaction(node.services)
         }
     }
