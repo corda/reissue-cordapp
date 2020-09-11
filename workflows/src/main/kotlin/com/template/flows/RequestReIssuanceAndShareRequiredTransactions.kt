@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.StateRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 
@@ -23,21 +22,23 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
             RequestReIssuance<T>(issuer, statesToReIssue.map{ it.ref }, issuanceCommand, issuanceSigners, requester)
         )
 
+        // all states need to have the same participants
+        val participants = statesToReIssue[0].state.data.participants
+        // if issuer is a participant, they already have access to those transactions
+        if(!participants.contains(issuer)) {
+            sendRequiredTransactions()
+        }
+    }
+
+    fun sendRequiredTransactions() {
         val transactionHashes = statesToReIssue.map { it.ref.txhash }
-        // We must use SendTransactionFlow as SendStateAndRefFlow doesn't let us override StatesToRecord.
         val transactionsToSend = transactionHashes.map {
             serviceHub.validatedTransactions.getTransaction(it)
                 ?: throw FlowException("Can't find transaction with hash $it")
         }
-
-        // all states need to have the same participants
-        val participnats = statesToReIssue[0].state.data.participants
-        // if issuer is a participant, they already have access to those transactions
-        if(!participnats.contains(issuer)) {
-            // TODO: filter transactions - some transactions can be ancestors of other transactions
-            subFlow(
-                SendSignedTransactions(issuer, transactionsToSend)
-            )
-        }
+        // TODO: filter transactions - some transactions can be ancestors of other transactions
+        subFlow(
+            SendSignedTransactions(issuer, transactionsToSend)
+        )
     }
 }
