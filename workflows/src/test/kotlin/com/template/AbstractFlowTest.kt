@@ -465,14 +465,14 @@ abstract class AbstractFlowTest {
 
     fun <T> createReIssuanceRequestAndShareRequiredTransactions(
         node: TestStartedNode,
-        stateRefsToReIssue: List<StateRef>,
+        statesToReIssue: List<StateAndRef<T>>,
         command: CommandData,
         issuer: AbstractParty,
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
         val flowLogic = RequestReIssuanceAndShareRequiredTransactions<T>(
-            issuer, stateRefsToReIssue, command, commandSigners, requester)
+            issuer, statesToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()

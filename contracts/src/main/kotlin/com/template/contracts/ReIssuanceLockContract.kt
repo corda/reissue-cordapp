@@ -8,7 +8,7 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 
-class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: contract validation
+class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName

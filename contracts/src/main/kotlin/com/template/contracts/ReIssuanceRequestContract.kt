@@ -5,7 +5,7 @@ import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 
-class ReIssuanceRequestContract<T>: Contract where T: ContractState { // TODO: contract validation
+class ReIssuanceRequestContract<T>: Contract where T: ContractState {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
