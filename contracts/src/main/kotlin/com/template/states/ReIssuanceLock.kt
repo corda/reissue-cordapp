@@ -10,11 +10,11 @@ import net.corda.core.identity.AbstractParty
 class ReIssuanceLock<T>(
     val issuer: AbstractParty,
     val requester: AbstractParty,
-    val lockedStates: List<StateAndRef<T>> // we need state as well to get participants
+    val originalStates: List<StateAndRef<T>> // we need state as well to get participants
 ): ContractState where T: ContractState {
 
     override val participants: List<AbstractParty>
         // participants are the same for every locked state (contract requirement)
-        get() = lockedStates[0].state.data.participants
+        get() = originalStates[0].state.data.participants
 
 }

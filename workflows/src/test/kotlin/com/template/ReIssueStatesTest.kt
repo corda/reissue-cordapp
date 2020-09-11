@@ -1,14 +1,19 @@
 package com.template
 
+import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.hasSize
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleStateContract
 import com.template.contracts.example.StateNeedingAcceptanceContract
 import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
+import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleState
 import com.template.states.example.StateNeedingAcceptance
 import com.template.states.example.StateNeedingAllParticipantsToSign
+import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
@@ -29,6 +34,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
@@ -47,6 +63,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<StateNeedingAcceptance>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<StateNeedingAcceptance>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<StateNeedingAcceptance>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<StateNeedingAcceptance>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
@@ -55,7 +82,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
         createStateNeedingAllParticipantsToSign(aliceParty)
 
         val stateNeedingAllParticipantsToSign = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
-        createReIssuanceRequestAndShareRequiredTransactions<StateNeedingAllParticipantsToSign>(
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(stateNeedingAllParticipantsToSign),
             StateNeedingAllParticipantsToSignContract.Commands.Create(),
@@ -65,6 +92,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<StateNeedingAllParticipantsToSign>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<StateNeedingAllParticipantsToSign>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
@@ -83,6 +121,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<FungibleToken>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     // TODO: many tokens are re-issued
@@ -97,11 +146,23 @@ class ReIssueStatesTest: AbstractFlowTest() {
             employeeNode,
             listOf(simpleState),
             SimpleStateContract.Commands.Create(),
-            employeeIssuerParty
+            employeeIssuerParty,
+            requester = employeeAliceParty
         )
 
         val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(employeeNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(employeeNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(employeeIssuerParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(employeeAliceParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
@@ -120,6 +181,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(employeeIssuerParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(employeeAliceParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test(expected = IllegalArgumentException::class) // issues find state by reference
@@ -157,6 +229,17 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(0)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates.map { it.state.data },
+            equalTo(encumberedStates.map { it.state.data }))
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -165,7 +248,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
         createStateNeedingAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
-        createReIssuanceRequestAndShareRequiredTransactions<StateNeedingAcceptance>(
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(stateNeedingAcceptance),
             StateNeedingAcceptanceContract.Commands.Create(),

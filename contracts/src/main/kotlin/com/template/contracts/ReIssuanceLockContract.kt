@@ -58,23 +58,23 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify participants
             "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
-                reIssuanceLock.participants.containsAll(reIssuanceLock.lockedStates[0].state.data.participants))
+                reIssuanceLock.participants.containsAll(reIssuanceLock.originalStates[0].state.data.participants))
 
             // verify state data
             "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
-                reIssuanceLock.lockedStates.map { it.state.data } == otherOutputs.map { it.data })
+                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
 
             // verify encumbrance
-            reIssuanceLock.lockedStates.forEach {
+            reIssuanceLock.originalStates.forEach {
                 "States referenced in lock object must be unencumbered" using (it.state.encumbrance  == null)
             }
             otherOutputs.forEach {
                 "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
             }
 
-            val firstReIssuedState = reIssuanceLock.lockedStates[0]
+            val firstReIssuedState = reIssuanceLock.originalStates[0]
             (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
-                val reIssuedState = reIssuanceLock.lockedStates[it]
+                val reIssuedState = reIssuanceLock.originalStates[it]
 
                 // participants for all re-issued states must be the same
                 "Participants in state to be re-issued ${reIssuedState.ref} must be the same as participants in the first state to be re-issued ${reIssuedState.ref}" using (
@@ -111,7 +111,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceLock = reIssuanceLockInputs[0]
             val attachedSignedTransaction = getAttachedLedgerTransaction(tx)
 
-            val lockedStatesRef = reIssuanceLock.lockedStates.map { it.ref }
+            val lockedStatesRef = reIssuanceLock.originalStates.map { it.ref }
 
             "All locked states are inputs of attached transaction" using (
                 attachedSignedTransaction.inputs.containsAll(lockedStatesRef))
