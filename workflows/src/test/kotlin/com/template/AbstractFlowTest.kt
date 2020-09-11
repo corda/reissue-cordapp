@@ -425,9 +425,15 @@ abstract class AbstractFlowTest {
 
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
-        encumbered: Boolean = false
+        encumbered: Boolean = false,
+        accountUUID: UUID? = null
     ): List<StateAndRef<T>> {
-        val states = node.services.vaultService.queryBy<T>().states
+        val states = if(accountUUID == null)
+            node.services.vaultService.queryBy<T>().states
+        else
+            node.services.vaultService.queryBy<T>(
+                criteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUUID))
+            ).states
         return filterStates(states, encumbered)
     }
 

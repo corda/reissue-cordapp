@@ -2,6 +2,8 @@ package com.template
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.hasElement
+import com.natpryce.hamkrest.hasSize
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -59,8 +61,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
-        updateSimpleState(aliceNode, debbieParty)
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
+        updateSimpleState(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -102,8 +109,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
-        updateStateNeedingAcceptance(aliceNode, debbieParty)
+        val encumberedStates = getStateAndRefs<StateNeedingAcceptance>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<StateNeedingAcceptance>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAcceptance.state.data))
 
+        updateStateNeedingAcceptance(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -147,8 +159,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
-        updateStateNeedingAllParticipantsToSign(aliceNode, debbieParty)
+        val encumberedStates = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAllParticipantsToSign.state.data))
 
+        updateStateNeedingAllParticipantsToSign(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -192,8 +209,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices)
         )
 
-        transferTokens(aliceNode, debbieParty, 50)
+        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(tokens[0].state.data))
 
+        transferTokens(aliceNode, debbieParty, 50)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -214,12 +236,12 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
-        val tokens = listOf(getTokens(aliceNode)[1]) // 30 tokens
+        val tokensToReIssue = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokens,
+            tokensToReIssue,
             IssueTokenCommand(issuedTokenType, indicesList),
             issuerParty
         )
@@ -228,7 +250,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
 
-        redeemTokens(aliceNode, tokens)
+        redeemTokens(aliceNode, tokensToReIssue)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
@@ -238,8 +260,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             MoveTokenCommand(issuedTokenType, indicesList, indicesList)
         )
 
-        transferTokens(aliceNode, debbieParty, 35)
+        val encumberedStates = getTokens(aliceNode, encumbered = true)
+        val unencumberedStates = getTokens(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(2)))
+        assertThat(unencumberedStates.map { it.state.data }, hasElement(tokensToReIssue[0].state.data))
 
+        transferTokens(aliceNode, debbieParty, 35)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(9))
     }
@@ -260,12 +287,12 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
-        val tokens = getTokens(aliceNode)
-        val tokenIndices = tokens.indices.toList()
+        val tokensToReIssue = getTokens(aliceNode)
+        val tokenIndices = tokensToReIssue.indices.toList()
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokens,
+            tokensToReIssue,
             IssueTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
@@ -274,7 +301,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
 
-        redeemTokens(aliceNode, tokens)
+        redeemTokens(aliceNode, tokensToReIssue)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
@@ -284,8 +311,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices)
         )
 
-        transferTokens(aliceNode, debbieParty, 35)
+        val encumberedStates = getTokens(aliceNode, encumbered = true)
+        val unencumberedStates = getTokens(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(2)))
+        assertThat(unencumberedStates.map { it.state.data }, equalTo(tokensToReIssue.map { it.state.data }))
 
+        transferTokens(aliceNode, debbieParty, 35)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -359,8 +391,15 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
-        updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
+        val encumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
+        updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
     }
 
@@ -396,8 +435,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
-        updateSimpleStateForAccount(aliceNode, employeeDebbieParty)
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, hasSize(equalTo(0)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
+        updateSimpleStateForAccount(aliceNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
     }
 
