@@ -26,19 +26,15 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
         val participants = statesToReIssue[0].state.data.participants
         // if issuer is a participant, they already have access to those transactions
         if(!participants.contains(issuer)) {
-            sendRequiredTransactions()
-        }
+            val transactionHashes = statesToReIssue.map { it.ref.txhash }
+            val transactionsToSend = transactionHashes.map {
+                serviceHub.validatedTransactions.getTransaction(it)
+                    ?: throw FlowException("Can't find transaction with hash $it")
+            }
+            // TODO: filter transactions - some transactions can be ancestors of other transactions
+            subFlow(
+                SendSignedTransactions(issuer, transactionsToSend)
+            )        }
     }
 
-    fun sendRequiredTransactions() {
-        val transactionHashes = statesToReIssue.map { it.ref.txhash }
-        val transactionsToSend = transactionHashes.map {
-            serviceHub.validatedTransactions.getTransaction(it)
-                ?: throw FlowException("Can't find transaction with hash $it")
-        }
-        // TODO: filter transactions - some transactions can be ancestors of other transactions
-        subFlow(
-            SendSignedTransactions(issuer, transactionsToSend)
-        )
-    }
 }

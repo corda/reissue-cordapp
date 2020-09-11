@@ -35,6 +35,7 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
@@ -421,16 +422,6 @@ abstract class AbstractFlowTest {
     }
 
     // common
-
-    fun sendSignedTransaction(
-        node: TestStartedNode,
-        sendTo: AbstractParty,
-        signedTransaction: SignedTransaction
-    ) {
-        val flowFuture = node.services.startFlow(SendSignedTransactions(sendTo, listOf(signedTransaction))).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
 
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
