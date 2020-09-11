@@ -67,7 +67,6 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
-
     }
 
     @Test
@@ -472,6 +471,65 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         unlockReIssuedState<SimpleState>(
             aliceNode, attachmentSecureHash,
             SimpleStateContract.Commands.Update()
+        )
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Re-issued SimpleState cannot be unlocked if the original state is consumed`() {
+        initialiseParties()
+        createSimpleState(aliceParty)
+
+        val lastSimpleStateTransaction = getSignedTransactions(aliceNode).last()
+
+        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+        createReIssuanceRequest<SimpleState>(
+            aliceNode,
+            listOf(simpleStateRef),
+            SimpleStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        sendSignedTransaction(aliceNode, issuerParty, lastSimpleStateTransaction)
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+
+        updateSimpleState(aliceNode, bobParty)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<SimpleState>(
+            aliceNode, attachmentSecureHash,
+            SimpleStateContract.Commands.Update()
+        )
+    }
+
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Re-issued StateNeedingAcceptance cannot be unlocked if the original state is consumed`() {
+        initialiseParties()
+        createStateNeedingAcceptance(aliceParty)
+
+        val stateNeedingAcceptanceRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0].ref
+        createReIssuanceRequest<StateNeedingAcceptance>(
+            aliceNode,
+            listOf(stateNeedingAcceptanceRef),
+            StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
+            listOf(issuerParty, acceptorParty)
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+
+        reIssueRequestedStates<StateNeedingAcceptance>(issuerNode, reIssuanceRequest)
+
+        updateStateNeedingAcceptance(aliceNode, bobParty)
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<StateNeedingAcceptance>(
+            aliceNode, attachmentSecureHash,
+            StateNeedingAcceptanceContract.Commands.Update(),
+            listOf(aliceParty, issuerParty, acceptorParty)
         )
     }
 }

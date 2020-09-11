@@ -33,7 +33,6 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
-
     }
 
     @Test
@@ -137,5 +136,65 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+    }
+
+    @Test(expected = IllegalArgumentException::class) // issues find state by reference
+    fun `State cannot be re-issued if issuer cannot access it`() {
+        initialiseParties()
+        createSimpleState(aliceParty)
+
+        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+        createReIssuanceRequest<SimpleState>(
+            aliceNode,
+            listOf(simpleStateRef),
+            SimpleStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+    }
+
+    @Test // issuer doesn't have an information about state being consumed
+    fun `Consumed state is re-issued when issuer is not a participant`() {
+        initialiseParties()
+        createSimpleState(aliceParty)
+
+        val lastSimpleStateTransaction = getSignedTransactions(aliceNode).last()
+        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+
+        updateSimpleState(aliceNode, bobParty)
+
+        createReIssuanceRequest<SimpleState>(
+            aliceNode,
+            listOf(simpleStateRef),
+            SimpleStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        sendSignedTransaction(aliceNode, issuerParty, lastSimpleStateTransaction)
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Consumed state isn't re-issued when issuer is a participant`() {
+        initialiseParties()
+        createStateNeedingAcceptance(aliceParty)
+
+        val stateNeedingAcceptanceRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0].ref
+        createReIssuanceRequest<StateNeedingAcceptance>(
+            aliceNode,
+            listOf(stateNeedingAcceptanceRef),
+            StateNeedingAcceptanceContract.Commands.Create(),
+            issuerParty,
+            listOf(issuerParty, acceptorParty)
+        )
+
+        updateStateNeedingAcceptance(aliceNode, bobParty)
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<StateNeedingAcceptance>(issuerNode, reIssuanceRequest)
     }
 }
