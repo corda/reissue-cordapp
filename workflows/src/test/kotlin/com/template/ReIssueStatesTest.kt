@@ -141,7 +141,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(employeeNode)[0]
+        val simpleState = getStateAndRefs<SimpleState>(employeeNode,
+            accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
             listOf(simpleState),
@@ -153,9 +154,12 @@ class ReIssueStatesTest: AbstractFlowTest() {
         val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(employeeNode, reIssuanceRequest)
 
-        val encumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(employeeNode, encumbered = true)
+        val encumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleState>(employeeNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(employeeNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
         assertThat(encumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(lockStates, hasSize(equalTo(1)))
@@ -182,8 +186,10 @@ class ReIssueStatesTest: AbstractFlowTest() {
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
 
-        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
         val lockStates = getStateAndRefs<ReIssuanceLock<SimpleState>>(aliceNode, encumbered = true)
         assertThat(encumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))

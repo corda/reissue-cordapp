@@ -160,7 +160,8 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(employeeNode)[0]
+        val simpleState = getStateAndRefs<SimpleState>(employeeNode,
+            accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
             listOf(simpleState),
@@ -177,7 +178,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(employeeNode)
+        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(employeeNode) // available to node, not account
         assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
     }
@@ -187,7 +188,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(aliceNode)[0]
+        val simpleState = getStateAndRefs<SimpleState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleState),
@@ -204,7 +205,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(issuerNode)
+        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(issuerNode) // available to node, not account
         assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
     }

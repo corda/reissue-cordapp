@@ -368,7 +368,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(employeeNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
 
-        val simpleState = getStateAndRefs<SimpleState>(employeeNode)[0]
+        val simpleState = getStateAndRefs<SimpleState>(employeeNode,
+            accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
             listOf(simpleState),
@@ -414,7 +415,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateSimpleStateForAccount(bobNode, employeeCharlieParty)
         updateSimpleStateForAccount(charlieNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(aliceNode)[0]
+        val simpleState = getStateAndRefs<SimpleState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleState),
@@ -435,8 +436,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             SimpleStateContract.Commands.Update()
         )
 
-        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false)
+        val encumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleState>(aliceNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
