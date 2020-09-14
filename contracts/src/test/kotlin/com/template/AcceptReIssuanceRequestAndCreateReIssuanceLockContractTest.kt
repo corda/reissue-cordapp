@@ -12,8 +12,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
     @Test
     fun `Re-issuance request is accepted and re-issuance lock is created`() {
         val dummyReIssuanceRequest = createDummyReIssuanceRequest()
-        ledgerServices
-            .ledger {
+        issuerNode.services.ledger {
                 unverifiedTransaction {
                     output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
                 }

@@ -4,6 +4,8 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.Base58
+import net.corda.core.crypto.SecureHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
@@ -118,6 +120,10 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             "Attached transaction doesn't have any outputs" using (
                 attachedSignedTransaction.coreTransaction.outputs.isEmpty())
             "Notary is provided for attached transaction" using(attachedSignedTransaction.notary != null)
+
+            val notary = attachedSignedTransaction.notary!!
+            val notarySig = "DL" + Base58.encode(SecureHash.sha256(notary.owningKey.encoded).bytes)
+            val sigs = attachedSignedTransaction.sigs.map { "DL" + Base58.encode(SecureHash.sha256(it.by.encoded).bytes) }
             "Attached transaction is notarised" using(attachedSignedTransaction.sigs.map { it.by }.contains(
                 attachedSignedTransaction.notary!!.owningKey))
 

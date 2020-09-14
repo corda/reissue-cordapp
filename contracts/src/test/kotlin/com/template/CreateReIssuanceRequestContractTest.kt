@@ -8,14 +8,13 @@ class CreateReIssuanceRequestContractTest: AbstractContractTest() {
 
     @Test
     fun `Re-issuance request is created`() {
-        ledgerServices
-            .ledger {
-                transaction {
-                    output(ReIssuanceRequestContract.contractId, createDummyReIssuanceRequest())
-                    command(listOf(aliceParty.owningKey), ReIssuanceRequestContract.Commands.Create())
-                    verifies()
-                }
+        aliceNode.services.ledger {
+            transaction {
+                output(ReIssuanceRequestContract.contractId, createDummyReIssuanceRequest())
+                command(listOf(aliceParty.owningKey), ReIssuanceRequestContract.Commands.Create())
+                verifies()
             }
+        }
     }
 
 }

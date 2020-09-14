@@ -7,46 +7,60 @@ import com.template.states.example.SimpleState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TransactionState
-import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SecureHash
-import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.AnonymousParty
+import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
-import net.corda.testing.core.TestIdentity
-import net.corda.testing.node.MockServices
+import net.corda.testing.core.singleIdentity
+import net.corda.testing.node.MockNetworkNotarySpec
+import net.corda.testing.node.internal.InternalMockNetwork
+import net.corda.testing.node.internal.InternalMockNodeParameters
+import net.corda.testing.node.internal.TestStartedNode
+import net.corda.testing.node.internal.findCordapp
 import org.junit.Before
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 abstract class AbstractContractTest {
-    protected val dummyNotary = TestIdentity(DUMMY_NOTARY_NAME, 20)
-    protected val ledgerServices = MockServices(
-        firstIdentity = dummyNotary,
-        networkParameters = testNetworkParameters(
-            minimumPlatformVersion = 4
-        ),
-        cordappPackages = listOf(
-            "net.corda.testing.contracts",
-            "com.template.contracts"
-        )
-    )
 
-    protected lateinit var notaryParty: Party
-    protected lateinit var issuerParty: AbstractParty
-    protected lateinit var aliceParty: AbstractParty
-    protected lateinit var bobParty: AbstractParty
+    lateinit var mockNet: InternalMockNetwork
+
+    lateinit var notaryNode: TestStartedNode
+    lateinit var issuerNode: TestStartedNode
+    lateinit var aliceNode: TestStartedNode
+
+    lateinit var notaryParty: Party
+    lateinit var issuerParty: Party
+    lateinit var aliceParty: Party
 
     @Before
     fun initialize() {
-        notaryParty = dummyNotary.party
-        issuerParty = AnonymousParty(Crypto.generateKeyPair().public)
-        aliceParty = AnonymousParty(Crypto.generateKeyPair().public)
-        bobParty = AnonymousParty(Crypto.generateKeyPair().public)
+        mockNet = InternalMockNetwork(
+            cordappsForAllNodes = listOf(
+                findCordapp("net.corda.testing.contracts"),
+                findCordapp("com.template.contracts")
+            ),
+            notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
+            initialNetworkParameters = testNetworkParameters(
+                minimumPlatformVersion = 4
+            )
+        )
+
+        notaryNode = mockNet.notaryNodes.first()
+        notaryParty = notaryNode.info.singleIdentity()
+
+        val issuerLegalName = CordaX500Name(organisation = "ISSUER", locality = "London", country = "GB")
+        issuerNode = mockNet.createNode(InternalMockNodeParameters(legalName = issuerLegalName))
+        issuerParty = issuerNode.info.singleIdentity()
+
+        val aliceLegalName = CordaX500Name(organisation = "ALICE", locality = "London", country = "GB")
+        aliceNode = mockNet.createNode(InternalMockNodeParameters(legalName = aliceLegalName))
+        aliceParty = aliceNode.info.singleIdentity()
+
     }
 
     fun createDummyState(): SimpleState {
@@ -57,19 +71,23 @@ abstract class AbstractContractTest {
         return StateRef(SecureHash.randomSHA256(), 0)
     }
 
-    fun createDummyReIssuanceRequest(): ReIssuanceRequest {
+    fun createDummyReIssuanceRequest(
+        stateRef: StateRef = createDummyRef()
+    ): ReIssuanceRequest {
         return ReIssuanceRequest(
             issuerParty,
             aliceParty,
-            listOf(createDummyRef()),
+            listOf(stateRef),
             SimpleStateContract.Commands.Create(),
             listOf(issuerParty)
         )
     }
 
-    fun createDummyReIssuanceLock(): ReIssuanceLock<SimpleState> {
+    fun createDummyReIssuanceLock(
+        stateRef: StateRef = createDummyRef()
+    ): ReIssuanceLock<SimpleState> {
         val dummyTransactionState = TransactionState(data = createDummyState(), notary = notaryParty)
-        val dummyStateAndRef = StateAndRef(dummyTransactionState, createDummyRef())
+        val dummyStateAndRef = StateAndRef(dummyTransactionState, stateRef)
         return ReIssuanceLock(issuerParty, aliceParty, listOf(dummyStateAndRef))
     }
 
