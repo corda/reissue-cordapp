@@ -20,6 +20,7 @@ import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.InternalMockNodeParameters
 import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.findCordapp
+import org.junit.After
 import org.junit.Before
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
@@ -63,6 +64,11 @@ abstract class AbstractContractTest {
 
     }
 
+    @After
+    fun tearDown() {
+        mockNet.stopNodes()
+    }
+
     fun createDummyState(): SimpleState {
         return SimpleState(aliceParty)
     }
@@ -72,12 +78,12 @@ abstract class AbstractContractTest {
     }
 
     fun createDummyReIssuanceRequest(
-        stateRef: StateRef = createDummyRef()
+        stateRefList: List<StateRef>
     ): ReIssuanceRequest {
         return ReIssuanceRequest(
             issuerParty,
             aliceParty,
-            listOf(stateRef),
+            stateRefList,
             SimpleStateContract.Commands.Create(),
             listOf(issuerParty)
         )

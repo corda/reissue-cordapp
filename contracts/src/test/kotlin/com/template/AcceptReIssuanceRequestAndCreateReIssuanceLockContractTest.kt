@@ -11,22 +11,82 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
 
     @Test
     fun `Re-issuance request is accepted and re-issuance lock is created`() {
-        val dummyReIssuanceRequest = createDummyReIssuanceRequest()
-        issuerNode.services.ledger {
-                unverifiedTransaction {
-                    output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                }
-                transaction {
-                    input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                    output(ReIssuanceLockContract.contractId, "re-issuance lock",
-                        contractState=createDummyReIssuanceLock(), encumbrance = 1)
-                    output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
-                        contractState=createDummyState(), encumbrance = 0)
-                    command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
-                    command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
-                    command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
-                    verifies()
-                }
+        val dummyReIssuanceRequest = createDummyReIssuanceRequest(listOf(createDummyRef()))
+        issuerNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
             }
+            transaction {
+                input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                    contractState=createDummyReIssuanceLock(), encumbrance = 1)
+                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                    contractState=createDummyState(), encumbrance = 0)
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
+                command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                verifies()
+            }
+        }
+    }
+
+    @Test
+    fun `Re-issuance can't produce unencumbered states`() {
+        val dummyReIssuanceRequest = createDummyReIssuanceRequest(listOf(createDummyRef()))
+        issuerNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+            }
+            transaction {
+                input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                    contractState=createDummyReIssuanceLock())
+                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                    contractState=createDummyState())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
+                command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                fails()
+            }
+        }
+    }
+
+    @Test
+    fun `States can't be re-issued without creating a re-issuance lock`() {
+        val dummyReIssuanceRequest = createDummyReIssuanceRequest(listOf(createDummyRef()))
+        issuerNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+            }
+            transaction {
+                input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                    contractState=createDummyState(), encumbrance = 0)
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
+                command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                fails()
+            }
+        }
+    }
+
+    @Test
+    fun `Re-issuance can't happen without a request`() {
+        val dummyReIssuanceRequest = createDummyReIssuanceRequest(listOf(createDummyRef()))
+        issuerNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+            }
+            transaction {
+                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                    contractState=createDummyReIssuanceLock(), encumbrance = 1)
+                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                    contractState=createDummyState(), encumbrance = 0)
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
+                command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                fails()
+            }
+        }
     }
 }
