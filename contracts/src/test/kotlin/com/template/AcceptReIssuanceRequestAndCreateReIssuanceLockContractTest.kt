@@ -18,9 +18,9 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             }
             transaction {
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(), encumbrance = 1)
-                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                output(DummyContract.PROGRAM_ID, reIssuedStateLabel,
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -39,9 +39,9 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             }
             transaction {
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock())
-                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                output(DummyContract.PROGRAM_ID, reIssuedStateLabel,
                     contractState=createDummyState())
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -60,7 +60,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             }
             transaction {
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                output(DummyContract.PROGRAM_ID, reIssuedStateLabel,
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -78,9 +78,9 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                 output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
             }
             transaction {
-                output(ReIssuanceLockContract.contractId, "re-issuance lock",
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(), encumbrance = 1)
-                output(DummyContract.PROGRAM_ID, "re-issued state encumbered by re-issuance lock",
+                output(DummyContract.PROGRAM_ID, reIssuedStateLabel,
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())

@@ -38,6 +38,9 @@ abstract class AbstractContractTest {
     lateinit var issuerParty: Party
     lateinit var aliceParty: Party
 
+    val reIssuanceLockLabel = "re-issuance lock"
+    val reIssuedStateLabel = "re-issued state encumbered by re-issuance lock"
+
     @Before
     fun initialize() {
         mockNet = InternalMockNetwork(
