@@ -24,11 +24,11 @@ class SimpleDummyStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
+        val simpleDummyStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleDummyStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
-            "No simpleStateInputs are allowed" using simpleStateInputs.isEmpty()
-            "Exactly one output is expected" using (simpleStateOutputs.size == 1)
+            "No inputs of type SimpleDummyState are allowed" using simpleDummyStateInputs.isEmpty()
+            "Exactly one output is expected" using (simpleDummyStateOutputs.size == 1)
         }
     }
 
@@ -36,15 +36,15 @@ class SimpleDummyStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
+        val simpleDummyStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleDummyStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
-            "Exactly one input is expected" using (simpleStateInputs.size == 1)
-            "Exactly one output is expected" using (simpleStateOutputs.size == 1)
-            val inputSimpleState = simpleStateInputs[0]
-            val outputSimpleState = simpleStateOutputs[0]
-            "Owner in input state is required signer" using command.signers.contains(inputSimpleState.owner.owningKey)
-            "Owner in output state is required signer" using command.signers.contains(outputSimpleState.owner.owningKey)
+            "Exactly one input of type SimpleDummyState is expected" using (simpleDummyStateInputs.size == 1)
+            "Exactly one output of type SimpleDummyState is expected" using (simpleDummyStateOutputs.size == 1)
+            val inputSimpleDummyState = simpleDummyStateInputs[0]
+            val outputSimpleDummyState = simpleDummyStateOutputs[0]
+            "Owner in input state is required signer" using command.signers.contains(inputSimpleDummyState.owner.owningKey)
+            "Owner in output state is required signer" using command.signers.contains(outputSimpleDummyState.owner.owningKey)
         }
     }
 
@@ -52,13 +52,13 @@ class SimpleDummyStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
+        val simpleDummyStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleDummyStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
-            "Exactly one input is expected" using (simpleStateInputs.size == 1)
-            "No simpleStateOutputs are allowed" using simpleStateOutputs.isEmpty()
-            val inputSimpleState = simpleStateInputs[0]
-            "Owner in input state is required signer" using command.signers.contains(inputSimpleState.owner.owningKey)
+            "Exactly one input is expected" using (simpleDummyStateInputs.size == 1)
+            "No simpleDummyStateOutputs are allowed" using simpleDummyStateOutputs.isEmpty()
+            val inputSimpleDummyState = simpleDummyStateInputs[0]
+            "Owner in input state is required signer" using command.signers.contains(inputSimpleDummyState.owner.owningKey)
         }
     }
 

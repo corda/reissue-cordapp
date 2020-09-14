@@ -11,7 +11,7 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class CreateSimpleStateForAccount(
+class CreateSimpleDummyStateForAccount(
     private val issuer: AbstractParty,
     private val owner: AbstractParty
 ): FlowLogic<Unit>() {
@@ -42,8 +42,8 @@ class CreateSimpleStateForAccount(
 }
 
 
-@InitiatedBy(CreateSimpleStateForAccount::class)
-class CreateSimpleStateForAccountResponder(
+@InitiatedBy(CreateSimpleDummyStateForAccount::class)
+class CreateSimpleDummyStateForAccountResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

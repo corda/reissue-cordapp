@@ -14,13 +14,13 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class UpdateSimpleStateForAccount(
-    private val simpleStateStateAndRef: StateAndRef<SimpleDummyState>,
+class UpdateSimpleDummyStateForAccount(
+    private val simpleDummyStateStateAndRef: StateAndRef<SimpleDummyState>,
     private val newOwner: AbstractParty
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val owner = simpleStateStateAndRef.state.data.owner
+        val owner = simpleDummyStateStateAndRef.state.data.owner
 
         val ownerHost = serviceHub.identityService.partyFromKey(owner.owningKey)!!
         require(ownerHost == ourIdentity) { "Owner is not a valid account for the host" }
@@ -29,12 +29,12 @@ class UpdateSimpleStateForAccount(
 
         val signers = setOf(owner.owningKey, newOwner.owningKey).toList() // old and new owner might be the same
         val localSigners = listOfNotNull(
-            simpleStateStateAndRef.state.data.owner.owningKey,
+            simpleDummyStateStateAndRef.state.data.owner.owningKey,
             if(newOwnerHost == ourIdentity && owner != newOwner) newOwner.owningKey else null
         )
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(simpleStateStateAndRef)
+        transactionBuilder.addInputState(simpleDummyStateStateAndRef)
         transactionBuilder.addOutputState(SimpleDummyState(newOwner))
         transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Update(), signers)
 
@@ -57,8 +57,8 @@ class UpdateSimpleStateForAccount(
 }
 
 
-@InitiatedBy(UpdateSimpleStateForAccount::class)
-class UpdateSimpleStateForAccountResponder(
+@InitiatedBy(UpdateSimpleDummyStateForAccount::class)
+class UpdateSimpleDummyStateForAccountResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

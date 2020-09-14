@@ -20,14 +20,14 @@ import org.junit.Test
 class RequestReIssuanceTest: AbstractFlowTest() {
 
     @Test
-    fun `SimpleState re-issuance request is created`() {
+    fun `SimpleDummyState re-issuance request is created`() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
@@ -38,11 +38,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
-        assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
+        val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
     }
 
     @Test
@@ -156,15 +156,15 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `SimpleState re-issuance request is created - accounts on the same host`() {
+    fun `SimpleDummyState re-issuance request is created - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(employeeNode,
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -176,22 +176,22 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(employeeNode) // available to node, not account
-        assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
+        val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(employeeNode) // available to node, not account
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
     }
 
     @Test
-    fun `SimpleState re-issuance request is created - accounts on different hosts`() {
+    fun `SimpleDummyState re-issuance request is created - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -203,11 +203,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode) // available to node, not account
-        assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
+        val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode) // available to node, not account
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
     }
 
     @Test(expected = TransactionVerificationException::class)

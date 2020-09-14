@@ -263,7 +263,7 @@ abstract class AbstractFlowTest {
     fun createSimpleDummyState(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateSimpleState(owner)).resultFuture
+        val flowFuture = issuerNode.services.startFlow(CreateSimpleDummyState(owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -272,7 +272,7 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         owner: AbstractParty
     ) {
-        val flowFuture = node.services.startFlow(CreateSimpleStateForAccount(employeeIssuerParty, owner)).resultFuture
+        val flowFuture = node.services.startFlow(CreateSimpleDummyStateForAccount(employeeIssuerParty, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -281,8 +281,8 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         owner: Party
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleState(simpleStateStateAndRef, owner)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateSimpleDummyState(simpleDummyStateStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -291,8 +291,8 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         owner: AbstractParty
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleStateForAccount(simpleStateStateAndRef, owner)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateSimpleDummyStateForAccount(simpleDummyStateStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -300,8 +300,8 @@ abstract class AbstractFlowTest {
     fun deleteSimpleDummyState(
         node: TestStartedNode
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleState(simpleStateStateAndRef, issuerParty)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleDummyState(simpleDummyStateStateAndRef, issuerParty)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -309,8 +309,8 @@ abstract class AbstractFlowTest {
     fun deleteSimpleDummyStateForAccount(
         node: TestStartedNode
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleDummyStateForAccount(simpleDummyStateStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

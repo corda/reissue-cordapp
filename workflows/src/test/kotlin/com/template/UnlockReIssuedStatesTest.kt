@@ -27,7 +27,7 @@ import java.util.zip.ZipOutputStream
 class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
     @Test
-    fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {
+    fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted`() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
         updateSimpleDummyState(aliceNode, bobParty)
@@ -40,10 +40,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
@@ -65,7 +65,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
 
         updateSimpleDummyState(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
@@ -355,7 +355,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `SimpleState re-issued - accounts on the same host`() {
+    fun `SimpleDummyState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
         updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
@@ -368,11 +368,11 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(employeeNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(employeeNode,
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -398,14 +398,14 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
 
         updateSimpleDummyStateForAccount(employeeNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
     }
 
     @Test
-    fun `SimpleState re-issued - accounts on different hosts`() {
+    fun `SimpleDummyState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
         updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
@@ -415,10 +415,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateSimpleDummyStateForAccount(bobNode, employeeCharlieParty)
         updateSimpleDummyStateForAccount(charlieNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
@@ -442,7 +442,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
+        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
 
         updateSimpleDummyStateForAccount(aliceNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
@@ -453,10 +453,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
@@ -490,14 +490,14 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     }
 
     @Test(expected = TransactionVerificationException::class)
-    fun `Re-issued SimpleState cannot be unlocked if the original state is consumed`() {
+    fun `Re-issued SimpleDummyState cannot be unlocked if the original state is consumed`() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
 
-        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleState),
+            listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )

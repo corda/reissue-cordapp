@@ -30,9 +30,9 @@ class DummyStateRequiringAcceptanceContract: Contract {
             "No inputs of type DummyStateRequiringAcceptance are allowed" using dummyStateRequiringAcceptanceInputs.isEmpty()
             "Exactly one output of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceOutputs.size == 1)
             
-            val simpleState = dummyStateRequiringAcceptanceOutputs[0]
-            "Issuer is required signer" using (command.signers.contains(simpleState.issuer.owningKey))
-            "Acceptor is required signer" using (command.signers.contains(simpleState.acceptor.owningKey))
+            val simpleDummyState = dummyStateRequiringAcceptanceOutputs[0]
+            "Issuer is required signer" using (command.signers.contains(simpleDummyState.issuer.owningKey))
+            "Acceptor is required signer" using (command.signers.contains(simpleDummyState.acceptor.owningKey))
         }
     }
 
@@ -46,15 +46,15 @@ class DummyStateRequiringAcceptanceContract: Contract {
             "Exactly one input of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceInputs.size == 1)
             "Exactly one output of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceOutputs.size == 1)
 
-            val simpleStateInput = dummyStateRequiringAcceptanceInputs[0]
-            val simpleStateOutput = dummyStateRequiringAcceptanceOutputs[0]
+            val simpleDummyStateInput = dummyStateRequiringAcceptanceInputs[0]
+            val simpleDummyStateOutput = dummyStateRequiringAcceptanceOutputs[0]
 
-            "Issuer remains the same" using (simpleStateInput.issuer == simpleStateOutput.issuer)
-            "Acceptor remains the same" using (simpleStateInput.acceptor == simpleStateOutput.acceptor)
+            "Issuer remains the same" using (simpleDummyStateInput.issuer == simpleDummyStateOutput.issuer)
+            "Acceptor remains the same" using (simpleDummyStateInput.acceptor == simpleDummyStateOutput.acceptor)
 
-            "Owner is required signer" using (command.signers.contains(simpleStateInput.owner.owningKey) &&
-                command.signers.contains(simpleStateOutput.owner.owningKey))
-            "Acceptor is required signer" using (command.signers.contains(simpleStateInput.acceptor.owningKey))
+            "Owner is required signer" using (command.signers.contains(simpleDummyStateInput.owner.owningKey) &&
+                command.signers.contains(simpleDummyStateOutput.owner.owningKey))
+            "Acceptor is required signer" using (command.signers.contains(simpleDummyStateInput.acceptor.owningKey))
         }
     }
 
@@ -68,9 +68,9 @@ class DummyStateRequiringAcceptanceContract: Contract {
             "Exactly one input of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceInputs.size == 1)
             "No outputs of type DummyStateRequiringAcceptance are allowed" using dummyStateRequiringAcceptanceOutputs.isEmpty()
 
-            val simpleState = dummyStateRequiringAcceptanceInputs[0]
-            "Owner is required signer" using (command.signers.contains(simpleState.owner.owningKey))
-            "Acceptor is required signer" using (command.signers.contains(simpleState.acceptor.owningKey))
+            val simpleDummyState = dummyStateRequiringAcceptanceInputs[0]
+            "Owner is required signer" using (command.signers.contains(simpleDummyState.owner.owningKey))
+            "Acceptor is required signer" using (command.signers.contains(simpleDummyState.acceptor.owningKey))
         }
     }
 

@@ -14,19 +14,19 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class UpdateSimpleState(
-    private val simpleStateStateAndRef: StateAndRef<SimpleDummyState>,
+class UpdateSimpleDummyState(
+    private val simpleDummyStateStateAndRef: StateAndRef<SimpleDummyState>,
     private val newOwner: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val owner = simpleStateStateAndRef.state.data.owner
+        val owner = simpleDummyStateStateAndRef.state.data.owner
         require(owner == ourIdentity) { "Only current owner can trigger the flow" }
 
         val signers = setOf(owner.owningKey, newOwner.owningKey).toList() // old and new owner might be the same
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(simpleStateStateAndRef)
+        transactionBuilder.addInputState(simpleDummyStateStateAndRef)
         transactionBuilder.addOutputState(SimpleDummyState(newOwner))
         transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Update(), signers)
 
@@ -47,8 +47,8 @@ class UpdateSimpleState(
 }
 
 
-@InitiatedBy(UpdateSimpleState::class)
-class UpdateSimpleStateResponder(
+@InitiatedBy(UpdateSimpleDummyState::class)
+class SimpleDummyStateResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

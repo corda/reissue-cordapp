@@ -12,7 +12,7 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class DeleteSimpleState(
+class DeleteSimpleDummyState(
     private val originalStateAndRef: StateAndRef<SimpleDummyState>,
     private val issuer: Party
 ): FlowLogic<Unit>() {
@@ -40,8 +40,8 @@ class DeleteSimpleState(
 
 }
 
-@InitiatedBy(DeleteSimpleState::class)
-class DeleteSimpleStateResponder(
+@InitiatedBy(DeleteSimpleDummyState::class)
+class DeleteSimpleDummyStateResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable
