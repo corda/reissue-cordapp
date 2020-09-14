@@ -507,9 +507,9 @@ abstract class AbstractFlowTest {
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()
-        val transactionInputStream = flowFuture.getOrThrow()
+        val transactionByteArray = flowFuture.getOrThrow()
 
-        return node.services.attachments.importAttachment(transactionInputStream.inputStream(), party.toString(), null)
+        return node.services.attachments.importAttachment(transactionByteArray.inputStream(), party.toString(), null)
     }
 
     fun getSignedTransactions(
