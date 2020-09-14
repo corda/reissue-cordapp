@@ -22,7 +22,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issuance request is created`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -48,7 +48,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test
     fun `StateNeedingAcceptance re-issuance request is created`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         val issuanceCommandSigners = listOf(issuerParty, acceptorParty)
@@ -76,7 +76,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test
     fun `StateNeedingAllParticipantsToSign re-issuance request is created`() {
         initialiseParties()
-        createStateNeedingAllParticipantsToSign(aliceParty)
+        createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
         val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
         val issuanceCommandSigners = listOf(aliceParty, issuerParty, acceptorParty)
@@ -158,7 +158,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issuance request is created - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
-        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
@@ -186,7 +186,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issuance request is created - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
-        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(

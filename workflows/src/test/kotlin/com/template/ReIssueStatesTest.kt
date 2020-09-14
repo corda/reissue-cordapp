@@ -22,7 +22,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleState is re-issued`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -50,7 +50,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test
     fun `StateNeedingAcceptance is re-issued`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -79,7 +79,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
         initialiseParties()
-        createStateNeedingAllParticipantsToSign(aliceParty)
+        createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
         val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -139,7 +139,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
-        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
@@ -172,7 +172,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
-        createSimpleStateForAccount(issuerNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -203,7 +203,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test(expected = IllegalArgumentException::class) // issues find state by reference
     fun `State cannot be re-issued if issuer cannot access it`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleStateRef = getStateAndRefs<SimpleDummyState>(aliceNode)[0].ref
         createReIssuanceRequest<SimpleDummyState>( // don't share required transactions
@@ -220,11 +220,11 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test // issuer doesn't have an information about state being consumed
     fun `Consumed state is re-issued when issuer is not a participant`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
 
-        updateSimpleState(aliceNode, bobParty)
+        updateSimpleDummyState(aliceNode, bobParty)
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
@@ -251,7 +251,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     @Test(expected = IllegalArgumentException::class)
     fun `Consumed state isn't re-issued when issuer is a participant`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -262,7 +262,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
             listOf(issuerParty, acceptorParty)
         )
 
-        updateStateNeedingAcceptance(aliceNode, bobParty)
+        updateDummyStateRequiringAcceptance(aliceNode, bobParty)
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)

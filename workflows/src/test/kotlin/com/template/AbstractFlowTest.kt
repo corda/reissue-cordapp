@@ -260,7 +260,7 @@ abstract class AbstractFlowTest {
 
     // simple state
 
-    fun createSimpleState(
+    fun createSimpleDummyState(
         owner: Party
     ) {
         val flowFuture = issuerNode.services.startFlow(CreateSimpleState(owner)).resultFuture
@@ -268,7 +268,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun createSimpleStateForAccount(
+    fun createSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
     ) {
@@ -277,7 +277,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun updateSimpleState(
+    fun updateSimpleDummyState(
         node: TestStartedNode,
         owner: Party
     ) {
@@ -287,7 +287,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun updateSimpleStateForAccount(
+    fun updateSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
     ) {
@@ -297,7 +297,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun deleteSimpleState(
+    fun deleteSimpleDummyState(
         node: TestStartedNode
     ) {
         val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
@@ -306,7 +306,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun deleteSimpleStateForAccount(
+    fun deleteSimpleDummyStateForAccount(
         node: TestStartedNode
     ) {
         val simpleStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
@@ -317,7 +317,7 @@ abstract class AbstractFlowTest {
 
     // state needing acceptance
 
-    fun createStateNeedingAcceptance(
+    fun createDummyStateRequiringAcceptance(
         owner: Party
     ) {
         val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAcceptance(owner, acceptorParty)).resultFuture
@@ -325,7 +325,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun updateStateNeedingAcceptance(
+    fun updateDummyStateRequiringAcceptance(
         node: TestStartedNode,
         owner: Party
     ) {
@@ -336,7 +336,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun deleteStateNeedingAcceptance(
+    fun deleteDummyStateRequiringAcceptance(
         node: TestStartedNode
     ) {
         val stateNeedingAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
@@ -347,7 +347,7 @@ abstract class AbstractFlowTest {
 
     // state needing all participants to sign
 
-    fun createStateNeedingAllParticipantsToSign(
+    fun createDummyStateRequiringAllParticipantsSignatures(
         owner: Party
     ) {
         val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAllParticipantsSignatures(owner, acceptorParty)).resultFuture
@@ -355,7 +355,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun updateStateNeedingAllParticipantsToSign(
+    fun updateDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode,
         owner: Party
     ) {
@@ -366,7 +366,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    fun deleteStateNeedingAllParticipantsToSign(
+    fun deleteDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode
     ) {
         val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]

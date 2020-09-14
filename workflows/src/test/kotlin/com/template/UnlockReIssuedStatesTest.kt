@@ -29,13 +29,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued SimpleState is unencumbered after the original state is deleted`() {
         initialiseParties()
-        createSimpleState(aliceParty)
-        updateSimpleState(aliceNode, bobParty)
-        updateSimpleState(bobNode, charlieParty)
-        updateSimpleState(charlieNode, aliceParty)
-        updateSimpleState(aliceNode, bobParty)
-        updateSimpleState(bobNode, charlieParty)
-        updateSimpleState(charlieNode, aliceParty)
+        createSimpleDummyState(aliceParty)
+        updateSimpleDummyState(aliceNode, bobParty)
+        updateSimpleDummyState(bobNode, charlieParty)
+        updateSimpleDummyState(charlieNode, aliceParty)
+        updateSimpleDummyState(aliceNode, bobParty)
+        updateSimpleDummyState(bobNode, charlieParty)
+        updateSimpleDummyState(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
@@ -52,7 +52,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
 
-        deleteSimpleState(aliceNode)
+        deleteSimpleDummyState(aliceNode)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
@@ -67,7 +67,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
-        updateSimpleState(aliceNode, debbieParty)
+        updateSimpleDummyState(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -75,13 +75,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued StateNeedingAcceptance is unencumbered after the original state is deleted`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
-        updateStateNeedingAcceptance(aliceNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, aliceParty)
-        updateStateNeedingAcceptance(aliceNode, bobParty)
-        updateStateNeedingAcceptance(bobNode, charlieParty)
-        updateStateNeedingAcceptance(charlieNode, aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
+        updateDummyStateRequiringAcceptance(aliceNode, bobParty)
+        updateDummyStateRequiringAcceptance(bobNode, charlieParty)
+        updateDummyStateRequiringAcceptance(charlieNode, aliceParty)
+        updateDummyStateRequiringAcceptance(aliceNode, bobParty)
+        updateDummyStateRequiringAcceptance(bobNode, charlieParty)
+        updateDummyStateRequiringAcceptance(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
@@ -99,7 +99,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
 
-        deleteStateNeedingAcceptance(aliceNode)
+        deleteDummyStateRequiringAcceptance(aliceNode)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
@@ -115,7 +115,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAcceptance.state.data))
 
-        updateStateNeedingAcceptance(aliceNode, debbieParty)
+        updateDummyStateRequiringAcceptance(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -123,13 +123,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `StateNeedingAllParticipantsToSign is re-issued`() {
         initialiseParties()
-        createStateNeedingAllParticipantsToSign(aliceParty)
-        updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, aliceParty)
-        updateStateNeedingAllParticipantsToSign(aliceNode, bobParty)
-        updateStateNeedingAllParticipantsToSign(bobNode, charlieParty)
-        updateStateNeedingAllParticipantsToSign(charlieNode, aliceParty)
+        createDummyStateRequiringAllParticipantsSignatures(aliceParty)
+        updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty)
+        updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty)
+        updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty)
+        updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty)
+        updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty)
+        updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
@@ -148,7 +148,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest)
 
-        deleteStateNeedingAllParticipantsToSign(aliceNode)
+        deleteDummyStateRequiringAllParticipantsSignatures(aliceNode)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
@@ -165,7 +165,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAllParticipantsToSign.state.data))
 
-        updateStateNeedingAllParticipantsToSign(aliceNode, debbieParty)
+        updateDummyStateRequiringAllParticipantsSignatures(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
         assertThat(transactionsAfterReIssuance.size, equalTo(4))
     }
@@ -325,7 +325,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test(expected = IllegalArgumentException::class)
     fun `Only requester can unlock re-issued state`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
 
@@ -341,7 +341,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
 
-        deleteStateNeedingAcceptance(aliceNode)
+        deleteDummyStateRequiringAcceptance(aliceNode)
 
         // issuer creates attachment and tries to unlock state
         val attachmentSecureHash = uploadDeletedStateAttachment(issuerNode)
@@ -357,13 +357,13 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
-        createSimpleStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleStateForAccount(employeeNode, employeeBobParty)
-        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
-        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleStateForAccount(employeeNode, employeeBobParty)
-        updateSimpleStateForAccount(employeeNode, employeeCharlieParty)
-        updateSimpleStateForAccount(employeeNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeCharlieParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(employeeNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
@@ -382,7 +382,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<SimpleDummyState>(employeeNode, reIssuanceRequest)
 
-        deleteSimpleStateForAccount(employeeNode)
+        deleteSimpleDummyStateForAccount(employeeNode)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(employeeNode)
 
@@ -400,20 +400,20 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
-        updateSimpleStateForAccount(employeeNode, employeeDebbieParty)
+        updateSimpleDummyStateForAccount(employeeNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
     }
 
     @Test
     fun `SimpleState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
-        createSimpleStateForAccount(issuerNode, employeeAliceParty)
-        updateSimpleStateForAccount(aliceNode, employeeBobParty)
-        updateSimpleStateForAccount(bobNode, employeeCharlieParty)
-        updateSimpleStateForAccount(charlieNode, employeeAliceParty)
-        updateSimpleStateForAccount(aliceNode, employeeBobParty)
-        updateSimpleStateForAccount(bobNode, employeeCharlieParty)
-        updateSimpleStateForAccount(charlieNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
+        updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
+        updateSimpleDummyStateForAccount(bobNode, employeeCharlieParty)
+        updateSimpleDummyStateForAccount(charlieNode, employeeAliceParty)
+        updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
+        updateSimpleDummyStateForAccount(bobNode, employeeCharlieParty)
+        updateSimpleDummyStateForAccount(charlieNode, employeeAliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -427,7 +427,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
 
-        deleteSimpleStateForAccount(aliceNode)
+        deleteSimpleDummyStateForAccount(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
         unlockReIssuedState<SimpleDummyState>(
@@ -444,14 +444,14 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         assertThat(unencumberedStates, hasSize(equalTo(1)))
         assertThat(unencumberedStates[0].state.data, equalTo(simpleState.state.data))
 
-        updateSimpleStateForAccount(aliceNode, employeeDebbieParty)
+        updateSimpleDummyStateForAccount(aliceNode, employeeDebbieParty)
         // TODO: figure out how to get back-chain for a given account
     }
 
     @Test(expected = TransactionVerificationException::class)
     fun `Attached transaction needs to be notarised`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -492,7 +492,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test(expected = TransactionVerificationException::class)
     fun `Re-issued SimpleState cannot be unlocked if the original state is consumed`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
         val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -505,7 +505,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
 
-        updateSimpleState(aliceNode, bobParty)
+        updateSimpleDummyState(aliceNode, bobParty)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
         unlockReIssuedState<SimpleDummyState>(
@@ -518,7 +518,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test(expected = TransactionVerificationException::class)
     fun `Re-issued StateNeedingAcceptance cannot be unlocked if the original state is consumed`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
         val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -533,7 +533,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
 
-        updateStateNeedingAcceptance(aliceNode, bobParty)
+        updateDummyStateRequiringAcceptance(aliceNode, bobParty)
 
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
