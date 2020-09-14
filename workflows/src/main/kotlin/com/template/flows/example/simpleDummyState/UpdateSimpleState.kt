@@ -1,10 +1,10 @@
-package com.template.flows.example.stateNeedingAllParticipantsToSign
+package com.template.flows.example.simpleDummyState
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
-import com.template.states.example.StateNeedingAllParticipantsToSign
+import com.template.contracts.example.SimpleDummyStateContract
+import com.template.states.example.SimpleDummyState
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -14,37 +14,41 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class CreateStateNeedingAllParticipantsToSign(
-    private val owner: Party,
-    private val other: Party
+class UpdateSimpleState(
+    private val simpleStateStateAndRef: StateAndRef<SimpleDummyState>,
+    private val newOwner: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val issuer = ourIdentity
-        val signers = listOf(owner.owningKey, issuer.owningKey, other.owningKey)
+        val owner = simpleStateStateAndRef.state.data.owner
+        require(owner == ourIdentity) { "Only current owner can trigger the flow" }
+
+        val signers = setOf(owner.owningKey, newOwner.owningKey).toList() // old and new owner might be the same
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addOutputState(StateNeedingAllParticipantsToSign(owner, issuer, other))
-        transactionBuilder.addCommand(StateNeedingAllParticipantsToSignContract.Commands.Create(), signers)
+        transactionBuilder.addInputState(simpleStateStateAndRef)
+        transactionBuilder.addOutputState(SimpleDummyState(newOwner))
+        transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Update(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
 
-        val sessions = listOf(owner, other).map{ initiateFlow(it) }
-        val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, sessions))
+        val signersSessions = if(owner != newOwner) listOf(initiateFlow(newOwner)) else listOf()
+
+        val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
 
         subFlow(
             FinalityFlow(
                 transaction = fullySignedTransaction,
-                sessions = sessions
+                sessions = signersSessions
             )
         )
     }
 }
 
 
-@InitiatedBy(CreateStateNeedingAllParticipantsToSign::class)
-class CreateStateNeedingAllParticipantsToSignResponder(
+@InitiatedBy(UpdateSimpleState::class)
+class UpdateSimpleStateResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

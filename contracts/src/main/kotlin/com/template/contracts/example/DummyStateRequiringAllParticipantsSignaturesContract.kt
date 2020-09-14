@@ -1,10 +1,10 @@
 package com.template.contracts.example
 
-import com.template.states.example.StateNeedingAllParticipantsToSign
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 
-class StateNeedingAllParticipantsToSignContract: Contract {
+class DummyStateRequiringAllParticipantsSignaturesContract: Contract {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
@@ -24,8 +24,8 @@ class StateNeedingAllParticipantsToSignContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<StateNeedingAllParticipantsToSign>()
-        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<StateNeedingAllParticipantsToSign>()
+        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<DummyStateRequiringAllParticipantsSignatures>()
+        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<DummyStateRequiringAllParticipantsSignatures>()
         requireThat {
             "No stateNeedingAllParticipantsToSignInputs are allowed" using stateNeedingAllParticipantsToSignInputs.isEmpty()
             "Exactly one output is expected" using (stateNeedingAllParticipantsToSignOutputs.size == 1)
@@ -45,8 +45,8 @@ class StateNeedingAllParticipantsToSignContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<StateNeedingAllParticipantsToSign>()
-        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<StateNeedingAllParticipantsToSign>()
+        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<DummyStateRequiringAllParticipantsSignatures>()
+        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<DummyStateRequiringAllParticipantsSignatures>()
         requireThat {
             "Exactly one input is expected" using (stateNeedingAllParticipantsToSignInputs.size == 1)
             "Exactly one output is expected" using (stateNeedingAllParticipantsToSignOutputs.size == 1)
@@ -70,8 +70,8 @@ class StateNeedingAllParticipantsToSignContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<StateNeedingAllParticipantsToSign>()
-        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<StateNeedingAllParticipantsToSign>()
+        val stateNeedingAllParticipantsToSignInputs = tx.inputsOfType<DummyStateRequiringAllParticipantsSignatures>()
+        val stateNeedingAllParticipantsToSignOutputs = tx.outputsOfType<DummyStateRequiringAllParticipantsSignatures>()
         requireThat {
             "Exactly one input is expected" using (stateNeedingAllParticipantsToSignInputs.size == 1)
             "No stateNeedingAllParticipantsToSignOutputs are allowed" using stateNeedingAllParticipantsToSignOutputs.isEmpty()

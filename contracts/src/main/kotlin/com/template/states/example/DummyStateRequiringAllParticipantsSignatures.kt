@@ -1,13 +1,13 @@
 package com.template.states.example
 
-import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
+import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 
-@BelongsToContract(StateNeedingAllParticipantsToSignContract::class)
-class StateNeedingAllParticipantsToSign(
+@BelongsToContract(DummyStateRequiringAllParticipantsSignaturesContract::class)
+class DummyStateRequiringAllParticipantsSignatures(
     var owner: Party,
     val issuer: Party,
     val other: Party
@@ -19,7 +19,7 @@ class StateNeedingAllParticipantsToSign(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as StateNeedingAllParticipantsToSign
+        other as DummyStateRequiringAllParticipantsSignatures
 
         if (owner != other.owner) return false
         if (issuer != other.issuer) return false

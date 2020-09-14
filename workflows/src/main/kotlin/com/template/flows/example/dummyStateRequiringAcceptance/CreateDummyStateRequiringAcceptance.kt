@@ -1,20 +1,18 @@
-package com.template.flows.example.stateNeedingAcceptance
+package com.template.flows.example.dummyStateRequiringAcceptance
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.template.contracts.example.StateNeedingAcceptanceContract
-import com.template.states.example.StateNeedingAcceptance
-import net.corda.core.contracts.requireThat
+import com.template.contracts.example.DummyStateRequiringAcceptanceContract
+import com.template.states.example.DummyStateRequiringAcceptance
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
-class CreateStateNeedingAcceptance(
+class CreateDummyStateRequiringAcceptance(
     private val owner: Party,
     private val acceptor: Party
 ): FlowLogic<Unit>() {
@@ -24,8 +22,8 @@ class CreateStateNeedingAcceptance(
         val signers = listOf(issuer.owningKey, acceptor.owningKey)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addOutputState(StateNeedingAcceptance(owner, ourIdentity, acceptor))
-        transactionBuilder.addCommand(StateNeedingAcceptanceContract.Commands.Create(), signers)
+        transactionBuilder.addOutputState(DummyStateRequiringAcceptance(owner, ourIdentity, acceptor))
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Create(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
@@ -52,8 +50,8 @@ class CreateStateNeedingAcceptance(
 }
 
 
-@InitiatedBy(CreateStateNeedingAcceptance::class)
-class CreateStateNeedingAcceptanceResponder(
+@InitiatedBy(CreateDummyStateRequiringAcceptance::class)
+class CreateDummyStateRequiringAcceptanceResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

@@ -5,13 +5,13 @@ import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.hasSize
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.template.contracts.example.SimpleStateContract
-import com.template.contracts.example.StateNeedingAcceptanceContract
-import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
+import com.template.contracts.example.SimpleDummyStateContract
+import com.template.contracts.example.DummyStateRequiringAcceptanceContract
+import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
 import com.template.states.ReIssuanceRequest
-import com.template.states.example.SimpleState
-import com.template.states.example.StateNeedingAcceptance
-import com.template.states.example.StateNeedingAllParticipantsToSign
+import com.template.states.example.SimpleDummyState
+import com.template.states.example.DummyStateRequiringAcceptance
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.queryBy
@@ -24,11 +24,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialiseParties()
         createSimpleState(aliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(aliceNode)[0]
+        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleState),
-            SimpleStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
 
@@ -36,11 +36,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleStateContract.Commands.Create, equalTo(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(issuerNode)
+        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
         assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
     }
@@ -50,12 +50,12 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialiseParties()
         createStateNeedingAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0]
+        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         val issuanceCommandSigners = listOf(issuerParty, acceptorParty)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(stateNeedingAcceptance),
-            StateNeedingAcceptanceContract.Commands.Create(),
+            DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             issuanceCommandSigners
         )
@@ -64,11 +64,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is StateNeedingAcceptanceContract.Commands.Create, equalTo(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAcceptanceContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(stateNeedingAcceptance.ref)))
 
-        val statesNeedingAcceptanceAvailableToIssuer = getStateAndRefs<StateNeedingAcceptance>(issuerNode)
+        val statesNeedingAcceptanceAvailableToIssuer = getStateAndRefs<DummyStateRequiringAcceptance>(issuerNode)
         assertThat(statesNeedingAcceptanceAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(statesNeedingAcceptanceAvailableToIssuer[0], equalTo(stateNeedingAcceptance))
     }
@@ -78,12 +78,12 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialiseParties()
         createStateNeedingAllParticipantsToSign(aliceParty)
 
-        val stateNeedingAllParticipantsToSign = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0]
+        val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
         val issuanceCommandSigners = listOf(aliceParty, issuerParty, acceptorParty)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(stateNeedingAllParticipantsToSign),
-            StateNeedingAllParticipantsToSignContract.Commands.Create(),
+            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             issuanceCommandSigners
         )
@@ -92,11 +92,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is StateNeedingAllParticipantsToSignContract.Commands.Create, equalTo(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(stateNeedingAllParticipantsToSign.ref)))
 
-        val statesNeedingAllParticipantsToSignAvailableToIssuer = getStateAndRefs<StateNeedingAllParticipantsToSign>(
+        val statesNeedingAllParticipantsToSignAvailableToIssuer = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
             issuerNode)
         assertThat(statesNeedingAllParticipantsToSignAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(statesNeedingAllParticipantsToSignAvailableToIssuer[0], equalTo(stateNeedingAllParticipantsToSign))
@@ -160,12 +160,12 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(employeeNode,
+        val simpleState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
             listOf(simpleState),
-            SimpleStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
@@ -174,11 +174,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(employeeIssuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleStateContract.Commands.Create, equalTo(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(employeeNode) // available to node, not account
+        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(employeeNode) // available to node, not account
         assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
     }
@@ -188,11 +188,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleStateForAccount(issuerNode, employeeAliceParty)
 
-        val simpleState = getStateAndRefs<SimpleState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
+        val simpleState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleState),
-            SimpleStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
@@ -201,11 +201,11 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(employeeIssuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleStateContract.Commands.Create, equalTo(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleState.ref)))
 
-        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleState>(issuerNode) // available to node, not account
+        val simpleStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode) // available to node, not account
         assertThat(simpleStatesAvailableToIssuer, hasSize(equalTo(1)))
         assertThat(simpleStatesAvailableToIssuer[0], equalTo(simpleState))
     }
@@ -213,10 +213,10 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     @Test(expected = TransactionVerificationException::class)
     fun `Request re-issuance of 0 states can't be created`() {
         initialiseParties()
-        createReIssuanceRequestAndShareRequiredTransactions<SimpleState>(
+        createReIssuanceRequestAndShareRequiredTransactions<SimpleDummyState>(
             aliceNode,
             listOf(),
-            SimpleStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
     }

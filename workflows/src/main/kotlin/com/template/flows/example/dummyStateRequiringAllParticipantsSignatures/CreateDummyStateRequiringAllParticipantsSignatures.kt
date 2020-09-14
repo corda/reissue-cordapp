@@ -1,10 +1,9 @@
-package com.template.flows.example.stateNeedingAllParticipantsToSign
+package com.template.flows.example.dummyStateRequiringAllParticipantsSignatures
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
-import com.template.states.example.StateNeedingAllParticipantsToSign
-import net.corda.core.contracts.StateAndRef
+import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -14,29 +13,23 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class UpdateStateNeedingAllParticipantsToSign(
-    private val stateNeedingAllParticipantsToSignAndRef: StateAndRef<StateNeedingAllParticipantsToSign>,
-    private val newOwner: Party
+class CreateDummyStateRequiringAllParticipantsSignatures(
+    private val owner: Party,
+    private val other: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val owner = ourIdentity
-        val issuer = stateNeedingAllParticipantsToSignAndRef.state.data.issuer
-        val other = stateNeedingAllParticipantsToSignAndRef.state.data.other
-        val signers = setOf(owner.owningKey, newOwner.owningKey, issuer.owningKey, other.owningKey).toList()
-
-        var stateNeedingAllParticipantsToSign = stateNeedingAllParticipantsToSignAndRef.state.data
-        stateNeedingAllParticipantsToSign.owner = newOwner
+        val issuer = ourIdentity
+        val signers = listOf(owner.owningKey, issuer.owningKey, other.owningKey)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(stateNeedingAllParticipantsToSignAndRef)
-        transactionBuilder.addOutputState(stateNeedingAllParticipantsToSign)
-        transactionBuilder.addCommand(StateNeedingAllParticipantsToSignContract.Commands.Update(), signers)
+        transactionBuilder.addOutputState(DummyStateRequiringAllParticipantsSignatures(owner, issuer, other))
+        transactionBuilder.addCommand(DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
 
-        val sessions = listOf(newOwner, issuer, other).map{ initiateFlow(it) }
+        val sessions = listOf(owner, other).map{ initiateFlow(it) }
         val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, sessions))
 
         subFlow(
@@ -49,8 +42,8 @@ class UpdateStateNeedingAllParticipantsToSign(
 }
 
 
-@InitiatedBy(UpdateStateNeedingAllParticipantsToSign::class)
-class UpdateStateNeedingAllParticipantsToSignResponder(
+@InitiatedBy(CreateDummyStateRequiringAllParticipantsSignatures::class)
+class CreateDummyStateRequiringAllParticipantsSignaturesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

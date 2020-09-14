@@ -2,7 +2,7 @@ package com.template
 
 import com.template.contracts.ReIssuanceLockContract
 import com.template.contracts.ReIssuanceRequestContract
-import com.template.contracts.example.SimpleStateContract
+import com.template.contracts.example.SimpleDummyStateContract
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.node.ledger
 import org.junit.Test
@@ -24,7 +24,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
-                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 verifies()
             }
         }
@@ -45,7 +45,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyState())
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
-                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
             }
         }
@@ -64,7 +64,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
-                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
             }
         }
@@ -84,7 +84,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
-                command(listOf(issuerParty.owningKey), SimpleStateContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
             }
         }

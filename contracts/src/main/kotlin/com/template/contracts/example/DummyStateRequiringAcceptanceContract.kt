@@ -1,10 +1,10 @@
 package com.template.contracts.example
 
-import com.template.states.example.StateNeedingAcceptance
+import com.template.states.example.DummyStateRequiringAcceptance
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 
-class StateNeedingAcceptanceContract: Contract {
+class DummyStateRequiringAcceptanceContract: Contract {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
@@ -24,8 +24,8 @@ class StateNeedingAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<StateNeedingAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<StateNeedingAcceptance>()
+        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
             "No inputs of type StateNeedingAcceptance are allowed" using stateNeedingAcceptanceInputs.isEmpty()
             "Exactly one output of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceOutputs.size == 1)
@@ -40,8 +40,8 @@ class StateNeedingAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<StateNeedingAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<StateNeedingAcceptance>()
+        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
             "Exactly one input of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceInputs.size == 1)
             "Exactly one output of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceOutputs.size == 1)
@@ -62,8 +62,8 @@ class StateNeedingAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<StateNeedingAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<StateNeedingAcceptance>()
+        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
             "Exactly one input of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceInputs.size == 1)
             "No outputs of type StateNeedingAcceptance are allowed" using stateNeedingAcceptanceOutputs.isEmpty()

@@ -1,9 +1,9 @@
-package com.template.flows.example.stateNeedingAcceptance
+package com.template.flows.example.dummyStateRequiringAcceptance
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.template.contracts.example.StateNeedingAcceptanceContract
-import com.template.states.example.StateNeedingAcceptance
+import com.template.contracts.example.DummyStateRequiringAcceptanceContract
+import com.template.states.example.DummyStateRequiringAcceptance
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -13,8 +13,9 @@ import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
-class DeleteStateNeedingAcceptance(
-    private val stateNeedingAcceptanceStateAndRef: StateAndRef<StateNeedingAcceptance>
+class UpdateDummyStateRequiringAcceptance(
+    private val stateNeedingAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>,
+    private val newOwner: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
@@ -22,16 +23,20 @@ class DeleteStateNeedingAcceptance(
         val issuer = stateNeedingAcceptanceStateAndRef.state.data.issuer
         val acceptor = stateNeedingAcceptanceStateAndRef.state.data.acceptor
 
-        val signers = setOf(owner.owningKey, acceptor.owningKey).toList()
+        val signers = setOf(owner.owningKey, newOwner.owningKey, acceptor.owningKey).toList()
+
+        var newStateNeedingAcceptance = stateNeedingAcceptanceStateAndRef.state.data
+        newStateNeedingAcceptance.owner = newOwner
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addInputState(stateNeedingAcceptanceStateAndRef)
-        transactionBuilder.addCommand(StateNeedingAcceptanceContract.Commands.Delete(), signers)
+        transactionBuilder.addOutputState(newStateNeedingAcceptance)
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
 
-        val signersSessions = listOf(initiateFlow(acceptor))
+        val signersSessions = listOf(initiateFlow(acceptor), initiateFlow(newOwner))
         signersSessions.forEach {
             it.send(true)
         }
@@ -53,8 +58,8 @@ class DeleteStateNeedingAcceptance(
 }
 
 
-@InitiatedBy(DeleteStateNeedingAcceptance::class)
-class DeleteStateNeedingAcceptanceResponder(
+@InitiatedBy(UpdateDummyStateRequiringAcceptance::class)
+class UpdateDummyStateRequiringAcceptanceResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

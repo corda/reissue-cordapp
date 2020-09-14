@@ -1,9 +1,9 @@
-package com.template.flows.example.simpleState
+package com.template.flows.example.simpleDummyState
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.template.contracts.example.SimpleStateContract
-import com.template.states.example.SimpleState
+import com.template.contracts.example.SimpleDummyStateContract
+import com.template.states.example.SimpleDummyState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -13,7 +13,7 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 @StartableByRPC
 class DeleteSimpleState(
-    private val originalStateAndRef: StateAndRef<SimpleState>,
+    private val originalStateAndRef: StateAndRef<SimpleDummyState>,
     private val issuer: Party
 ): FlowLogic<Unit>() {
     @Suspendable
@@ -24,7 +24,7 @@ class DeleteSimpleState(
         val transactionBuilder = TransactionBuilder(notary = notary)
 
         transactionBuilder.addInputState(originalStateAndRef)
-        transactionBuilder.addCommand(SimpleStateContract.Commands.Delete(), signers)
+        transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Delete(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)

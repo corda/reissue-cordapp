@@ -1,10 +1,10 @@
 package com.template.contracts.example
 
-import com.template.states.example.SimpleState
+import com.template.states.example.SimpleDummyState
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 
-class SimpleStateContract: Contract {
+class SimpleDummyStateContract: Contract {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
@@ -24,8 +24,8 @@ class SimpleStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleState>()
+        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
             "No simpleStateInputs are allowed" using simpleStateInputs.isEmpty()
             "Exactly one output is expected" using (simpleStateOutputs.size == 1)
@@ -36,8 +36,8 @@ class SimpleStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleState>()
+        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
             "Exactly one input is expected" using (simpleStateInputs.size == 1)
             "Exactly one output is expected" using (simpleStateOutputs.size == 1)
@@ -52,8 +52,8 @@ class SimpleStateContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val simpleStateInputs = tx.inputsOfType<SimpleState>()
-        val simpleStateOutputs = tx.outputsOfType<SimpleState>()
+        val simpleStateInputs = tx.inputsOfType<SimpleDummyState>()
+        val simpleStateOutputs = tx.outputsOfType<SimpleDummyState>()
         requireThat {
             "Exactly one input is expected" using (simpleStateInputs.size == 1)
             "No simpleStateOutputs are allowed" using simpleStateOutputs.isEmpty()

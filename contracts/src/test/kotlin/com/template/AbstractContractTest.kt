@@ -1,9 +1,9 @@
 package com.template
 
-import com.template.contracts.example.SimpleStateContract
+import com.template.contracts.example.SimpleDummyStateContract
 import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
-import com.template.states.example.SimpleState
+import com.template.states.example.SimpleDummyState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TransactionState
@@ -72,8 +72,8 @@ abstract class AbstractContractTest {
         mockNet.stopNodes()
     }
 
-    fun createDummyState(): SimpleState {
-        return SimpleState(aliceParty)
+    fun createDummyState(): SimpleDummyState {
+        return SimpleDummyState(aliceParty)
     }
 
     fun createDummyRef(): StateRef {
@@ -87,14 +87,14 @@ abstract class AbstractContractTest {
             issuerParty,
             aliceParty,
             stateRefList,
-            SimpleStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Create(),
             listOf(issuerParty)
         )
     }
 
     fun createDummyReIssuanceLock(
         stateRef: StateRef = createDummyRef()
-    ): ReIssuanceLock<SimpleState> {
+    ): ReIssuanceLock<SimpleDummyState> {
         val dummyTransactionState = TransactionState(data = createDummyState(), notary = notaryParty)
         val dummyStateAndRef = StateAndRef(dummyTransactionState, stateRef)
         return ReIssuanceLock(issuerParty, aliceParty, listOf(dummyStateAndRef))
