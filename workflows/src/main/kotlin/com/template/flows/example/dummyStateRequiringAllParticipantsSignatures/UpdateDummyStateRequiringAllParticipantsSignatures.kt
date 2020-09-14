@@ -15,22 +15,22 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 @StartableByRPC
 class UpdateDummyStateRequiringAllParticipantsSignatures(
-    private val stateNeedingAllParticipantsToSignAndRef: StateAndRef<DummyStateRequiringAllParticipantsSignatures>,
+    private val dummyStateRequiringAllParticipantsSignaturesStateAndRef: StateAndRef<DummyStateRequiringAllParticipantsSignatures>,
     private val newOwner: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val owner = ourIdentity
-        val issuer = stateNeedingAllParticipantsToSignAndRef.state.data.issuer
-        val other = stateNeedingAllParticipantsToSignAndRef.state.data.other
+        val issuer = dummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data.issuer
+        val other = dummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data.other
         val signers = setOf(owner.owningKey, newOwner.owningKey, issuer.owningKey, other.owningKey).toList()
 
-        var stateNeedingAllParticipantsToSign = stateNeedingAllParticipantsToSignAndRef.state.data
-        stateNeedingAllParticipantsToSign.owner = newOwner
+        var dummyStateRequiringAllParticipantsSignatures = dummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data
+        dummyStateRequiringAllParticipantsSignatures.owner = newOwner
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(stateNeedingAllParticipantsToSignAndRef)
-        transactionBuilder.addOutputState(stateNeedingAllParticipantsToSign)
+        transactionBuilder.addInputState(dummyStateRequiringAllParticipantsSignaturesStateAndRef)
+        transactionBuilder.addOutputState(dummyStateRequiringAllParticipantsSignatures)
         transactionBuilder.addCommand(DummyStateRequiringAllParticipantsSignaturesContract.Commands.Update(), signers)
 
         transactionBuilder.verify(serviceHub)

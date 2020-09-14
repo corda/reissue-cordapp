@@ -14,23 +14,23 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class UpdateDummyStateRequiringAcceptance(
-    private val stateNeedingAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>,
+    private val dummyStateRequiringAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>,
     private val newOwner: Party
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val owner = ourIdentity
-        val issuer = stateNeedingAcceptanceStateAndRef.state.data.issuer
-        val acceptor = stateNeedingAcceptanceStateAndRef.state.data.acceptor
+        val issuer = dummyStateRequiringAcceptanceStateAndRef.state.data.issuer
+        val acceptor = dummyStateRequiringAcceptanceStateAndRef.state.data.acceptor
 
         val signers = setOf(owner.owningKey, newOwner.owningKey, acceptor.owningKey).toList()
 
-        var newStateNeedingAcceptance = stateNeedingAcceptanceStateAndRef.state.data
-        newStateNeedingAcceptance.owner = newOwner
+        var newStateRequiringAcceptance = dummyStateRequiringAcceptanceStateAndRef.state.data
+        newStateRequiringAcceptance.owner = newOwner
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(stateNeedingAcceptanceStateAndRef)
-        transactionBuilder.addOutputState(newStateNeedingAcceptance)
+        transactionBuilder.addInputState(dummyStateRequiringAcceptanceStateAndRef)
+        transactionBuilder.addOutputState(newStateRequiringAcceptance)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), signers)
 
         transactionBuilder.verify(serviceHub)

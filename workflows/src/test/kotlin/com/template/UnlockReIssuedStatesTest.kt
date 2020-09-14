@@ -73,7 +73,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `Re-issued StateNeedingAcceptance is unencumbered after the original state is deleted`() {
+    fun `Re-issued DummyStateRequiringAcceptance is unencumbered after the original state is deleted`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
         updateDummyStateRequiringAcceptance(aliceNode, bobParty)
@@ -86,10 +86,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
@@ -113,7 +113,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAcceptance.state.data))
+        assertThat(unencumberedStates[0].state.data, equalTo(dummyStateRequiringAcceptance.state.data))
 
         updateDummyStateRequiringAcceptance(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
@@ -121,7 +121,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `StateNeedingAllParticipantsToSign is re-issued`() {
+    fun `DummyStateRequiringAllParticipantsSignatures is re-issued`() {
         initialiseParties()
         createDummyStateRequiringAllParticipantsSignatures(aliceParty)
         updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty)
@@ -134,11 +134,11 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
         assertThat(transactionsBeforeReIssuance.size, equalTo(7))
 
-        val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
+        val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAllParticipantsToSign),
+            listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
@@ -163,7 +163,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
         assertThat(encumberedStates, hasSize(equalTo(0)))
         assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(stateNeedingAllParticipantsToSign.state.data))
+        assertThat(unencumberedStates[0].state.data, equalTo(dummyStateRequiringAllParticipantsSignatures.state.data))
 
         updateDummyStateRequiringAllParticipantsSignatures(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
@@ -327,11 +327,11 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
@@ -516,14 +516,14 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
 
     @Test(expected = TransactionVerificationException::class)
-    fun `Re-issued StateNeedingAcceptance cannot be unlocked if the original state is consumed`() {
+    fun `Re-issued DummyStateRequiringAcceptance cannot be unlocked if the original state is consumed`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)

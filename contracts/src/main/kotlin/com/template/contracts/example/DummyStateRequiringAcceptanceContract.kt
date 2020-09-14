@@ -24,13 +24,13 @@ class DummyStateRequiringAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
-            "No inputs of type StateNeedingAcceptance are allowed" using stateNeedingAcceptanceInputs.isEmpty()
-            "Exactly one output of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceOutputs.size == 1)
+            "No inputs of type DummyStateRequiringAcceptance are allowed" using dummyStateRequiringAcceptanceInputs.isEmpty()
+            "Exactly one output of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceOutputs.size == 1)
             
-            val simpleState = stateNeedingAcceptanceOutputs[0]
+            val simpleState = dummyStateRequiringAcceptanceOutputs[0]
             "Issuer is required signer" using (command.signers.contains(simpleState.issuer.owningKey))
             "Acceptor is required signer" using (command.signers.contains(simpleState.acceptor.owningKey))
         }
@@ -40,14 +40,14 @@ class DummyStateRequiringAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
-            "Exactly one input of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceInputs.size == 1)
-            "Exactly one output of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceOutputs.size == 1)
+            "Exactly one input of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceInputs.size == 1)
+            "Exactly one output of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceOutputs.size == 1)
 
-            val simpleStateInput = stateNeedingAcceptanceInputs[0]
-            val simpleStateOutput = stateNeedingAcceptanceOutputs[0]
+            val simpleStateInput = dummyStateRequiringAcceptanceInputs[0]
+            val simpleStateOutput = dummyStateRequiringAcceptanceOutputs[0]
 
             "Issuer remains the same" using (simpleStateInput.issuer == simpleStateOutput.issuer)
             "Acceptor remains the same" using (simpleStateInput.acceptor == simpleStateOutput.acceptor)
@@ -62,13 +62,13 @@ class DummyStateRequiringAcceptanceContract: Contract {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val stateNeedingAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
-        val stateNeedingAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceInputs = tx.inputsOfType<DummyStateRequiringAcceptance>()
+        val dummyStateRequiringAcceptanceOutputs = tx.outputsOfType<DummyStateRequiringAcceptance>()
         requireThat {
-            "Exactly one input of type StateNeedingAcceptance is expected" using (stateNeedingAcceptanceInputs.size == 1)
-            "No outputs of type StateNeedingAcceptance are allowed" using stateNeedingAcceptanceOutputs.isEmpty()
+            "Exactly one input of type DummyStateRequiringAcceptance is expected" using (dummyStateRequiringAcceptanceInputs.size == 1)
+            "No outputs of type DummyStateRequiringAcceptance are allowed" using dummyStateRequiringAcceptanceOutputs.isEmpty()
 
-            val simpleState = stateNeedingAcceptanceInputs[0]
+            val simpleState = dummyStateRequiringAcceptanceInputs[0]
             "Owner is required signer" using (command.signers.contains(simpleState.owner.owningKey))
             "Acceptor is required signer" using (command.signers.contains(simpleState.acceptor.owningKey))
         }

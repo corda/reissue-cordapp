@@ -315,7 +315,7 @@ abstract class AbstractFlowTest {
         flowFuture.getOrThrow()
     }
 
-    // state needing acceptance
+    // dummy state requiring acceptance
 
     fun createDummyStateRequiringAcceptance(
         owner: Party
@@ -329,9 +329,9 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         owner: Party
     ) {
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
+        val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
         val flowFuture = node.services.startFlow(
-            UpdateDummyStateRequiringAcceptance(stateNeedingAcceptanceStateAndRef, owner)).resultFuture
+            UpdateDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -339,13 +339,13 @@ abstract class AbstractFlowTest {
     fun deleteDummyStateRequiringAcceptance(
         node: TestStartedNode
     ) {
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAcceptance(stateNeedingAcceptanceStateAndRef)).resultFuture
+        val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    // state needing all participants to sign
+    // dummy state requiring all participants to sign
 
     fun createDummyStateRequiringAllParticipantsSignatures(
         owner: Party
@@ -359,9 +359,9 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         owner: Party
     ) {
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
+        val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
         val flowFuture = node.services.startFlow(
-            UpdateDummyStateRequiringAllParticipantsSignatures(stateNeedingAllParticipantsToSignStateAndRef, owner)).resultFuture
+            UpdateDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -369,8 +369,8 @@ abstract class AbstractFlowTest {
     fun deleteDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode
     ) {
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAllParticipantsSignatures(stateNeedingAllParticipantsToSignStateAndRef)).resultFuture
+        val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

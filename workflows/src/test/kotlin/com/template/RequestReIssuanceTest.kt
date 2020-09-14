@@ -46,15 +46,15 @@ class RequestReIssuanceTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `StateNeedingAcceptance re-issuance request is created`() {
+    fun `DummyStateRequiringAcceptance re-issuance request is created`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         val issuanceCommandSigners = listOf(issuerParty, acceptorParty)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             issuanceCommandSigners
@@ -66,23 +66,23 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAcceptanceContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(stateNeedingAcceptance.ref)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(dummyStateRequiringAcceptance.ref)))
 
-        val statesNeedingAcceptanceAvailableToIssuer = getStateAndRefs<DummyStateRequiringAcceptance>(issuerNode)
-        assertThat(statesNeedingAcceptanceAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(statesNeedingAcceptanceAvailableToIssuer[0], equalTo(stateNeedingAcceptance))
+        val dummyStatesRequiringAcceptanceAvailableToIssuer = getStateAndRefs<DummyStateRequiringAcceptance>(issuerNode)
+        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer, hasSize(equalTo(1)))
+        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer[0], equalTo(dummyStateRequiringAcceptance))
     }
 
     @Test
-    fun `StateNeedingAllParticipantsToSign re-issuance request is created`() {
+    fun `DummyStateRequiringAllParticipantsSignatures re-issuance request is created`() {
         initialiseParties()
         createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
-        val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
+        val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
         val issuanceCommandSigners = listOf(aliceParty, issuerParty, acceptorParty)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAllParticipantsToSign),
+            listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             issuanceCommandSigners
@@ -94,12 +94,12 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create, equalTo(true))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(stateNeedingAllParticipantsToSign.ref)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(dummyStateRequiringAllParticipantsSignatures.ref)))
 
-        val statesNeedingAllParticipantsToSignAvailableToIssuer = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
+        val dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
             issuerNode)
-        assertThat(statesNeedingAllParticipantsToSignAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(statesNeedingAllParticipantsToSignAvailableToIssuer[0], equalTo(stateNeedingAllParticipantsToSign))
+        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer, hasSize(equalTo(1)))
+        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer[0], equalTo(dummyStateRequiringAllParticipantsSignatures))
     }
 
     @Test

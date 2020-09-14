@@ -14,17 +14,17 @@ import net.corda.core.transactions.TransactionBuilder
 @InitiatingFlow
 @StartableByRPC
 class DeleteDummyStateRequiringAllParticipantsSignatures(
-    private val stateNeedingAllParticipantsToSignAndRef: StateAndRef<DummyStateRequiringAllParticipantsSignatures>
+    private val DummyStateRequiringAllParticipantsSignaturesStateAndRef: StateAndRef<DummyStateRequiringAllParticipantsSignatures>
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val owner = ourIdentity
-        val issuer = stateNeedingAllParticipantsToSignAndRef.state.data.issuer
-        val other = stateNeedingAllParticipantsToSignAndRef.state.data.other
+        val issuer = DummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data.issuer
+        val other = DummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data.other
         val signers = setOf(owner.owningKey, issuer.owningKey, other.owningKey).toList()
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(stateNeedingAllParticipantsToSignAndRef)
+        transactionBuilder.addInputState(DummyStateRequiringAllParticipantsSignaturesStateAndRef)
         transactionBuilder.addCommand(DummyStateRequiringAllParticipantsSignaturesContract.Commands.Delete(), signers)
 
         transactionBuilder.verify(serviceHub)

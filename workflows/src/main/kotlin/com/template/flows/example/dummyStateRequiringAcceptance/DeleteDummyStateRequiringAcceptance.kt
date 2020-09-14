@@ -13,18 +13,18 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class DeleteDummyStateRequiringAcceptance(
-    private val stateNeedingAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>
+    private val dummyStateRequiringAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>
 ): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val owner = ourIdentity
-        val issuer = stateNeedingAcceptanceStateAndRef.state.data.issuer
-        val acceptor = stateNeedingAcceptanceStateAndRef.state.data.acceptor
+        val issuer = dummyStateRequiringAcceptanceStateAndRef.state.data.issuer
+        val acceptor = dummyStateRequiringAcceptanceStateAndRef.state.data.acceptor
 
         val signers = setOf(owner.owningKey, acceptor.owningKey).toList()
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addInputState(stateNeedingAcceptanceStateAndRef)
+        transactionBuilder.addInputState(dummyStateRequiringAcceptanceStateAndRef)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Delete(), signers)
 
         transactionBuilder.verify(serviceHub)

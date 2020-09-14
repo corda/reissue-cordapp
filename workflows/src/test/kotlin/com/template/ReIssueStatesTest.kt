@@ -20,7 +20,7 @@ import org.junit.Test
 class ReIssueStatesTest: AbstractFlowTest() {
 
     @Test
-    fun `SimpleState is re-issued`() {
+    fun `SimpleDummyState is re-issued`() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
 
@@ -48,14 +48,14 @@ class ReIssueStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `StateNeedingAcceptance is re-issued`() {
+    fun `DummyStateRequiringAcceptance is re-issued`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
@@ -77,14 +77,14 @@ class ReIssueStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `StateNeedingAllParticipantsToSign is re-issued`() {
+    fun `DummyStateRequiringAllParticipantsSignatures is re-issued`() {
         initialiseParties()
         createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
-        val stateNeedingAllParticipantsToSign = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
+        val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAllParticipantsToSign),
+            listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
@@ -137,7 +137,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     // TODO: many tokens are re-issued
 
     @Test
-    fun `SimpleState re-issued - accounts on the same host`() {
+    fun `SimpleDummyState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
@@ -170,7 +170,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `SimpleState re-issued - accounts on different hosts`() {
+    fun `SimpleDummyState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
 
@@ -253,10 +253,10 @@ class ReIssueStatesTest: AbstractFlowTest() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptance),
+            listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
