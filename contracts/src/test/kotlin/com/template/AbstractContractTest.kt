@@ -42,8 +42,8 @@ abstract class AbstractContractTest {
     lateinit var aliceParty: Party
 
     val reIssuanceLockLabel = "re-issuance lock"
-    val reIssuedState1Label = "re-issued state 1 encumbered by re-issuance lock"
-    val reIssuedState2Label = "re-issued state 2 encumbered by re-issuance lock"
+    val reIssuedStateLabel = "re-issued state encumbered by re-issuance lock"
+    fun reIssuedStateLabel(id: Int) = "re-issued state $id encumbered by re-issuance lock"
 
     lateinit var issuedTokenType: IssuedTokenType
 

@@ -21,13 +21,6 @@ class RedeemTokens(
 
     @Suspendable
     override fun call() {
-        val holderParty: Party = ourIdentity
-
-        val signers = listOf(
-            holderParty.owningKey,
-            issuer.owningKey
-        )
-
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         addTokensToRedeem(transactionBuilder, tokens, null)
 

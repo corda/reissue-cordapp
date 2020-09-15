@@ -1,5 +1,9 @@
 package com.template
 
+import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
+import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
+import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.ReIssuanceLockContract
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.states.example.SimpleDummyState
@@ -18,8 +22,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state is unlocked`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -32,14 +36,14 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -49,11 +53,53 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     }
 
     @Test
+    fun `Many re-issued states are unlocked`() {
+        val tokens = listOf(createToken(), createToken())
+        val tokenIndices = tokens.indices.toList()
+
+        val deleteStateWireTransaction = generateDeleteTokensWireTransaction(tokens)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
+            .inputStream()
+
+        val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
+            deletedSignedTransactionInputStream, aliceParty.toString(), null)
+        val deletedStateRefs: List<StateRef> = deleteStateSignedTransaction.coreTransaction.inputs
+        val tokenStateAndRefs = deletedStateRefs.map { createTokenStateAndRef(it) }
+
+        aliceNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
+                    contractState=createDummyReIssuanceLock(tokenStateAndRefs), encumbrance = 1)
+                tokens.forEachIndexed { idx, token ->
+                    output(FungibleTokenContract.contractId, reIssuedStateLabel(idx),
+                        contractState=token, encumbrance = 0)
+                }
+            }
+
+            transaction {
+                attachment(uploadedDeletedTransactionSecureHash)
+                tokenIndices.forEach {
+                    input(reIssuedStateLabel(it))
+                }
+                input(reIssuanceLockLabel)
+
+                tokens.map {
+                    output(FungibleTokenContract.contractId, it)
+                }
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices))
+                verifies()
+            }
+        }
+    }
+
+    @Test
     fun `Re-issued state can't be unlocked without attached transaction proving that the original state had been deleted`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
 
         val deletedStateRef: StateRef = deleteStateSignedTransaction.coreTransaction.inputs[0]
 
@@ -62,13 +108,13 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -81,8 +127,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state can't be unlocked when attached transaction is not notarised`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction,
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction,
             notarySignature = false)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
@@ -96,14 +142,14 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -116,8 +162,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued can't be unlocked when original state ref and state ref in re-issuance lock don't match`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -130,14 +176,14 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -150,8 +196,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state can't be unlocked when attached transaction produces some output`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState, generateOutput = true)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState, generateOutput = true)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -164,14 +210,14 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -184,8 +230,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state can't be unlocked without re-issuance lock`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -198,13 +244,13 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
@@ -216,8 +262,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state can't be unlocked without consuming the encumbered state`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -230,7 +276,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
@@ -249,8 +295,8 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     fun `Re-issued state must be unencumbered`() {
         val dummyState = createSimpleDummyState()
 
-        val deleteStateWireTransaction = generateDeleteDummyStateWireTransaction(dummyState)
-        val deleteStateSignedTransaction = generateDeleteDummyStateSignedTransaction(deleteStateWireTransaction)
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
         val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
             .inputStream()
 
@@ -263,14 +309,14 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
                     encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
 
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
-                input(reIssuedState1Label)
+                input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, "", contractState=dummyState, encumbrance = 0)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
@@ -279,23 +325,37 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
         }
     }
 
-    private fun generateDeleteDummyStateWireTransaction(
-        dummyState: SimpleDummyState,
+    private fun generateDeleteSimpleDummyStateWireTransaction(
+        simpleDummyState: SimpleDummyState,
         generateOutput: Boolean = false
     ): WireTransaction {
         var nullableDeleteStateTransaction: WireTransaction? = null
         aliceNode.services.ledger(notary = notaryParty) {
             nullableDeleteStateTransaction = unverifiedTransaction {
-                input(SimpleDummyStateContract.contractId, dummyState)
+                input(SimpleDummyStateContract.contractId, simpleDummyState)
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Delete())
-                if(generateOutput) output(SimpleDummyStateContract.contractId, dummyState)
+                if(generateOutput) output(SimpleDummyStateContract.contractId, simpleDummyState)
             }
         }
-        require(nullableDeleteStateTransaction != null) { "deleteStateTransaction hasn't been initialized" }
         return nullableDeleteStateTransaction!!
     }
 
-    private fun generateDeleteDummyStateSignedTransaction(
+    private fun generateDeleteTokensWireTransaction(
+        tokens: List<FungibleToken>
+    ): WireTransaction {
+        var nullableDeleteStateTransaction: WireTransaction? = null
+        aliceNode.services.ledger(notary = notaryParty) {
+            nullableDeleteStateTransaction = unverifiedTransaction {
+                tokens.forEach {
+                    input(FungibleTokenContract.contractId, it)
+                }
+                command(listOf(aliceParty.owningKey), RedeemTokenCommand(issuedTokenType, tokens.indices.toList(), listOf()))
+            }
+        }
+        return nullableDeleteStateTransaction!!
+    }
+
+    private fun generateSignedTransaction(
         deleteStateWireTransaction: WireTransaction,
         requesterSignature: Boolean = true,
         notarySignature: Boolean = true

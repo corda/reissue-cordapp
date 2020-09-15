@@ -24,7 +24,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())), encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -43,9 +43,9 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             }
             transaction {
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                output(FungibleTokenContract.contractId, reIssuedState1Label,
+                output(FungibleTokenContract.contractId, reIssuedStateLabel(0),
                     contractState=createToken(), encumbrance = 1)
-                output(FungibleTokenContract.contractId, reIssuedState2Label,
+                output(FungibleTokenContract.contractId, reIssuedStateLabel(1),
                     contractState=createToken(), encumbrance = 2)
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createTokenStateAndRef(), createTokenStateAndRef())), encumbrance = 0)
@@ -68,7 +68,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())))
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState())
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -87,7 +87,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             }
             transaction {
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
@@ -107,7 +107,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
             transaction {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())), encumbrance = 1)
-                output(SimpleDummyStateContract.contractId, reIssuedState1Label,
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
