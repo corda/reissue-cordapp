@@ -106,7 +106,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
     }
 
     @Test
-    fun `Tokens are re-issued`() {
+    fun `Token is re-issued`() {
         initialiseParties()
         issueTokens(aliceParty, 50)
 
@@ -134,7 +134,35 @@ class ReIssueStatesTest: AbstractFlowTest() {
         assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
-    // TODO: many tokens are re-issued
+    @Test
+    fun `Tokens are re-issued`() {
+        initialiseParties()
+        issueTokens(aliceParty, 25)
+        issueTokens(aliceParty, 25)
+
+        val tokens = getTokens(aliceNode)
+
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<FungibleToken>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(2)))
+        assertThat(unencumberedStates, hasSize(equalTo(2)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
+    }
 
     @Test
     fun `SimpleDummyState re-issued - accounts on the same host`() {

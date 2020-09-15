@@ -119,7 +119,10 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true)) // TODO: better check
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true))
+        val issuanceCommand = reIssuanceRequests[0].state.data.issuanceCommand as IssueTokenCommand
+        assertThat(issuanceCommand.token, equalTo(issuedTokenType))
+        assertThat(issuanceCommand.outputs, equalTo(listOf(0)))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(tokens.map { it.ref }))
 
@@ -146,7 +149,10 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         assertThat(reIssuanceRequests, hasSize(equalTo(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true)) // TODO: better check
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true))
+        val issuanceCommand = reIssuanceRequests[0].state.data.issuanceCommand as IssueTokenCommand
+        assertThat(issuanceCommand.token, equalTo(issuedTokenType))
+        assertThat(issuanceCommand.outputs, equalTo(listOf(0, 1)))
         assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
         assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(tokens.map { it.ref }))
 

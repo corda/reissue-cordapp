@@ -31,10 +31,10 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
                 serviceHub.validatedTransactions.getTransaction(it)
                     ?: throw FlowException("Can't find transaction with hash $it")
             }
-            // TODO: filter transactions - some transactions can be ancestors of other transactions
             subFlow(
                 SendSignedTransactions(issuer, transactionsToSend)
-            )        }
+            )
+        }
     }
 
 }
