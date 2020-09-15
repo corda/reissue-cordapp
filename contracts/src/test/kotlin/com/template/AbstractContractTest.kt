@@ -1,12 +1,14 @@
 package com.template
 
+import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
+import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
-import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.StateRef
-import net.corda.core.contracts.TransactionState
+import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
@@ -23,6 +25,7 @@ import net.corda.testing.node.internal.findCordapp
 import org.junit.After
 import org.junit.Before
 import java.io.ByteArrayOutputStream
+import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -39,13 +42,17 @@ abstract class AbstractContractTest {
     lateinit var aliceParty: Party
 
     val reIssuanceLockLabel = "re-issuance lock"
-    val reIssuedStateLabel = "re-issued state encumbered by re-issuance lock"
+    val reIssuedState1Label = "re-issued state 1 encumbered by re-issuance lock"
+    val reIssuedState2Label = "re-issued state 2 encumbered by re-issuance lock"
+
+    lateinit var issuedTokenType: IssuedTokenType
 
     @Before
     fun initialize() {
         mockNet = InternalMockNetwork(
             cordappsForAllNodes = listOf(
                 findCordapp("net.corda.testing.contracts"),
+                findCordapp("com.r3.corda.lib.tokens.contracts"),
                 findCordapp("com.template.contracts")
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
@@ -65,6 +72,7 @@ abstract class AbstractContractTest {
         aliceNode = mockNet.createNode(InternalMockNodeParameters(legalName = aliceLegalName))
         aliceParty = aliceNode.info.singleIdentity()
 
+        issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
     }
 
     @After
@@ -72,15 +80,21 @@ abstract class AbstractContractTest {
         mockNet.stopNodes()
     }
 
-    fun createDummyState(): SimpleDummyState {
+    fun createSimpleDummyState(): SimpleDummyState {
         return SimpleDummyState(aliceParty)
+    }
+
+    fun createToken(): FungibleToken {
+        val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+        val amount = Amount(10, issuedTokenType)
+        return FungibleToken(amount, aliceParty)
     }
 
     fun createDummyRef(): StateRef {
         return StateRef(SecureHash.randomSHA256(), 0)
     }
 
-    fun createDummyReIssuanceRequest(
+    fun createDummySimpleStateReIssuanceRequest(
         stateRefList: List<StateRef>
     ): ReIssuanceRequest {
         return ReIssuanceRequest(
@@ -92,12 +106,36 @@ abstract class AbstractContractTest {
         )
     }
 
-    fun createDummyReIssuanceLock(
+    fun createTokensReIssuanceRequest(
+        stateRefList: List<StateRef>
+    ): ReIssuanceRequest {
+        return ReIssuanceRequest(
+            issuerParty,
+            aliceParty,
+            stateRefList,
+            IssueTokenCommand(issuedTokenType, stateRefList.indices.toList()),
+            listOf(issuerParty)
+        )
+    }
+
+    fun createSimpleDummyStateAndRef(
         stateRef: StateRef = createDummyRef()
-    ): ReIssuanceLock<SimpleDummyState> {
-        val dummyTransactionState = TransactionState(data = createDummyState(), notary = notaryParty)
-        val dummyStateAndRef = StateAndRef(dummyTransactionState, stateRef)
-        return ReIssuanceLock(issuerParty, aliceParty, listOf(dummyStateAndRef))
+    ): StateAndRef<SimpleDummyState> {
+        val dummyTransactionState = TransactionState(data = createSimpleDummyState(), notary = notaryParty)
+        return StateAndRef(dummyTransactionState, stateRef)
+    }
+
+    fun createTokenStateAndRef(
+        stateRef: StateRef = createDummyRef()
+    ): StateAndRef<FungibleToken> {
+        val dummyTransactionState = TransactionState(data = createToken(), notary = notaryParty)
+        return StateAndRef(dummyTransactionState, stateRef)
+    }
+
+    fun <T> createDummyReIssuanceLock(
+        stateAndRefList: List<StateAndRef<T>>
+    ): ReIssuanceLock<T> where T: ContractState {
+        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList)
     }
 
     // TODO: repeated code (copied over from GenerateTransactionByteArray flow)

@@ -10,7 +10,19 @@ class CreateReIssuanceRequestContractTest: AbstractContractTest() {
     fun `Re-issuance request is created`() {
         aliceNode.services.ledger(notary = notaryParty) {
             transaction {
-                output(ReIssuanceRequestContract.contractId, createDummyReIssuanceRequest(listOf(createDummyRef())))
+                output(ReIssuanceRequestContract.contractId, createDummySimpleStateReIssuanceRequest(listOf(createDummyRef())))
+                command(listOf(aliceParty.owningKey), ReIssuanceRequestContract.Commands.Create())
+                verifies()
+            }
+        }
+    }
+
+    @Test
+    fun `Re-issuance request is created for many states`() {
+        aliceNode.services.ledger(notary = notaryParty) {
+            transaction {
+                output(ReIssuanceRequestContract.contractId, createTokensReIssuanceRequest(
+                    listOf(createDummyRef(), createDummyRef())))
                 command(listOf(aliceParty.owningKey), ReIssuanceRequestContract.Commands.Create())
                 verifies()
             }
@@ -21,7 +33,7 @@ class CreateReIssuanceRequestContractTest: AbstractContractTest() {
     fun `Re-issuance request can't be created when state reference list is empty`() {
         aliceNode.services.ledger(notary = notaryParty) {
             transaction {
-                output(ReIssuanceRequestContract.contractId, createDummyReIssuanceRequest(listOf()))
+                output(ReIssuanceRequestContract.contractId, createDummySimpleStateReIssuanceRequest(listOf()))
                 command(listOf(aliceParty.owningKey), ReIssuanceRequestContract.Commands.Create())
                 fails()
             }
@@ -32,7 +44,7 @@ class CreateReIssuanceRequestContractTest: AbstractContractTest() {
     fun `Re-issuance request can't be created when command is not signed by requester`() {
         aliceNode.services.ledger(notary = notaryParty) {
             transaction {
-                output(ReIssuanceRequestContract.contractId, createDummyReIssuanceRequest(listOf(createDummyRef())))
+                output(ReIssuanceRequestContract.contractId, createDummySimpleStateReIssuanceRequest(listOf(createDummyRef())))
                 command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Create())
                 fails()
             }
