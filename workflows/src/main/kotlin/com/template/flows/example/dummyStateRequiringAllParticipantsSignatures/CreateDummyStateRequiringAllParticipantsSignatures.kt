@@ -1,10 +1,9 @@
-package com.template.flows.example.tokens
+package com.template.flows.example.dummyStateRequiringAllParticipantsSignatures
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.r3.corda.lib.tokens.workflows.flows.redeem.addTokensToRedeem
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import net.corda.core.contracts.StateAndRef
+import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
@@ -14,21 +13,23 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class RedeemTokens(
-    private val tokens: List<StateAndRef<FungibleToken>>,
-    private val issuer: Party
-) : FlowLogic<Unit>() {
-
+class CreateDummyStateRequiringAllParticipantsSignatures(
+    private val owner: Party,
+    private val other: Party
+): FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        val issuer = ourIdentity
+        val signers = listOf(owner.owningKey, issuer.owningKey, other.owningKey)
+
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        addTokensToRedeem(transactionBuilder, tokens, null)
+        transactionBuilder.addOutputState(DummyStateRequiringAllParticipantsSignatures(owner, issuer, other))
+        transactionBuilder.addCommand(DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
 
-        val issuerSession = initiateFlow(issuer)
-        val sessions = listOf(issuerSession)
+        val sessions = listOf(owner, other).map{ initiateFlow(it) }
         val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, sessions))
 
         subFlow(
@@ -38,12 +39,11 @@ class RedeemTokens(
             )
         )
     }
-
 }
 
 
-@InitiatedBy(RedeemTokens::class)
-class RedeemTokensResponder(
+@InitiatedBy(CreateDummyStateRequiringAllParticipantsSignatures::class)
+class CreateDummyStateRequiringAllParticipantsSignaturesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

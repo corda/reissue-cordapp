@@ -17,13 +17,13 @@ class GenerateTransactionByteArray(
     override fun call(): ByteArray {
         val signedTransaction = serviceHub.validatedTransactions.track().snapshot
             .findLast { it.tx.id == transactionId }!!
-        val serializedsignedTransactionBytes = signedTransaction.serialize().bytes
+        val serializedSignedTransactionBytes = signedTransaction.serialize().bytes
 
         val baos = ByteArrayOutputStream()
         ZipOutputStream(baos).use { zos ->
             val entry = ZipEntry("SignedTransaction")
             zos.putNextEntry(entry)
-            zos.write(serializedsignedTransactionBytes)
+            zos.write(serializedSignedTransactionBytes)
             zos.closeEntry()
         }
         baos.close()

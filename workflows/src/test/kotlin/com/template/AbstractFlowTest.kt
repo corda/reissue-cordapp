@@ -8,22 +8,22 @@ import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.template.flows.*
-import com.template.flows.example.simpleState.*
-import com.template.flows.example.stateNeedingAcceptance.CreateStateNeedingAcceptance
-import com.template.flows.example.stateNeedingAcceptance.DeleteStateNeedingAcceptance
-import com.template.flows.example.stateNeedingAcceptance.UpdateStateNeedingAcceptance
-import com.template.flows.example.stateNeedingAllParticipantsToSign.CreateStateNeedingAllParticipantsToSign
-import com.template.flows.example.stateNeedingAllParticipantsToSign.DeleteStateNeedingAllParticipantsToSign
-import com.template.flows.example.stateNeedingAllParticipantsToSign.UpdateStateNeedingAllParticipantsToSign
+import com.template.flows.example.simpleDummyState.*
+import com.template.flows.example.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
+import com.template.flows.example.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
+import com.template.flows.example.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
+import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
+import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
+import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
 import com.template.flows.example.tokens.IssueTokens
 import com.template.flows.example.tokens.ListTokensFlow
 import com.template.flows.example.tokens.RedeemTokens
 import com.template.flows.example.tokens.TransferTokens
 import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
-import com.template.states.example.SimpleState
-import com.template.states.example.StateNeedingAcceptance
-import com.template.states.example.StateNeedingAllParticipantsToSign
+import com.template.states.example.SimpleDummyState
+import com.template.states.example.DummyStateRequiringAcceptance
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -35,6 +35,7 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
@@ -259,117 +260,117 @@ abstract class AbstractFlowTest {
 
     // simple state
 
-    fun createSimpleState(
+    fun createSimpleDummyState(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateSimpleState(owner)).resultFuture
+        val flowFuture = issuerNode.services.startFlow(CreateSimpleDummyState(owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun createSimpleStateForAccount(
+    fun createSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
     ) {
-        val flowFuture = node.services.startFlow(CreateSimpleStateForAccount(employeeIssuerParty, owner)).resultFuture
+        val flowFuture = node.services.startFlow(CreateSimpleDummyStateForAccount(employeeIssuerParty, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun updateSimpleState(
+    fun updateSimpleDummyState(
         node: TestStartedNode,
         owner: Party
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleState(simpleStateStateAndRef, owner)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateSimpleDummyState(simpleDummyStateStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun updateSimpleStateForAccount(
+    fun updateSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleStateForAccount(simpleStateStateAndRef, owner)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateSimpleDummyStateForAccount(simpleDummyStateStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun deleteSimpleState(
+    fun deleteSimpleDummyState(
         node: TestStartedNode
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleState(simpleStateStateAndRef, issuerParty)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleDummyState(simpleDummyStateStateAndRef, issuerParty)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun deleteSimpleStateForAccount(
+    fun deleteSimpleDummyStateForAccount(
         node: TestStartedNode
     ) {
-        val simpleStateStateAndRef = getStateAndRefs<SimpleState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleStateForAccount(simpleStateStateAndRef)).resultFuture
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteSimpleDummyStateForAccount(simpleDummyStateStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    // state needing acceptance
+    // dummy state requiring acceptance
 
-    fun createStateNeedingAcceptance(
+    fun createDummyStateRequiringAcceptance(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateStateNeedingAcceptance(owner, acceptorParty)).resultFuture
+        val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAcceptance(owner, acceptorParty)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun updateStateNeedingAcceptance(
+    fun updateDummyStateRequiringAcceptance(
         node: TestStartedNode,
         owner: Party
     ) {
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(node)[0]
+        val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
         val flowFuture = node.services.startFlow(
-            UpdateStateNeedingAcceptance(stateNeedingAcceptanceStateAndRef, owner)).resultFuture
+            UpdateDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun deleteStateNeedingAcceptance(
+    fun deleteDummyStateRequiringAcceptance(
         node: TestStartedNode
     ) {
-        val stateNeedingAcceptanceStateAndRef = getStateAndRefs<StateNeedingAcceptance>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteStateNeedingAcceptance(stateNeedingAcceptanceStateAndRef)).resultFuture
+        val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    // state needing all participants to sign
+    // dummy state requiring all participants to sign
 
-    fun createStateNeedingAllParticipantsToSign(
+    fun createDummyStateRequiringAllParticipantsSignatures(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateStateNeedingAllParticipantsToSign(owner, acceptorParty)).resultFuture
+        val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAllParticipantsSignatures(owner, acceptorParty)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun updateStateNeedingAllParticipantsToSign(
+    fun updateDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode,
         owner: Party
     ) {
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(node)[0]
+        val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
         val flowFuture = node.services.startFlow(
-            UpdateStateNeedingAllParticipantsToSign(stateNeedingAllParticipantsToSignStateAndRef, owner)).resultFuture
+            UpdateDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef, owner)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
 
-    fun deleteStateNeedingAllParticipantsToSign(
+    fun deleteDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode
     ) {
-        val stateNeedingAllParticipantsToSignStateAndRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteStateNeedingAllParticipantsToSign(stateNeedingAllParticipantsToSignStateAndRef)).resultFuture
+        val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
+        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -422,21 +423,17 @@ abstract class AbstractFlowTest {
 
     // common
 
-    fun sendSignedTransaction(
-        node: TestStartedNode,
-        sendTo: AbstractParty,
-        signedTransaction: SignedTransaction
-    ) {
-        val flowFuture = node.services.startFlow(SendSignedTransaction(sendTo, signedTransaction)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
-    }
-
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
-        encumbered: Boolean = false
+        encumbered: Boolean = false,
+        accountUUID: UUID? = null
     ): List<StateAndRef<T>> {
-        val states = node.services.vaultService.queryBy<T>().states
+        val states = if(accountUUID == null)
+            node.services.vaultService.queryBy<T>().states
+        else
+            node.services.vaultService.queryBy<T>(
+                criteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUUID))
+            ).states
         return filterStates(states, encumbered)
     }
 
@@ -458,6 +455,21 @@ abstract class AbstractFlowTest {
         requester: AbstractParty? = null
     ) where T: ContractState {
         val flowLogic = RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
+        val flowFuture = node.services.startFlow(flowLogic).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun <T> createReIssuanceRequestAndShareRequiredTransactions(
+        node: TestStartedNode,
+        statesToReIssue: List<StateAndRef<T>>,
+        command: CommandData,
+        issuer: AbstractParty,
+        commandSigners: List<AbstractParty> = listOf(issuer),
+        requester: AbstractParty? = null
+    ) where T: ContractState {
+        val flowLogic = RequestReIssuanceAndShareRequiredTransactions<T>(
+            issuer, statesToReIssue, command, commandSigners, requester)
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
@@ -495,9 +507,9 @@ abstract class AbstractFlowTest {
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()
-        val transactionInputStream = flowFuture.getOrThrow()
+        val transactionByteArray = flowFuture.getOrThrow()
 
-        return node.services.attachments.importAttachment(transactionInputStream.inputStream(), party.toString(), null)
+        return node.services.attachments.importAttachment(transactionByteArray.inputStream(), party.toString(), null)
     }
 
     fun getSignedTransactions(

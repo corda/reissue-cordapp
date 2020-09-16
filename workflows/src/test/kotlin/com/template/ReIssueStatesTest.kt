@@ -1,200 +1,383 @@
 package com.template
 
+import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.hasSize
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.template.contracts.example.SimpleStateContract
-import com.template.contracts.example.StateNeedingAcceptanceContract
-import com.template.contracts.example.StateNeedingAllParticipantsToSignContract
+import com.template.contracts.example.SimpleDummyStateContract
+import com.template.contracts.example.DummyStateRequiringAcceptanceContract
+import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
+import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
-import com.template.states.example.SimpleState
-import com.template.states.example.StateNeedingAcceptance
-import com.template.states.example.StateNeedingAllParticipantsToSign
+import com.template.states.example.SimpleDummyState
+import com.template.states.example.DummyStateRequiringAcceptance
+import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
+import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
 class ReIssueStatesTest: AbstractFlowTest() {
 
     @Test
-    fun `SimpleState is re-issued`() {
+    fun `SimpleDummyState is re-issued`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
-        val lastSimpleStateTransaction = getSignedTransactions(aliceNode).last()
-
-        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
-        createReIssuanceRequest<SimpleState>(
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleStateRef),
-            SimpleStateContract.Commands.Create(),
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
 
-        sendSignedTransaction(aliceNode, issuerParty, lastSimpleStateTransaction)
-
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
-    fun `StateNeedingAcceptance is re-issued`() {
+    fun `DummyStateRequiringAcceptance is re-issued`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptanceRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0].ref
-        createReIssuanceRequest<StateNeedingAcceptance>(
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptanceRef),
-            StateNeedingAcceptanceContract.Commands.Create(),
+            listOf(dummyStateRequiringAcceptance),
+            DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<StateNeedingAcceptance>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<DummyStateRequiringAcceptance>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
-    fun `StateNeedingAllParticipantsToSign is re-issued`() {
+    fun `DummyStateRequiringAllParticipantsSignatures is re-issued`() {
         initialiseParties()
-        createStateNeedingAllParticipantsToSign(aliceParty)
+        createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
-        val stateNeedingAllParticipantsToSignRef = getStateAndRefs<StateNeedingAllParticipantsToSign>(aliceNode)[0].ref
-        createReIssuanceRequest<StateNeedingAllParticipantsToSign>(
+        val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAllParticipantsToSignRef),
-            StateNeedingAllParticipantsToSignContract.Commands.Create(),
+            listOf(dummyStateRequiringAllParticipantsSignatures),
+            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<StateNeedingAllParticipantsToSign>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<DummyStateRequiringAllParticipantsSignatures>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
+    }
+
+    @Test
+    fun `Token is re-issued`() {
+        initialiseParties()
+        issueTokens(aliceParty, 50)
+
+        val tokens = getTokens(aliceNode)
+
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<FungibleToken>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test
     fun `Tokens are re-issued`() {
         initialiseParties()
-        issueTokens(aliceParty, 50)
+        issueTokens(aliceParty, 25)
+        issueTokens(aliceParty, 25)
 
-        val tokenRefs = getTokens(aliceNode).map { it.ref }
+        val tokens = getTokens(aliceNode)
 
-        val lastTokensTransaction = getSignedTransactions(aliceNode).last()
-
-        createReIssuanceRequest<FungibleToken>(
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokenRefs,
-            IssueTokenCommand(issuedTokenType, tokenRefs.indices.toList()),
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
             issuerParty
         )
 
-        sendSignedTransaction(aliceNode, issuerParty, lastTokensTransaction)
-
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<FungibleToken>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(2)))
+        assertThat(unencumberedStates, hasSize(equalTo(2)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
-    // TODO: many tokens are re-issued
-
     @Test
-    fun `SimpleState re-issued - accounts on the same host`() {
+    fun `SimpleDummyState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
-        createSimpleStateForAccount(employeeNode, employeeAliceParty)
+        createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
-        val createSimpleStateTransaction = getSignedTransactions(employeeNode).last()
-
-        val simpleStateRef = getStateAndRefs<SimpleState>(employeeNode)[0].ref
-        createReIssuanceRequest<SimpleState>(
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(employeeNode,
+            accountUUID = employeeAliceAccount.identifier.id)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
-            listOf(simpleStateRef),
-            SimpleStateContract.Commands.Create(),
-            employeeIssuerParty
-        )
-
-        sendSignedTransaction(employeeNode, employeeIssuerParty, createSimpleStateTransaction)
-
-        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleState>(employeeNode, reIssuanceRequest)
-    }
-
-    @Test
-    fun `SimpleState re-issued - accounts on different hosts`() {
-        initialisePartiesForAccountsOnDifferentHosts()
-        createSimpleStateForAccount(issuerNode, employeeAliceParty)
-
-        val createSimpleStateTransaction = getSignedTransactions(aliceNode).last()
-
-        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
-        createReIssuanceRequest<SimpleState>(
-            aliceNode,
-            listOf(simpleStateRef),
-            SimpleStateContract.Commands.Create(),
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
 
-        sendSignedTransaction(aliceNode, issuerParty, createSimpleStateTransaction)
+        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleDummyState>(employeeNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(employeeNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(employeeIssuerParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(employeeAliceParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
+    }
+
+    @Test
+    fun `SimpleDummyState re-issued - accounts on different hosts`() {
+        initialisePartiesForAccountsOnDifferentHosts()
+        createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            employeeIssuerParty,
+            requester = employeeAliceParty
+        )
 
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false,
+            accountUUID = employeeAliceAccount.identifier.id)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(employeeIssuerParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(employeeAliceParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
     }
 
     @Test(expected = IllegalArgumentException::class) // issues find state by reference
     fun `State cannot be re-issued if issuer cannot access it`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
-        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
-        createReIssuanceRequest<SimpleState>(
+        val simpleDummyStateRef = getStateAndRefs<SimpleDummyState>(aliceNode)[0].ref
+        createReIssuanceRequest<SimpleDummyState>( // don't share required transactions
             aliceNode,
-            listOf(simpleStateRef),
-            SimpleStateContract.Commands.Create(),
+            listOf(simpleDummyStateRef),
+            SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
     }
 
     @Test // issuer doesn't have an information about state being consumed
     fun `Consumed state is re-issued when issuer is not a participant`() {
         initialiseParties()
-        createSimpleState(aliceParty)
+        createSimpleDummyState(aliceParty)
 
-        val lastSimpleStateTransaction = getSignedTransactions(aliceNode).last()
-        val simpleStateRef = getStateAndRefs<SimpleState>(aliceNode)[0].ref
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
 
-        updateSimpleState(aliceNode, bobParty)
+        updateSimpleDummyState(aliceNode, bobParty)
 
-        createReIssuanceRequest<SimpleState>(
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(simpleStateRef),
-            SimpleStateContract.Commands.Create(),
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
 
-        sendSignedTransaction(aliceNode, issuerParty, lastSimpleStateTransaction)
-
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(0)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(lockStates[0].state.data.issuer, equalTo(issuerParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates.map { it.state.data },
+            equalTo(encumberedStates.map { it.state.data }))
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun `Consumed state isn't re-issued when issuer is a participant`() {
         initialiseParties()
-        createStateNeedingAcceptance(aliceParty)
+        createDummyStateRequiringAcceptance(aliceParty)
 
-        val stateNeedingAcceptanceRef = getStateAndRefs<StateNeedingAcceptance>(aliceNode)[0].ref
-        createReIssuanceRequest<StateNeedingAcceptance>(
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            listOf(stateNeedingAcceptanceRef),
-            StateNeedingAcceptanceContract.Commands.Create(),
+            listOf(dummyStateRequiringAcceptance),
+            DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
         )
 
-        updateStateNeedingAcceptance(aliceNode, bobParty)
+        updateDummyStateRequiringAcceptance(aliceNode, bobParty)
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<StateNeedingAcceptance>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
     }
+
+    @Test
+    fun `Another party can re-issue SimpleDummyState because it doesn't store issuer information`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            bobParty
+        )
+
+        val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleDummyState>(bobNode, reIssuanceRequest)
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
+        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
+        assertThat(encumberedStates, hasSize(equalTo(1)))
+        assertThat(unencumberedStates, hasSize(equalTo(1)))
+        assertThat(lockStates, hasSize(equalTo(1)))
+        assertThat(encumberedStates.map { it.state.data }, equalTo(unencumberedStates.map { it.state.data }))
+        assertThat(lockStates[0].state.data.issuer, equalTo(bobParty as AbstractParty))
+        assertThat(lockStates[0].state.data.requester, equalTo(aliceParty as AbstractParty))
+        assertThat(lockStates[0].state.data.originalStates, equalTo(unencumberedStates))
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Another party can't re-issue DummyStateRequiringAcceptance as issuer is a participant`() {
+        initialiseParties()
+        createDummyStateRequiringAcceptance(aliceParty)
+
+        val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(dummyStateRequiringAcceptance),
+            DummyStateRequiringAcceptanceContract.Commands.Create(),
+            bobParty,
+            listOf(bobParty, acceptorParty)
+        )
+
+        val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reIssuanceRequest)
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Another party can't re-issue DummyStateRequiringAllParticipantsSignatures as issuer is a participant`() {
+        initialiseParties()
+        createDummyStateRequiringAllParticipantsSignatures(aliceParty)
+
+        val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(dummyStateRequiringAllParticipantsSignatures),
+            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
+            bobParty,
+            listOf(aliceParty, bobParty, acceptorParty)
+        )
+
+        val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reIssuanceRequest)
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Another party can't re-issue tokens as issuer information is stored in IssuedTokenType`() {
+        initialiseParties()
+        issueTokens(aliceParty, 50)
+
+        val tokens = getTokens(aliceNode)
+
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            tokens,
+            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            bobParty
+        )
+
+        val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<FungibleToken>(bobNode, reIssuanceRequest)
+
+    }
+
 }

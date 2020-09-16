@@ -4,11 +4,13 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.Base58
+import net.corda.core.crypto.SecureHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 
-class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: contract validation
+class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
@@ -58,23 +60,23 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
 
             // verify participants
             "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
-                reIssuanceLock.participants.containsAll(reIssuanceLock.lockedStates[0].state.data.participants))
+                reIssuanceLock.participants.containsAll(reIssuanceLock.originalStates[0].state.data.participants))
 
             // verify state data
             "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
-                reIssuanceLock.lockedStates.map { it.state.data } == otherOutputs.map { it.data })
+                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
 
             // verify encumbrance
-            reIssuanceLock.lockedStates.forEach {
+            reIssuanceLock.originalStates.forEach {
                 "States referenced in lock object must be unencumbered" using (it.state.encumbrance  == null)
             }
             otherOutputs.forEach {
                 "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
             }
 
-            val firstReIssuedState = reIssuanceLock.lockedStates[0]
+            val firstReIssuedState = reIssuanceLock.originalStates[0]
             (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
-                val reIssuedState = reIssuanceLock.lockedStates[it]
+                val reIssuedState = reIssuanceLock.originalStates[it]
 
                 // participants for all re-issued states must be the same
                 "Participants in state to be re-issued ${reIssuedState.ref} must be the same as participants in the first state to be re-issued ${reIssuedState.ref}" using (
@@ -111,13 +113,17 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState { // TODO: cont
             val reIssuanceLock = reIssuanceLockInputs[0]
             val attachedSignedTransaction = getAttachedLedgerTransaction(tx)
 
-            val lockedStatesRef = reIssuanceLock.lockedStates.map { it.ref }
+            val lockedStatesRef = reIssuanceLock.originalStates.map { it.ref }
 
             "All locked states are inputs of attached transaction" using (
                 attachedSignedTransaction.inputs.containsAll(lockedStatesRef))
             "Attached transaction doesn't have any outputs" using (
                 attachedSignedTransaction.coreTransaction.outputs.isEmpty())
             "Notary is provided for attached transaction" using(attachedSignedTransaction.notary != null)
+
+            val notary = attachedSignedTransaction.notary!!
+            val notarySig = "DL" + Base58.encode(SecureHash.sha256(notary.owningKey.encoded).bytes)
+            val sigs = attachedSignedTransaction.sigs.map { "DL" + Base58.encode(SecureHash.sha256(it.by.encoded).bytes) }
             "Attached transaction is notarised" using(attachedSignedTransaction.sigs.map { it.by }.contains(
                 attachedSignedTransaction.notary!!.owningKey))
 
