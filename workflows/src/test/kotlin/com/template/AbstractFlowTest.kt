@@ -47,7 +47,6 @@ import net.corda.testing.node.MockNetworkNotarySpec
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
-import org.junit.Test
 import java.util.*
 
 
@@ -525,6 +524,14 @@ abstract class AbstractFlowTest {
         return getSignedTransactions(node).map {
             it.toLedgerTransaction(node.services)
         }
+    }
+
+    fun getTransactionBackChain(
+        node: TestStartedNode,
+        txId: SecureHash
+    ): Set<SecureHash> {
+        val ledgerGraphService = node.services.cordaService(LedgerGraphService::class.java)
+        return ledgerGraphService.getBackchain(setOf(txId))
     }
 
 }
