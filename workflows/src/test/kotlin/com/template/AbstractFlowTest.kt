@@ -7,6 +7,7 @@ import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
+import com.r3.dr.ledgergraph.services.LedgerGraphService
 import com.template.flows.*
 import com.template.flows.example.simpleDummyState.*
 import com.template.flows.example.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
@@ -46,6 +47,7 @@ import net.corda.testing.node.MockNetworkNotarySpec
 import net.corda.testing.node.internal.*
 import org.junit.After
 import org.junit.Before
+import org.junit.Test
 import java.util.*
 
 
@@ -108,9 +110,7 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.ci.workflows"),
                 findCordapp("com.template.flows"),
                 findCordapp("com.template.contracts"),
-                findCordapp("com.r3.corda.lib.accounts.workflows"),
-                findCordapp("com.r3.corda.lib.accounts.contracts"),
-                findCordapp("com.r3.corda.lib.tokens.contracts")
+                findCordapp("com.r3.dr.ledgergraph")
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(
@@ -157,6 +157,7 @@ abstract class AbstractFlowTest {
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
 
+        aliceNode.services.cordaService(LedgerGraphService::class.java).waitForInitialization()
     }
 
     fun initialisePartiesForAccountsOnTheSameHost() {
@@ -525,4 +526,5 @@ abstract class AbstractFlowTest {
             it.toLedgerTransaction(node.services)
         }
     }
+
 }

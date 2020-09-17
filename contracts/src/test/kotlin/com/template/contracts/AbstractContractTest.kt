@@ -1,4 +1,4 @@
-package com.template
+package com.template.contracts
 
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -25,7 +25,6 @@ import net.corda.testing.node.internal.findCordapp
 import org.junit.After
 import org.junit.Before
 import java.io.ByteArrayOutputStream
-import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 

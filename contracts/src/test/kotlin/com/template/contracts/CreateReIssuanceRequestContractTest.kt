@@ -1,6 +1,5 @@
-package com.template
+package com.template.contracts
 
-import com.template.contracts.ReIssuanceRequestContract
 import net.corda.testing.node.ledger
 import org.junit.Test
 
