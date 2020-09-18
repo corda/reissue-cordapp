@@ -1,6 +1,9 @@
 package com.template.example.dummyStateRequiringAcceptance
 
 import com.template.AbstractFlowTest
+import com.template.states.example.DummyStateRequiringAcceptance
+import org.hamcrest.MatcherAssert.*
+import org.hamcrest.Matchers.empty
 import org.junit.Test
 
 class DeleteDummyStateRequiringAcceptanceTest: AbstractFlowTest() {
@@ -10,6 +13,9 @@ class DeleteDummyStateRequiringAcceptanceTest: AbstractFlowTest() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
         deleteDummyStateRequiringAcceptance(aliceNode)
+
+        val dummyStatesRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)
+        assertThat(dummyStatesRequiringAcceptance, empty())
     }
 
 }

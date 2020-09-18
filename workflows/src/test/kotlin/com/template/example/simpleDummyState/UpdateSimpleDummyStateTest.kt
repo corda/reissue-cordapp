@@ -1,6 +1,11 @@
 package com.template.example.simpleDummyState
 
 import com.template.AbstractFlowTest
+import com.template.states.example.SimpleDummyState
+import net.corda.core.identity.AbstractParty
+import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.*
+import org.hamcrest.Matchers.*
 import org.junit.Test
 
 class UpdateSimpleDummyStateTest: AbstractFlowTest() {
@@ -10,6 +15,11 @@ class UpdateSimpleDummyStateTest: AbstractFlowTest() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
         updateSimpleDummyState(aliceNode, bobParty)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(bobNode)
+        assertThat(simpleDummyStates, hasSize(1))
+        val simpleDummyState = simpleDummyStates[0].state.data
+        assertThat(simpleDummyState.owner, `is`(bobParty as AbstractParty))
     }
 
     @Test
@@ -22,6 +32,11 @@ class UpdateSimpleDummyStateTest: AbstractFlowTest() {
         updateSimpleDummyState(debbieNode, charlieParty)
         updateSimpleDummyState(charlieNode, bobParty)
         updateSimpleDummyState(bobNode, aliceParty)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
+        assertThat(simpleDummyStates, hasSize(1))
+        val simpleDummyState = simpleDummyStates[0].state.data
+        assertThat(simpleDummyState.owner, `is`(aliceParty as AbstractParty))
     }
 
     @Test
@@ -29,6 +44,11 @@ class UpdateSimpleDummyStateTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
         updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(employeeNode)
+        assertThat(simpleDummyStates, hasSize(1))
+        val simpleDummyState = simpleDummyStates[0].state.data
+        assertThat(simpleDummyState.owner, `is`(employeeBobParty))
     }
 
     @Test
@@ -36,5 +56,10 @@ class UpdateSimpleDummyStateTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
         updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(bobNode)
+        assertThat(simpleDummyStates, hasSize(1))
+        val simpleDummyState = simpleDummyStates[0].state.data
+        assertThat(simpleDummyState.owner, `is`(employeeBobParty))
     }
 }

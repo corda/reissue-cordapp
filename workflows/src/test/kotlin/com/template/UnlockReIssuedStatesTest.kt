@@ -1,9 +1,7 @@
 package com.template
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.hasElement
-import com.natpryce.hamkrest.hasSize
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.*
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -38,7 +36,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateSimpleDummyState(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -63,16 +61,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
         updateSimpleDummyState(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        assertThat(transactionsAfterReIssuance.size, `is`(4))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
     @Test
@@ -87,7 +85,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateDummyStateRequiringAcceptance(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -114,16 +112,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(dummyStateRequiringAcceptance.state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(dummyStateRequiringAcceptance.state.data))
 
         updateDummyStateRequiringAcceptance(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        assertThat(transactionsAfterReIssuance.size, `is`(4))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
     @Test
@@ -138,7 +136,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
 
@@ -167,16 +165,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(dummyStateRequiringAllParticipantsSignatures.state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(dummyStateRequiringAllParticipantsSignatures.state.data))
 
         updateDummyStateRequiringAllParticipantsSignatures(aliceNode, debbieParty)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        assertThat(transactionsAfterReIssuance.size, `is`(4))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
     @Test
@@ -192,7 +190,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         transferTokens(charlieNode, aliceParty, 50)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
@@ -220,16 +218,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(tokens[0].state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(tokens[0].state.data))
 
         transferTokens(aliceNode, debbieParty, 50)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        assertThat(transactionsAfterReIssuance.size, `is`(4))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
 
@@ -246,7 +244,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         transferTokens(charlieNode, aliceParty, 30)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val tokensToReIssue = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
@@ -274,16 +272,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getTokens(aliceNode, encumbered = true)
         val unencumberedStates = getTokens(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(2)))
-        assertThat(unencumberedStates.map { it.state.data }, hasElement(tokensToReIssue[0].state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(2)))
+        assertThat(unencumberedStates.map { it.state.data }, hasItem(tokensToReIssue[0].state.data))
 
         transferTokens(aliceNode, debbieParty, 35)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(9))
+        assertThat(transactionsAfterReIssuance.size, `is`(9))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
 
@@ -300,7 +298,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         transferTokens(charlieNode, aliceParty, 30)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(aliceNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(7))
+        assertThat(transactionsBeforeReIssuance.size, `is`(7))
 
         val tokensToReIssue = getTokens(aliceNode)
         val tokenIndices = tokensToReIssue.indices.toList()
@@ -328,16 +326,16 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getTokens(aliceNode, encumbered = true)
         val unencumberedStates = getTokens(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(2)))
-        assertThat(unencumberedStates.map { it.state.data }, equalTo(tokensToReIssue.map { it.state.data }))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(2)))
+        assertThat(unencumberedStates.map { it.state.data }, `is`(tokensToReIssue.map { it.state.data }))
 
         transferTokens(aliceNode, debbieParty, 35)
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(4))
+        assertThat(transactionsAfterReIssuance.size, `is`(4))
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds, equalTo(transactionsAfterReIssuance.map { it.id }.toSet()))
+        assertThat(backChainTransactionsIds, `is`(transactionsAfterReIssuance.map { it.id }.toSet()))
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -384,7 +382,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         updateSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(employeeNode)
-        assertThat(transactionsBeforeReIssuance.size, equalTo(12)) // including 5 create account transactions
+        assertThat(transactionsBeforeReIssuance.size, `is`(12)) // including 5 create account transactions
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)[0]
@@ -414,18 +412,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = false,
             accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
         updateSimpleDummyStateForAccount(employeeNode, employeeDebbieParty)
 
         val transactionsAfterReIssuance = getLedgerTransactions(employeeNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(17)) // transactions available to all accounts
+        assertThat(transactionsAfterReIssuance.size, `is`(17)) // transactions available to all accounts
 
         val backChainTransactionsIds = getTransactionBackChain(employeeNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds.size, equalTo(4)) // transactions available the given account
-        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), equalTo(true)) // TODO: improve
+        assertThat(backChainTransactionsIds.size, `is`(4)) // transactions available the given account
+        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), `is`(true)) // TODO: improve
     }
 
     @Test
@@ -464,19 +462,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false,
             accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, hasSize(equalTo(0)))
-        assertThat(unencumberedStates, hasSize(equalTo(1)))
-        assertThat(unencumberedStates[0].state.data, equalTo(simpleDummyState.state.data))
+        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
         updateSimpleDummyStateForAccount(aliceNode, employeeDebbieParty)
 
-        // TODO: make sure 9 is correct
         val transactionsAfterReIssuance = getLedgerTransactions(debbieNode)
-        assertThat(transactionsAfterReIssuance.size, equalTo(9)) // transactions available to all accounts
+        assertThat(transactionsAfterReIssuance.size, `is`(9)) // transactions available to all accounts
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
-        assertThat(backChainTransactionsIds.size, equalTo(4)) // transactions available the given account
-        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), equalTo(true)) // TODO: improve
+        assertThat(backChainTransactionsIds.size, `is`(4)) // transactions available the given account
+        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), `is`(true)) // TODO: improve
     }
 
     @Test(expected = TransactionVerificationException::class)

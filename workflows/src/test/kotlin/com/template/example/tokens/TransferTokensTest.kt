@@ -1,7 +1,7 @@
 package com.template.example.tokens
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.`is`
 import com.template.AbstractFlowTest
 import org.junit.Test
 
@@ -12,8 +12,8 @@ class TransferTokensTest: AbstractFlowTest() {
         initialiseParties()
         issueTokens(aliceParty, 50)
         transferTokens(aliceNode, bobParty, 10)
-        assertThat(getTokenQuantity(aliceNode), equalTo(40))
-        assertThat(getTokenQuantity(bobNode), equalTo(10))
+        assertThat(getTokenQuantity(aliceNode), `is`(40))
+        assertThat(getTokenQuantity(bobNode), `is`(10))
     }
 
     @Test
@@ -22,8 +22,8 @@ class TransferTokensTest: AbstractFlowTest() {
         issueTokens(aliceParty, 10)
         issueTokens(aliceParty, 10)
         transferTokens(aliceNode, bobParty, 15)
-        assertThat(getTokenQuantity(aliceNode), equalTo(5))
-        assertThat(getTokenQuantity(bobNode), equalTo(15))
+        assertThat(getTokenQuantity(aliceNode), `is`(5))
+        assertThat(getTokenQuantity(bobNode), `is`(15))
     }
 
     @Test
@@ -37,9 +37,9 @@ class TransferTokensTest: AbstractFlowTest() {
         transferTokens(debbieNode, bobParty, 50)
         transferTokens(bobNode, aliceParty, 50)
 
-        assertThat(getTokenQuantity(aliceNode), equalTo(50))
-        assertThat(getTokenQuantity(bobNode), equalTo(0))
-        assertThat(getTokenQuantity(charlieNode), equalTo(0))
-        assertThat(getTokenQuantity(debbieNode), equalTo(0))
+        assertThat(getTokenQuantity(aliceNode), `is`(50))
+        assertThat(getTokenQuantity(bobNode), `is`(0))
+        assertThat(getTokenQuantity(charlieNode), `is`(0))
+        assertThat(getTokenQuantity(debbieNode), `is`(0))
     }
 }

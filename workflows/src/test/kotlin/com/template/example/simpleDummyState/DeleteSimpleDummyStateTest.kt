@@ -1,6 +1,9 @@
 package com.template.example.simpleDummyState
 
 import com.template.AbstractFlowTest
+import com.template.states.example.SimpleDummyState
+import org.hamcrest.MatcherAssert.*
+import org.hamcrest.Matchers.empty
 import org.junit.Test
 
 class DeleteSimpleDummyStateTest: AbstractFlowTest() {
@@ -10,6 +13,9 @@ class DeleteSimpleDummyStateTest: AbstractFlowTest() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
         deleteSimpleDummyState(aliceNode)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
+        assertThat(simpleDummyStates, empty())
     }
 
     @Test
@@ -17,6 +23,9 @@ class DeleteSimpleDummyStateTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
         deleteSimpleDummyStateForAccount(employeeNode)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(employeeNode)
+        assertThat(simpleDummyStates, empty())
     }
 
     @Test
@@ -24,5 +33,8 @@ class DeleteSimpleDummyStateTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
         deleteSimpleDummyStateForAccount(aliceNode)
+
+        val simpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
+        assertThat(simpleDummyStates, empty())
     }
 }

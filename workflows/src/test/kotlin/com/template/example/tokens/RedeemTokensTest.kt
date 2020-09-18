@@ -1,7 +1,7 @@
 package com.template.example.tokens
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.`is`
 import com.template.AbstractFlowTest
 import org.junit.Test
 
@@ -13,7 +13,7 @@ class RedeemTokensTest: AbstractFlowTest() {
         issueTokens(aliceParty, 50)
         val tokens = getTokens(aliceNode)
         redeemTokens(aliceNode, tokens)
-        assertThat(getTokenQuantity(aliceNode), equalTo(0))
+        assertThat(getTokenQuantity(aliceNode), `is`(0))
     }
 
     @Test
@@ -23,6 +23,6 @@ class RedeemTokensTest: AbstractFlowTest() {
         issueTokens(aliceParty, 10)
         val tokens = getTokens(aliceNode)
         redeemTokens(aliceNode, listOf(tokens[0]))
-        assertThat(getTokenQuantity(aliceNode), equalTo(10))
+        assertThat(getTokenQuantity(aliceNode), `is`(10))
     }
 }

@@ -1,7 +1,7 @@
 package com.template.example.tokens
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.`is`
 import com.template.AbstractFlowTest
 import org.junit.Test
 
@@ -11,6 +11,6 @@ class IssueTokensTest: AbstractFlowTest() {
     fun `Issued number of issued token type is in holder's vault`() {
         initialiseParties()
         issueTokens(aliceParty, 50)
-        assertThat(getTokenQuantity(aliceNode), equalTo(50))
+        assertThat(getTokenQuantity(aliceNode), `is`(50))
     }
 }

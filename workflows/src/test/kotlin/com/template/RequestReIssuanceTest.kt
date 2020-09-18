@@ -1,8 +1,7 @@
 package com.template
 
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.hasSize
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.*
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleDummyStateContract
@@ -33,16 +32,16 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, `is`(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(listOf(issuerParty as AbstractParty)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(listOf(simpleDummyState.ref)))
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], `is`(simpleDummyState))
     }
 
     @Test
@@ -61,16 +60,16 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAcceptanceContract.Commands.Create, equalTo(true))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(dummyStateRequiringAcceptance.ref)))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAcceptanceContract.Commands.Create, `is`(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(issuanceCommandSigners as List<AbstractParty>))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(listOf(dummyStateRequiringAcceptance.ref)))
 
         val dummyStatesRequiringAcceptanceAvailableToIssuer = getStateAndRefs<DummyStateRequiringAcceptance>(issuerNode)
-        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer[0], equalTo(dummyStateRequiringAcceptance))
+        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer[0], `is`(dummyStateRequiringAcceptance))
     }
 
     @Test
@@ -89,17 +88,17 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create, equalTo(true))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(issuanceCommandSigners as List<AbstractParty>))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(dummyStateRequiringAllParticipantsSignatures.ref)))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create, `is`(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(issuanceCommandSigners as List<AbstractParty>))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(listOf(dummyStateRequiringAllParticipantsSignatures.ref)))
 
         val dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
             issuerNode)
-        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer[0], equalTo(dummyStateRequiringAllParticipantsSignatures))
+        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer[0], `is`(dummyStateRequiringAllParticipantsSignatures))
     }
 
     @Test
@@ -116,19 +115,19 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, `is`(true))
         val issuanceCommand = reIssuanceRequests[0].state.data.issuanceCommand as IssueTokenCommand
-        assertThat(issuanceCommand.token, equalTo(issuedTokenType))
-        assertThat(issuanceCommand.outputs, equalTo(listOf(0)))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(tokens.map { it.ref }))
+        assertThat(issuanceCommand.token, `is`(issuedTokenType))
+        assertThat(issuanceCommand.outputs, `is`(listOf(0)))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(listOf(issuerParty as AbstractParty)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(tokens.map { it.ref }))
 
         val tokensAvailableToIssuer = getStateAndRefs<FungibleToken>(issuerNode)
-        assertThat(tokensAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(tokensAvailableToIssuer, equalTo(tokens))
+        assertThat(tokensAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(tokensAvailableToIssuer, `is`(tokens))
     }
 
     @Test
@@ -146,19 +145,19 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(issuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(aliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, equalTo(true))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is IssueTokenCommand, `is`(true))
         val issuanceCommand = reIssuanceRequests[0].state.data.issuanceCommand as IssueTokenCommand
-        assertThat(issuanceCommand.token, equalTo(issuedTokenType))
-        assertThat(issuanceCommand.outputs, equalTo(listOf(0, 1)))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(issuerParty as AbstractParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(tokens.map { it.ref }))
+        assertThat(issuanceCommand.token, `is`(issuedTokenType))
+        assertThat(issuanceCommand.outputs, `is`(listOf(0, 1)))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(listOf(issuerParty as AbstractParty)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(tokens.map { it.ref }))
 
         val tokensAvailableToIssuer = getStateAndRefs<FungibleToken>(issuerNode)
-        assertThat(tokensAvailableToIssuer, hasSize(equalTo(2)))
-        assertThat(tokensAvailableToIssuer, equalTo(tokens))
+        assertThat(tokensAvailableToIssuer, hasSize(`is`(2)))
+        assertThat(tokensAvailableToIssuer, `is`(tokens))
     }
 
     @Test
@@ -177,16 +176,16 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(employeeIssuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(employeeIssuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(employeeAliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, `is`(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(listOf(employeeIssuerParty)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(listOf(simpleDummyState.ref)))
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(employeeNode) // available to node, not account
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], `is`(simpleDummyState))
     }
 
     @Test
@@ -204,16 +203,16 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
-        assertThat(reIssuanceRequests, hasSize(equalTo(1)))
-        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, equalTo(employeeIssuerParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, equalTo(employeeAliceParty.owningKey))
-        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, equalTo(true))
-        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, equalTo(listOf(employeeIssuerParty)))
-        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, equalTo(listOf(simpleDummyState.ref)))
+        assertThat(reIssuanceRequests, hasSize(`is`(1)))
+        assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(employeeIssuerParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(employeeAliceParty.owningKey))
+        assertThat(reIssuanceRequests[0].state.data.issuanceCommand is SimpleDummyStateContract.Commands.Create, `is`(true))
+        assertThat(reIssuanceRequests[0].state.data.issuanceSigners, `is`(listOf(employeeIssuerParty)))
+        assertThat(reIssuanceRequests[0].state.data.stateRefsToReIssue, `is`(listOf(simpleDummyState.ref)))
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode) // available to node, not account
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(equalTo(1)))
-        assertThat(simpleDummyStatesAvailableToIssuer[0], equalTo(simpleDummyState))
+        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
+        assertThat(simpleDummyStatesAvailableToIssuer[0], `is`(simpleDummyState))
     }
 
     @Test(expected = TransactionVerificationException::class)
