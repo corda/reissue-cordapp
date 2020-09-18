@@ -57,15 +57,9 @@ class UnlockReIssuedStates<T>(
         val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
         val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
 
-        val signersSessions = initiateFlows(signers)
-        val otherParticipantsSessions = initiateFlows(otherParticipants)
-
-        signersSessions.forEach {
-            it.send(true)
-        }
-        otherParticipantsSessions.forEach {
-            it.send(false)
-        }
+        val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
+        val otherParticipantsSessions = subFlow(GenerateRequiredFlowSessions(otherParticipants))
+        subFlow(SendSignerFlags(signersSessions, otherParticipantsSessions))
 
         if(signersSessions.isNotEmpty()) {
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
@@ -77,14 +71,6 @@ class UnlockReIssuedStates<T>(
                 sessions = signersSessions + otherParticipantsSessions
             )
         )
-    }
-
-    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> { // TODO: this function is a duplicate
-        return parties
-            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
-            .filter { it != ourIdentity }
-            .distinct()
-            .map { initiateFlow(it) }
     }
 
 }

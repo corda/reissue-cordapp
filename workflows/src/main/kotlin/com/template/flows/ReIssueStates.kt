@@ -1,8 +1,6 @@
 package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.ReIssuanceLockContract
 import com.template.contracts.ReIssuanceRequestContract
@@ -11,7 +9,6 @@ import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
-import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
@@ -81,15 +78,9 @@ class ReIssueStates<T>(
         val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
 
-        val signersSessions = initiateFlows(signers)
-        val otherParticipantsSessions = initiateFlows(otherParticipants)
-
-        signersSessions.forEach {
-            it.send(true)
-        }
-        otherParticipantsSessions.forEach {
-            it.send(false)
-        }
+        val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
+        val otherParticipantsSessions = subFlow(GenerateRequiredFlowSessions(otherParticipants))
+        subFlow(SendSignerFlags(signersSessions, otherParticipantsSessions))
 
         if(signersSessions.isNotEmpty()) {
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
@@ -103,13 +94,6 @@ class ReIssueStates<T>(
         )
     }
 
-    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> {
-        return parties
-            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
-            .filter { it != ourIdentity }
-            .distinct()
-            .map { initiateFlow(it) }
-    }
 }
 
 @InitiatedBy(ReIssueStates::class)
