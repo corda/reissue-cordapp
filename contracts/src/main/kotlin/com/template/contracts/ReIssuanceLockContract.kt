@@ -122,8 +122,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             "Notary is provided for attached transaction" using(attachedSignedTransaction.notary != null)
 
             val notary = attachedSignedTransaction.notary!!
-            val notarySig = "DL" + Base58.encode(SecureHash.sha256(notary.owningKey.encoded).bytes)
-            val sigs = attachedSignedTransaction.sigs.map { "DL" + Base58.encode(SecureHash.sha256(it.by.encoded).bytes) }
             "Attached transaction is notarised" using(attachedSignedTransaction.sigs.map { it.by }.contains(
                 attachedSignedTransaction.notary!!.owningKey))
 

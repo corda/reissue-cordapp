@@ -6,7 +6,7 @@ import org.hamcrest.MatcherAssert.*
 import org.hamcrest.Matchers.*
 import org.junit.Test
 
-class CreateDummyStateRequiringAllParticipantsSignaturesTest: AbstractFlowTest() {
+class CreateDummyStateWithInvalidEqualsMethodTest: AbstractFlowTest() {
 
     @Test
     fun `Create DummyStateRequiringAllParticipantsSignatures`() {

@@ -8,10 +8,12 @@ import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.contracts.example.DummyStateRequiringAcceptanceContract
 import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
+import com.template.contracts.example.DummyStateWithInvalidEqualsMethodContract
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
+import com.template.states.example.DummyStateWithInvalidEqualsMethod
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.queryBy
@@ -571,6 +573,36 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             aliceNode, attachmentSecureHash,
             DummyStateRequiringAcceptanceContract.Commands.Update(),
             listOf(aliceParty, issuerParty, acceptorParty)
+        )
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Invalid equals method doesn't allow cheating by attaching another state exit as reference is checked`() {
+        initialiseParties()
+        createDummyStateWithInvalidEqualsMethod(aliceParty, 10)
+
+        val dummyStateWithInvalidEqualsMethod = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(dummyStateWithInvalidEqualsMethod),
+            DummyStateWithInvalidEqualsMethodContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<DummyStateWithInvalidEqualsMethod>(issuerNode, reIssuanceRequest)
+
+
+        createDummyStateWithInvalidEqualsMethod(aliceParty, 5)
+        val stateAndRefToDelete = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode)
+
+        deleteDummyStateWithInvalidEqualsMethod(aliceNode, stateAndRefToDelete.last())
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<DummyStateWithInvalidEqualsMethod>(
+            aliceNode,
+            attachmentSecureHash,
+            DummyStateWithInvalidEqualsMethodContract.Commands.Update()
         )
     }
 }

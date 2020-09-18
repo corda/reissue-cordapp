@@ -6,7 +6,7 @@ import org.hamcrest.MatcherAssert.*
 import org.hamcrest.Matchers.empty
 import org.junit.Test
 
-class DeleteDummyStateRequiringAllParticipantsSignaturesTest: AbstractFlowTest() {
+class DeleteDummyStateWithInvalidEqualsMethodTest: AbstractFlowTest() {
 
     @Test
     fun `Delete DummyStateRequiringAllParticipantsSignatures`() {

@@ -16,6 +16,9 @@ import com.template.flows.example.dummyStateRequiringAcceptance.UpdateDummyState
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.CreateDummyStateWithInvalidEqualsMethod
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.DeleteDummyStateWithInvalidEqualsMethod
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.UpdateDummyStateWithInvalidEqualsMethod
 import com.template.flows.example.tokens.IssueTokens
 import com.template.flows.example.tokens.ListTokensFlow
 import com.template.flows.example.tokens.RedeemTokens
@@ -25,6 +28,7 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
+import com.template.states.example.DummyStateWithInvalidEqualsMethod
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -419,6 +423,36 @@ abstract class AbstractFlowTest {
         mockNet.runNetwork()
         val tokens = tokensFuture.getOrThrow()
         return filterStates(tokens, encumbered)
+    }
+
+    // DummyStateWithInvalidEqualsMethodContract
+
+    fun createDummyStateWithInvalidEqualsMethod(
+        owner: Party,
+        quantity: Int
+    ) {
+        val flowFuture = issuerNode.services.startFlow(CreateDummyStateWithInvalidEqualsMethod(owner, quantity)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun updateDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode,
+        owner: Party
+    ) {
+        val dummyStateWithInvalidEqualsMethodStateAndRef = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef, owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun deleteDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode,
+        dummyStateWithInvalidEqualsMethodStateAndRef: StateAndRef<DummyStateWithInvalidEqualsMethod> = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
+    ) {
+        val flowFuture = node.services.startFlow(DeleteDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
     }
 
     // common
