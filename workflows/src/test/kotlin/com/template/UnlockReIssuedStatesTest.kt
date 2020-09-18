@@ -13,6 +13,7 @@ import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.TransactionBuilder
@@ -423,7 +424,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val backChainTransactionsIds = getTransactionBackChain(employeeNode, transactionsAfterReIssuance.last().id)
         assertThat(backChainTransactionsIds.size, `is`(4)) // transactions available the given account
-        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), `is`(true)) // TODO: improve
+        assertThat(transactionsAfterReIssuance.map { it.id }, hasItems(*backChainTransactionsIds.toTypedArray()))
     }
 
     @Test
@@ -473,7 +474,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val backChainTransactionsIds = getTransactionBackChain(debbieNode, transactionsAfterReIssuance.last().id)
         assertThat(backChainTransactionsIds.size, `is`(4)) // transactions available the given account
-        assertThat(transactionsAfterReIssuance.map { it.id }.containsAll(backChainTransactionsIds), `is`(true)) // TODO: improve
+        assertThat(transactionsAfterReIssuance.map { it.id }, hasItems(*backChainTransactionsIds.toTypedArray()))
     }
 
     @Test(expected = TransactionVerificationException::class)
