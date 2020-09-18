@@ -510,7 +510,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         }
         baos.close()
 
-        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(baos.toByteArray().inputStream(), aliceNode.info.singleIdentity().toString(), null)
+        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(
+            baos.toByteArray().inputStream(), aliceNode.info.singleIdentity().toString(), null)
 
         unlockReIssuedState<SimpleDummyState>(
             aliceNode, attachmentSecureHash,

@@ -8,6 +8,7 @@ import com.template.contracts.example.SimpleDummyStateContract
 import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
+import com.template.utils.convertSignedTransactionToByteArray
 import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.CordaX500Name
@@ -24,6 +25,7 @@ import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.findCordapp
 import org.junit.After
 import org.junit.Before
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -137,19 +139,9 @@ abstract class AbstractContractTest {
         return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList)
     }
 
-    // TODO: repeated code (copied over from GenerateTransactionByteArray flow)
-    fun generateSignedTransactionByteArray(signedTransaction: SignedTransaction): ByteArray {
-        val serializedSignedTransactionBytes = signedTransaction.serialize().bytes
-
-        val baos = ByteArrayOutputStream()
-        ZipOutputStream(baos).use { zos ->
-            val entry = ZipEntry("SignedTransaction")
-            zos.putNextEntry(entry)
-            zos.write(serializedSignedTransactionBytes)
-            zos.closeEntry()
-        }
-        baos.close()
-
-        return baos.toByteArray()
+    fun generateSignedTransactionByteArrayInputStream(
+        signedTransaction: SignedTransaction
+    ): ByteArrayInputStream {
+        return convertSignedTransactionToByteArray(signedTransaction).inputStream()
     }
 }
