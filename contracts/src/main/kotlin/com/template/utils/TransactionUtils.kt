@@ -14,7 +14,7 @@ fun convertSignedTransactionToByteArray(
 
     val baos = ByteArrayOutputStream()
     ZipOutputStream(baos).use { zos ->
-        val entry = ZipEntry("SignedTransaction")
+        val entry = ZipEntry("SignedTransaction_${signedTransaction.id}")
         zos.putNextEntry(entry)
         zos.write(serializedSignedTransactionBytes)
         zos.closeEntry()

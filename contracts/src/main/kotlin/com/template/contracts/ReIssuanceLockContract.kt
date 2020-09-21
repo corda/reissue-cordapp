@@ -108,22 +108,26 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             "No outputs of type ReIssuanceLock are allowed" using reIssuanceLockOutputs.isEmpty()
 
             "At least one input other than lock is expected" using otherInputs.isNotEmpty()
-            "The same number of inputs and outputs other than lock is expected" using (otherInputs.size == otherOutputs.size)
+            "The same number of inputs and outputs other than lock is expected" using (
+                otherInputs.size == otherOutputs.size)
 
             val reIssuanceLock = reIssuanceLockInputs[0]
-            val attachedSignedTransaction = getAttachedLedgerTransaction(tx)
+            val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
             val lockedStatesRef = reIssuanceLock.originalStates.map { it.ref }
 
-            "All locked states are inputs of attached transaction" using (
-                attachedSignedTransaction.inputs.containsAll(lockedStatesRef))
-            "Attached transaction doesn't have any outputs" using (
-                attachedSignedTransaction.coreTransaction.outputs.isEmpty())
-            "Notary is provided for attached transaction" using(attachedSignedTransaction.notary != null)
+            "All locked states are inputs of attached transactions" using (
+                attachedSignedTransactions.flatMap { it.inputs }.containsAll(lockedStatesRef))
+            "Attached transactions don't have any outputs" using (
+                attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
-            val notary = attachedSignedTransaction.notary!!
-            "Attached transaction is notarised" using(attachedSignedTransaction.sigs.map { it.by }.contains(
-                attachedSignedTransaction.notary!!.owningKey))
+            attachedSignedTransactions.forEach { attachedSignedTransaction ->
+                "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
+                    attachedSignedTransaction.notary != null)
+                "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
+                    attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
+            }
+
 
             // verify encumbrance
             otherInputs.forEach {
@@ -139,19 +143,28 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     }
 
-    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): SignedTransaction {
+    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): List<SignedTransaction> {
         // Constraints on the included attachments.
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
-        "The transaction should have a single non-contract attachment" using (nonContractAttachments.size == 1)
-        val attachment = nonContractAttachments.single()
+        "The transaction should have at least one non-contract attachment" using (nonContractAttachments.isNotEmpty())
 
-        val attachmentJar = attachment.openAsJAR()
-        while (attachmentJar.nextEntry.name != "SignedTransaction") {
-            // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+        var attachedSignedTransactions = mutableListOf<SignedTransaction>()
+        nonContractAttachments.forEach { attachment ->
+            val attachmentJar = attachment.openAsJAR()
+            var nextEntry = attachmentJar.nextEntry
+            while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
+                // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                nextEntry = attachmentJar.nextEntry
+            }
+
+            if(nextEntry != null) {
+                val transactionBytes = attachmentJar.readBytes()
+                attachedSignedTransactions.add(transactionBytes.deserialize<SignedTransaction>())
+            }
+
         }
 
-        val transactionBytes = attachmentJar.readBytes()
-        return transactionBytes.deserialize<SignedTransaction>()
+        return attachedSignedTransactions
     }
 
     interface Commands : CommandData {

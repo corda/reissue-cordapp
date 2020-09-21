@@ -511,14 +511,15 @@ abstract class AbstractFlowTest {
 
     inline fun <reified T : ContractState> unlockReIssuedState(
         node: TestStartedNode,
-        attachmentSecureHash: SecureHash,
+        attachmentSecureHashes: List<SecureHash>,
         command: CommandData,
         commandSigners: List<AbstractParty>? = null
     ) {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
+        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef,
+            attachmentSecureHashes, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -533,11 +534,10 @@ abstract class AbstractFlowTest {
     }
 
     fun uploadDeletedStateAttachment(
-        node: TestStartedNode
+        node: TestStartedNode,
+        deleteStateTransaction: LedgerTransaction = getLedgerTransactions(node).last()
     ): SecureHash {
         val party = node.info.singleIdentity()
-
-        val deleteStateTransaction = getLedgerTransactions(node).last()
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()

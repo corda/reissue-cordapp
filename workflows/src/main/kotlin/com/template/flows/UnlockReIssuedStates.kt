@@ -19,7 +19,7 @@ import net.corda.core.utilities.unwrap
 class UnlockReIssuedStates<T>(
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
-    private val deletedStateTransactionHash: SecureHash,
+    private val deletedStateTransactionHashes: List<SecureHash>,
     private val updateCommand: CommandData,
     private val updateSigners: List<AbstractParty> = listOf(reIssuanceLock.state.data.requester)
 ): FlowLogic<Unit>() where T: ContractState {
@@ -45,7 +45,9 @@ class UnlockReIssuedStates<T>(
         transactionBuilder.addInputState(reIssuanceLock)
         transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Delete(), lockSigners)
 
-        transactionBuilder.addAttachment(deletedStateTransactionHash)
+        deletedStateTransactionHashes.forEach { deletedStateTransactionHash ->
+            transactionBuilder.addAttachment(deletedStateTransactionHash)
+        }
 
         val localSigners = (lockSigners + reIssuedStatesSigners)
             .distinct()
