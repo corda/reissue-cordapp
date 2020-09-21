@@ -131,11 +131,13 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify encumbrance
             otherInputs.forEach {
-                "Input other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
+                "Inputs other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
             }
             otherOutputs.forEach {
-                "Output other than ReIssuanceLock can't be encumbered" using (it.encumbrance == null)
+                "Outputs other than ReIssuanceLock can't be encumbered" using (it.encumbrance == null)
             }
+            "Input data other than ReIssuanceLock are the same as output data other than ReIssuanceLock" using (
+                otherInputs.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet())
 
             // verify signers
             "Requester is required signer" using (command.signers.contains(reIssuanceLock.requester.owningKey))
