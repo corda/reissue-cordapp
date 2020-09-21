@@ -6,7 +6,9 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.node.StatesToRecord
 
+@InitiatingFlow
 @StartableByRPC
 class RequestReIssuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
@@ -22,19 +24,38 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
             RequestReIssuance<T>(issuer, statesToReIssue.map{ it.ref }, issuanceCommand, issuanceSigners, requester)
         )
 
+        val requesterIdentity = requester ?: ourIdentity
+
         // all states need to have the same participants
         val participants = statesToReIssue[0].state.data.participants
+
+        val requesterHost = serviceHub.identityService.partyFromKey(requesterIdentity.owningKey)!!
+        val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
+
         // if issuer is a participant, they already have access to those transactions
-        if(!participants.contains(issuer)) {
+        if(!participants.contains(issuer) && requesterHost != issuerHost) {
             val transactionHashes = statesToReIssue.map { it.ref.txhash }
             val transactionsToSend = transactionHashes.map {
                 serviceHub.validatedTransactions.getTransaction(it)
                     ?: throw FlowException("Can't find transaction with hash $it")
             }
-            subFlow(
-                SendSignedTransactions(issuer, transactionsToSend)
-            )
+
+            transactionsToSend.forEach { signedTransaction ->
+                val sendToSession = initiateFlow(issuerHost)
+                subFlow(SendTransactionFlow(sendToSession, signedTransaction))
+            }
         }
     }
 
+}
+
+@InitiatedBy(RequestReIssuanceAndShareRequiredTransactions::class)
+class ReceiveSignedTransaction(val otherSession: FlowSession) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        subFlow(ReceiveTransactionFlow(
+            otherSideSession = otherSession,
+            statesToRecord = StatesToRecord.ALL_VISIBLE
+        ))
+    }
 }

@@ -20,7 +20,7 @@ class UnlockReIssuedStates<T>(
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
     private val deletedStateTransactionHashes: List<SecureHash>,
-    private val updateCommand: CommandData,
+    private val updateCommand: CommandData, // unencumber state command
     private val updateSigners: List<AbstractParty> = listOf(reIssuanceLock.state.data.requester)
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
