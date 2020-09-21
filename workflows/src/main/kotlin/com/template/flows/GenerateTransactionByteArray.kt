@@ -1,13 +1,10 @@
 package com.template.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.template.utils.convertSignedTransactionToByteArray
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
-import net.corda.core.serialization.serialize
-import java.io.ByteArrayOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 @StartableByRPC
 class GenerateTransactionByteArray(
@@ -17,17 +14,6 @@ class GenerateTransactionByteArray(
     override fun call(): ByteArray {
         val signedTransaction = serviceHub.validatedTransactions.track().snapshot
             .findLast { it.tx.id == transactionId }!!
-        val serializedSignedTransactionBytes = signedTransaction.serialize().bytes
-
-        val baos = ByteArrayOutputStream()
-        ZipOutputStream(baos).use { zos ->
-            val entry = ZipEntry("SignedTransaction")
-            zos.putNextEntry(entry)
-            zos.write(serializedSignedTransactionBytes)
-            zos.closeEntry()
-        }
-        baos.close()
-
-        return baos.toByteArray()
+        return convertSignedTransactionToByteArray(signedTransaction)
     }
 }

@@ -1,12 +1,8 @@
-package com.template
+package com.template.contracts
 
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
-import com.template.contracts.ReIssuanceLockContract
-import com.template.contracts.ReIssuanceRequestContract
 import com.template.contracts.example.SimpleDummyStateContract
-import com.template.states.example.SimpleDummyState
-import net.corda.core.contracts.StateAndRef
 import net.corda.testing.node.ledger
 import org.junit.Test
 

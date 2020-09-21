@@ -7,6 +7,7 @@ import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
+import com.r3.dr.ledgergraph.services.LedgerGraphService
 import com.template.flows.*
 import com.template.flows.example.simpleDummyState.*
 import com.template.flows.example.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
@@ -15,6 +16,9 @@ import com.template.flows.example.dummyStateRequiringAcceptance.UpdateDummyState
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
 import com.template.flows.example.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.CreateDummyStateWithInvalidEqualsMethod
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.DeleteDummyStateWithInvalidEqualsMethod
+import com.template.flows.example.dummyStateWithInvalidEqualsMethod.UpdateDummyStateWithInvalidEqualsMethod
 import com.template.flows.example.tokens.IssueTokens
 import com.template.flows.example.tokens.ListTokensFlow
 import com.template.flows.example.tokens.RedeemTokens
@@ -24,6 +28,7 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
+import com.template.states.example.DummyStateWithInvalidEqualsMethod
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -108,9 +113,7 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.ci.workflows"),
                 findCordapp("com.template.flows"),
                 findCordapp("com.template.contracts"),
-                findCordapp("com.r3.corda.lib.accounts.workflows"),
-                findCordapp("com.r3.corda.lib.accounts.contracts"),
-                findCordapp("com.r3.corda.lib.tokens.contracts")
+                findCordapp("com.r3.dr.ledgergraph")
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(
@@ -157,6 +160,7 @@ abstract class AbstractFlowTest {
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
 
+        aliceNode.services.cordaService(LedgerGraphService::class.java).waitForInitialization()
     }
 
     fun initialisePartiesForAccountsOnTheSameHost() {
@@ -421,6 +425,36 @@ abstract class AbstractFlowTest {
         return filterStates(tokens, encumbered)
     }
 
+    // DummyStateWithInvalidEqualsMethodContract
+
+    fun createDummyStateWithInvalidEqualsMethod(
+        owner: Party,
+        quantity: Int
+    ) {
+        val flowFuture = issuerNode.services.startFlow(CreateDummyStateWithInvalidEqualsMethod(owner, quantity)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun updateDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode,
+        owner: Party
+    ) {
+        val dummyStateWithInvalidEqualsMethodStateAndRef = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
+        val flowFuture = node.services.startFlow(UpdateDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef, owner)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun deleteDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode,
+        dummyStateWithInvalidEqualsMethodStateAndRef: StateAndRef<DummyStateWithInvalidEqualsMethod> = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
+    ) {
+        val flowFuture = node.services.startFlow(DeleteDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
     // common
 
     inline fun <reified T : ContractState> getStateAndRefs(
@@ -477,14 +511,15 @@ abstract class AbstractFlowTest {
 
     inline fun <reified T : ContractState> unlockReIssuedState(
         node: TestStartedNode,
-        attachmentSecureHash: SecureHash,
+        attachmentSecureHashes: List<SecureHash>,
         command: CommandData,
         commandSigners: List<AbstractParty>? = null
     ) {
         val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
         val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHash, command, signers)).resultFuture
+        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef,
+            attachmentSecureHashes, command, signers)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }
@@ -499,11 +534,10 @@ abstract class AbstractFlowTest {
     }
 
     fun uploadDeletedStateAttachment(
-        node: TestStartedNode
+        node: TestStartedNode,
+        deleteStateTransaction: LedgerTransaction = getLedgerTransactions(node).last()
     ): SecureHash {
         val party = node.info.singleIdentity()
-
-        val deleteStateTransaction = getLedgerTransactions(node).last()
 
         val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
         mockNet.runNetwork()
@@ -525,4 +559,13 @@ abstract class AbstractFlowTest {
             it.toLedgerTransaction(node.services)
         }
     }
+
+    fun getTransactionBackChain(
+        node: TestStartedNode,
+        txId: SecureHash
+    ): Set<SecureHash> {
+        val ledgerGraphService = node.services.cordaService(LedgerGraphService::class.java)
+        return ledgerGraphService.getBackchain(setOf(txId))
+    }
+
 }

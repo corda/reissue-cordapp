@@ -19,8 +19,8 @@ import net.corda.core.utilities.unwrap
 class UnlockReIssuedStates<T>(
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
-    private val deletedStateTransactionHash: SecureHash,
-    private val updateCommand: CommandData,
+    private val deletedStateTransactionHashes: List<SecureHash>,
+    private val updateCommand: CommandData, // unencumber state command
     private val updateSigners: List<AbstractParty> = listOf(reIssuanceLock.state.data.requester)
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
@@ -45,7 +45,9 @@ class UnlockReIssuedStates<T>(
         transactionBuilder.addInputState(reIssuanceLock)
         transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Delete(), lockSigners)
 
-        transactionBuilder.addAttachment(deletedStateTransactionHash)
+        deletedStateTransactionHashes.forEach { deletedStateTransactionHash ->
+            transactionBuilder.addAttachment(deletedStateTransactionHash)
+        }
 
         val localSigners = (lockSigners + reIssuedStatesSigners)
             .distinct()
@@ -57,15 +59,9 @@ class UnlockReIssuedStates<T>(
         val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
         val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
 
-        val signersSessions = initiateFlows(signers)
-        val otherParticipantsSessions = initiateFlows(otherParticipants)
-
-        signersSessions.forEach {
-            it.send(true)
-        }
-        otherParticipantsSessions.forEach {
-            it.send(false)
-        }
+        val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
+        val otherParticipantsSessions = subFlow(GenerateRequiredFlowSessions(otherParticipants))
+        subFlow(SendSignerFlags(signersSessions, otherParticipantsSessions))
 
         if(signersSessions.isNotEmpty()) {
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
@@ -77,14 +73,6 @@ class UnlockReIssuedStates<T>(
                 sessions = signersSessions + otherParticipantsSessions
             )
         )
-    }
-
-    fun initiateFlows(parties: List<AbstractParty>): List<FlowSession> { // TODO: this function is a duplicate
-        return parties
-            .map { serviceHub.identityService.partyFromKey(it.owningKey)!! } // get host
-            .filter { it != ourIdentity }
-            .distinct()
-            .map { initiateFlow(it) }
     }
 
 }

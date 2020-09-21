@@ -1,30 +1,26 @@
 package com.template.states.example
 
-import com.template.contracts.example.SimpleDummyStateContract
+import com.template.contracts.example.DummyStateWithInvalidEqualsMethodContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.Party
 
-@BelongsToContract(SimpleDummyStateContract::class)
-class SimpleDummyState(
-    val owner: AbstractParty
+@BelongsToContract(DummyStateWithInvalidEqualsMethodContract::class)
+class DummyStateWithInvalidEqualsMethod(
+    var owner: Party,
+    val issuer: Party,
+    val quantity: Int
 ): ContractState {
     override val participants: List<AbstractParty>
         get() = listOf(owner)
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SimpleDummyState
-
-        if (owner != other.owner) return false
-
         return true
     }
 
     override fun hashCode(): Int {
-        return owner.hashCode()
+        return 0
     }
 
 }

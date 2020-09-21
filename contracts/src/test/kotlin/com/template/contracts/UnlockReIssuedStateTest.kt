@@ -1,10 +1,9 @@
-package com.template
+package com.template.contracts
 
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.template.contracts.ReIssuanceLockContract
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.states.example.SimpleDummyState
 import net.corda.core.contracts.StateRef
@@ -24,8 +23,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -59,8 +57,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteTokensWireTransaction(tokens)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -130,8 +127,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction,
             notarySignature = false)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -164,8 +160,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -198,8 +193,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState, generateOutput = true)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -232,8 +226,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -264,8 +257,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
@@ -297,8 +289,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
         val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
         val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
-        val deletedSignedTransactionInputStream = generateSignedTransactionByteArray(deleteStateSignedTransaction)
-            .inputStream()
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
 
         val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
