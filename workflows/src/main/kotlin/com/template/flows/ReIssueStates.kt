@@ -31,10 +31,19 @@ class ReIssueStates<T>(
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
         // we don't use withExternalIds as transaction can be only shared with a host
-        val criteria = QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+
         @Suppress("UNCHECKED_CAST")
         val statesToReIssue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
-            criteria=criteria).states as List<StateAndRef<T>>
+            criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+        ).states as List<StateAndRef<T>>
+
+        @Suppress("UNCHECKED_CAST")
+        val locks: List<StateAndRef<ReIssuanceLock<T>>> = serviceHub.vaultService.queryBy<ReIssuanceLock<ContractState>>()
+            .states as List<StateAndRef<ReIssuanceLock<T>>>
+        val reIssuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
+        reIssuanceRequest.stateRefsToReIssue.forEach {
+            require(!reIssuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
+        }
 
         require(statesToReIssue.size == reIssuanceRequest.stateRefsToReIssue.size) { "Cannot validate states to re-issue" }
 
@@ -47,7 +56,7 @@ class ReIssueStates<T>(
 
         val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
-        transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Accept(), lockSigners)
+        transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Approve(), lockSigners)
 
         var encumbrance = 1
         statesToReIssue

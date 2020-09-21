@@ -25,8 +25,8 @@ class UpdateDummyStateRequiringAllParticipantsSignatures(
         val other = dummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data.other
         val signers = setOf(owner.owningKey, newOwner.owningKey, issuer.owningKey, other.owningKey).toList()
 
-        var dummyStateRequiringAllParticipantsSignatures = dummyStateRequiringAllParticipantsSignaturesStateAndRef.state.data
-        dummyStateRequiringAllParticipantsSignatures.owner = newOwner
+        var dummyStateRequiringAllParticipantsSignatures = dummyStateRequiringAllParticipantsSignaturesStateAndRef
+            .state.data.copy(owner = newOwner)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addInputState(dummyStateRequiringAllParticipantsSignaturesStateAndRef)

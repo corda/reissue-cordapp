@@ -5,6 +5,7 @@ import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.template.contracts.example.SimpleDummyStateContract
+import com.template.states.ReIssuanceLock
 import com.template.states.example.SimpleDummyState
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.*
@@ -29,11 +30,12 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
             deletedSignedTransactionInputStream, aliceParty.toString(), null)
         val deletedStateRef: StateRef = deleteStateSignedTransaction.coreTransaction.inputs[0]
 
+        val reIssuanceLock = createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef)))
+
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
-                    contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef))),
-                    encumbrance = 1)
+                    contractState=reIssuanceLock, encumbrance = 1)
                 output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=dummyState, encumbrance = 0)
             }
@@ -41,9 +43,11 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
             transaction {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
+                output(ReIssuanceLockContract.contractId,
+                    reIssuanceLock.copy(reIssuesStatesStatus = ReIssuanceLock.ReIssuanceStatus.USED))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 verifies()
             }
@@ -64,10 +68,11 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
         val deletedStateRefs: List<StateRef> = deleteStateSignedTransaction.coreTransaction.inputs
         val tokenStateAndRefs = deletedStateRefs.map { createTokenStateAndRef(it) }
 
+        val reIssuanceLock = createDummyReIssuanceLock(tokenStateAndRefs)
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
-                    contractState=createDummyReIssuanceLock(tokenStateAndRefs), encumbrance = 1)
+                    contractState=reIssuanceLock, encumbrance = 1)
                 tokens.forEachIndexed { idx, token ->
                     output(FungibleTokenContract.contractId, reIssuedStateLabel(idx),
                         contractState=token, encumbrance = 0)
@@ -79,12 +84,15 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 tokenIndices.forEach {
                     input(reIssuedStateLabel(it))
                 }
-                input(reIssuanceLockLabel)
-
                 tokens.map {
                     output(FungibleTokenContract.contractId, it)
                 }
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+
+                input(reIssuanceLockLabel)
+                output(ReIssuanceLockContract.contractId,
+                    reIssuanceLock.copy(reIssuesStatesStatus = ReIssuanceLock.ReIssuanceStatus.USED))
+
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices))
                 verifies()
             }
@@ -113,7 +121,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -147,7 +155,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -180,7 +188,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -213,7 +221,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -276,7 +284,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -309,7 +317,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, "", contractState=dummyState, encumbrance = 0)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Delete())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }

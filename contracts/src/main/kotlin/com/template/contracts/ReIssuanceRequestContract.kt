@@ -15,7 +15,8 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         val command = tx.commands.requireSingleCommand<Commands>()
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
-            is Commands.Accept -> verifyAcceptCommand(tx, command)
+            is Commands.Approve -> verifyApproveCommand(tx, command)
+            is Commands.Deny -> verifyDenyCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
     }
@@ -37,7 +38,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyAcceptCommand(
+    fun verifyApproveCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
@@ -61,8 +62,27 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         }
     }
 
+    fun verifyDenyCommand( // TODO: unit test
+        tx: LedgerTransaction,
+        command: CommandWithParties<Commands>
+    ) {
+        val reIssuanceRequestInputs = tx.inputsOfType<ReIssuanceRequest>()
+
+        requireThat {
+            "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
+            "No inputs of other than ReIssuanceRequest are allowed" using (tx.inputs.size == 1)
+
+            "No outputs are allowed" using (tx.outputs.isEmpty())
+
+            val reIssuanceRequest = reIssuanceRequestInputs[0]
+            "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
+
+        }
+    }
+
     interface Commands : CommandData {
         class Create : Commands
-        class Accept : Commands
+        class Approve : Commands
+        class Deny : Commands
     }
 }

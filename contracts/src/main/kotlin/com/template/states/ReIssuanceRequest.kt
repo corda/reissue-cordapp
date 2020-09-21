@@ -7,7 +7,7 @@ import net.corda.core.serialization.CordaSerializable
 
 @BelongsToContract(ReIssuanceRequestContract::class)
 @CordaSerializable
-class ReIssuanceRequest(
+data class ReIssuanceRequest(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val stateRefsToReIssue: List<StateRef>,

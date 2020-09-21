@@ -4,8 +4,6 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
-import net.corda.core.crypto.Base58
-import net.corda.core.crypto.SecureHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
@@ -20,7 +18,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         val command = tx.commands.requireSingleCommand<Commands>()
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
-            is Commands.Delete -> verifyDeleteCommand(tx, command)
+            is Commands.Use -> verifyUseCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
     }
@@ -51,6 +49,10 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             val reIssuanceRequest = reIssuanceRequestInputs[0]
             val reIssuanceLock = reIssuanceLockOutputs[0]
+
+            // verify status
+            "Re-issuance lock status is RE_ISSUED" using(
+                reIssuanceLock.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.RE_ISSUED)
 
             // verify requester & issuer
             "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
@@ -92,7 +94,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyDeleteCommand(
+    fun verifyUseCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
@@ -105,16 +107,24 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         requireThat {
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
-            "No outputs of type ReIssuanceLock are allowed" using reIssuanceLockOutputs.isEmpty()
+            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
 
             "At least one input other than lock is expected" using otherInputs.isNotEmpty()
             "The same number of inputs and outputs other than lock is expected" using (
                 otherInputs.size == otherOutputs.size)
 
-            val reIssuanceLock = reIssuanceLockInputs[0]
+            val reIssuanceLockInput = reIssuanceLockInputs[0]
+            val reIssuanceLockOutput = reIssuanceLockOutputs[0]
+
+            // verify status
+            "Input re-issuance lock status is RE_ISSUED" using(
+                reIssuanceLockInput.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.RE_ISSUED)
+            "Output re-issuance lock status is USED" using(
+                reIssuanceLockOutput.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.USED)
+
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
-            val lockedStatesRef = reIssuanceLock.originalStates.map { it.ref }
+            val lockedStatesRef = reIssuanceLockInput.originalStates.map { it.ref }
 
             "All locked states are inputs of attached transactions" using (
                 attachedSignedTransactions.flatMap { it.inputs }.containsAll(lockedStatesRef))
@@ -128,7 +138,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
             }
 
-
             // verify encumbrance
             otherInputs.forEach {
                 "Inputs other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
@@ -140,7 +149,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 otherInputs.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet())
 
             // verify signers
-            "Requester is required signer" using (command.signers.contains(reIssuanceLock.requester.owningKey))
+            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
         }
 
     }
@@ -171,6 +180,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     interface Commands : CommandData {
         class Create : Commands
-        class Delete : Commands
+        class Use : Commands
     }
 }

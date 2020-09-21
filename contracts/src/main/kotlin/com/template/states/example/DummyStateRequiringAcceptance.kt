@@ -7,7 +7,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 
 @BelongsToContract(DummyStateRequiringAcceptanceContract::class)
-class DummyStateRequiringAcceptance(
+data class DummyStateRequiringAcceptance(
     var owner: Party,
     val issuer: Party,
     val acceptor: Party

@@ -513,10 +513,10 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         attachmentSecureHashes: List<SecureHash>,
         command: CommandData,
-        commandSigners: List<AbstractParty>? = null
+        commandSigners: List<AbstractParty>? = null,
+        reIssuedStateAndRefs: List<StateAndRef<T>> = getStateAndRefs<T>(node, true),
+        lockStateAndRef: StateAndRef<ReIssuanceLock<T>> = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
     ) {
-        val reIssuedStateAndRefs = getStateAndRefs<T>(node, true)
-        val lockStateAndRef = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
         val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef,
             attachmentSecureHashes, command, signers)).resultFuture

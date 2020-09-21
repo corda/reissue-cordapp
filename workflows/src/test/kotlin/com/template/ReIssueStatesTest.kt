@@ -379,4 +379,30 @@ class ReIssueStatesTest: AbstractFlowTest() {
 
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `State can't be re-issued twice`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest1 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest2 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[1]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest1)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest2)
+
+    }
 }

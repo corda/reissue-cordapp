@@ -9,6 +9,7 @@ import com.template.contracts.example.SimpleDummyStateContract
 import com.template.contracts.example.DummyStateRequiringAcceptanceContract
 import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
 import com.template.contracts.example.DummyStateWithInvalidEqualsMethodContract
+import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance
@@ -653,5 +654,43 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             listOf(attachmentSecureHash),
             DummyStateWithInvalidEqualsMethodContract.Commands.Update()
         )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `State can't be re-issued again after the re-issued state has been unlocked`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        deleteSimpleDummyState(aliceNode)
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<SimpleDummyState>(
+            aliceNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update()
+        )
+
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+        val reIssuanceRequest2 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest2)
+
     }
 }
