@@ -62,7 +62,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyRejectCommand( // TODO: unit test
+    fun verifyRejectCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
