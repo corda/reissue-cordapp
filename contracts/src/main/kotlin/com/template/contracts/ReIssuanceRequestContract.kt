@@ -15,8 +15,8 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         val command = tx.commands.requireSingleCommand<Commands>()
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
-            is Commands.Approve -> verifyApproveCommand(tx, command)
-            is Commands.Deny -> verifyDenyCommand(tx, command)
+            is Commands.Accept -> verifyAcceptCommand(tx, command)
+            is Commands.Reject -> verifyRejectCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
     }
@@ -38,7 +38,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyApproveCommand(
+    fun verifyAcceptCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
@@ -62,7 +62,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyDenyCommand( // TODO: unit test
+    fun verifyRejectCommand( // TODO: unit test
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
@@ -82,7 +82,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
 
     interface Commands : CommandData {
         class Create : Commands
-        class Approve : Commands
-        class Deny : Commands
+        class Accept : Commands
+        class Reject : Commands
     }
 }

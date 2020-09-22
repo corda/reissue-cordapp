@@ -56,7 +56,7 @@ class ReIssueStates<T>(
 
         val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
-        transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Approve(), lockSigners)
+        transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Accept(), lockSigners)
 
         var encumbrance = 1
         statesToReIssue

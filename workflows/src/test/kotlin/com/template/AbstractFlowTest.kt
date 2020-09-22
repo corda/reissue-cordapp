@@ -459,7 +459,7 @@ abstract class AbstractFlowTest {
 
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
-        encumbered: Boolean = false,
+        encumbered: Boolean? = null,
         accountUUID: UUID? = null
     ): List<StateAndRef<T>> {
         val states = if(accountUUID == null)
@@ -468,6 +468,8 @@ abstract class AbstractFlowTest {
             node.services.vaultService.queryBy<T>(
                 criteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUUID))
             ).states
+        if(encumbered == null)
+            return states
         return filterStates(states, encumbered)
     }
 
@@ -529,6 +531,15 @@ abstract class AbstractFlowTest {
         reIssuanceRequest: StateAndRef<ReIssuanceRequest>
     ) where T: ContractState {
         val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+    fun <T> rejectReIssuanceRequested(
+        node: TestStartedNode,
+        reIssuanceRequest: StateAndRef<ReIssuanceRequest>
+    ) where T: ContractState {
+        val flowFuture = node.services.startFlow(RejectReIssuanceRequest<T>(reIssuanceRequest)).resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

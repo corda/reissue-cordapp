@@ -22,7 +22,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())), encumbrance = 1)
                 output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
-                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Approve())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 verifies()
@@ -45,7 +45,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createToken(), encumbrance = 2)
                 output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
                     contractState=createDummyReIssuanceLock(listOf(createTokenStateAndRef(), createTokenStateAndRef())), encumbrance = 0)
-                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Approve())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), IssueTokenCommand(issuedTokenType, listOf(0, 1)))
                 verifies()
@@ -66,7 +66,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())))
                 output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState())
-                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Approve())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
@@ -85,7 +85,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                 input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
                 output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
-                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Approve())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
@@ -105,7 +105,7 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                     contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef())), encumbrance = 1)
                 output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
-                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Approve())
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
                 fails()
