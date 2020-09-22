@@ -9,7 +9,6 @@ import com.template.contracts.example.SimpleDummyStateContract
 import com.template.contracts.example.DummyStateRequiringAcceptanceContract
 import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
 import com.template.contracts.example.DummyStateWithInvalidEqualsMethodContract
-import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import com.template.states.example.SimpleDummyState
 import com.template.states.example.DummyStateRequiringAcceptance

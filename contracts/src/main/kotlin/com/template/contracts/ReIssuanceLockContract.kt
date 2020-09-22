@@ -61,8 +61,8 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 reIssuanceRequest.issuer == reIssuanceLock.issuer)
 
             // verify participants
-            "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
-                reIssuanceLock.participants.containsAll(reIssuanceLock.originalStates[0].state.data.participants))
+            "Requester is a participant" using(reIssuanceLock.participants.contains(reIssuanceLock.requester))
+            "Issuer is a participant" using(reIssuanceLock.participants.contains(reIssuanceLock.issuer))
 
             // verify state data
             "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
