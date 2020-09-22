@@ -546,11 +546,11 @@ abstract class AbstractFlowTest {
 
     fun uploadDeletedStateAttachment(
         node: TestStartedNode,
-        deleteStateTransaction: LedgerTransaction = getLedgerTransactions(node).last()
+        deleteStateTransactionId: SecureHash = getLedgerTransactions(node).last().id
     ): SecureHash {
         val party = node.info.singleIdentity()
 
-        val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransaction.id)).resultFuture
+        val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransactionId)).resultFuture
         mockNet.runNetwork()
         val transactionByteArray = flowFuture.getOrThrow()
 

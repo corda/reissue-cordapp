@@ -5,6 +5,7 @@ import org.hamcrest.Matchers.*
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.contracts.example.DummyStateRequiringAcceptanceContract
 import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
@@ -374,8 +375,10 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val ledgerTransactions = getLedgerTransactions(aliceNode)
         val ledgerTransactionsLength = ledgerTransactions.size
 
-        val attachmentSecureHash1 = uploadDeletedStateAttachment(aliceNode, ledgerTransactions[ledgerTransactionsLength-1])
-        val attachmentSecureHash2 = uploadDeletedStateAttachment(aliceNode, ledgerTransactions[ledgerTransactionsLength-2])
+        val attachmentSecureHash1 = uploadDeletedStateAttachment(aliceNode,
+            ledgerTransactions[ledgerTransactionsLength-1].id)
+        val attachmentSecureHash2 = uploadDeletedStateAttachment(aliceNode,
+            ledgerTransactions[ledgerTransactionsLength-2].id)
 
         unlockReIssuedState<FungibleToken>(
             aliceNode,
@@ -691,5 +694,28 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val reIssuanceRequest2 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest2)
 
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Requester can't pretend to be a notary to forge exit transaction`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        val transactionBuilder = TransactionBuilder(notary = aliceParty)
+        transactionBuilder.addInputState(simpleDummyState)
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
+        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 }
