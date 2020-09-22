@@ -44,7 +44,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
                 output(ReIssuanceLockContract.contractId,
-                    reIssuanceLock.copy(reIssuesStatesStatus = ReIssuanceLock.ReIssuanceStatus.USED))
+                    reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
@@ -90,7 +90,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
 
                 input(reIssuanceLockLabel)
                 output(ReIssuanceLockContract.contractId,
-                    reIssuanceLock.copy(reIssuesStatesStatus = ReIssuanceLock.ReIssuanceStatus.USED))
+                    reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
 
                 command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
                 command(listOf(aliceParty.owningKey), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices))

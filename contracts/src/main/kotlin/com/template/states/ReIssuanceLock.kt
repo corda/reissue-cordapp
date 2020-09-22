@@ -12,13 +12,13 @@ data class ReIssuanceLock<T>(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val originalStates: List<StateAndRef<T>>,
-    val reIssuesStatesStatus: ReIssuanceStatus = ReIssuanceStatus.RE_ISSUED
+    val status: ReIssuanceLockStatus = ReIssuanceLockStatus.ACTIVE
 ): ContractState where T: ContractState {
 
     @CordaSerializable
-    enum class ReIssuanceStatus {
-        RE_ISSUED,
-        USED
+    enum class ReIssuanceLockStatus {
+        ACTIVE,
+        INACTIVE
     }
 
     override val participants: List<AbstractParty>

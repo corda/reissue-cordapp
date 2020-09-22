@@ -43,7 +43,7 @@ class UnlockReIssuedStates<T>(
         transactionBuilder.addCommand(updateCommand, reIssuedStatesSigners)
 
         var usedReIssuanceLock = (reIssuanceLock.state.data).copy(
-            reIssuesStatesStatus = ReIssuanceLock.ReIssuanceStatus.USED)
+            status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
 
         transactionBuilder.addInputState(reIssuanceLock)
         transactionBuilder.addOutputState(usedReIssuanceLock)

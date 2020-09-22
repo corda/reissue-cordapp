@@ -52,7 +52,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify status
             "Re-issuance lock status is RE_ISSUED" using(
-                reIssuanceLock.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.RE_ISSUED)
+                reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
 
             // verify requester & issuer
             "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
@@ -118,9 +118,9 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify status
             "Input re-issuance lock status is RE_ISSUED" using(
-                reIssuanceLockInput.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.RE_ISSUED)
+                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
             "Output re-issuance lock status is USED" using(
-                reIssuanceLockOutput.reIssuesStatesStatus == ReIssuanceLock.ReIssuanceStatus.USED)
+                reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
 
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
