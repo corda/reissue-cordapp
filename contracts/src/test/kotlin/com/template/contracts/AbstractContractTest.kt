@@ -134,9 +134,10 @@ abstract class AbstractContractTest {
     }
 
     fun <T> createDummyReIssuanceLock(
-        stateAndRefList: List<StateAndRef<T>>
+        stateAndRefList: List<StateAndRef<T>>,
+        status: ReIssuanceLock.ReIssuanceLockStatus = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE
     ): ReIssuanceLock<T> where T: ContractState {
-        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList)
+        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList, status)
     }
 
     fun generateSignedTransactionByteArrayInputStream(

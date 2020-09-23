@@ -20,6 +20,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
             is Commands.Use -> verifyUseCommand(tx, command)
+            is Commands.Delete -> verifyDeleteCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
     }
@@ -52,7 +53,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceLock = reIssuanceLockOutputs[0]
 
             // verify status
-            "Re-issuance lock status is RE_ISSUED" using(
+            "Re-issuance lock status is ACTIVE" using(
                 reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
 
             // verify requester & issuer
@@ -118,7 +119,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceLockOutput = reIssuanceLockOutputs[0]
 
             // verify status
-            "Input re-issuance lock status is RE_ISSUED" using(
+            "Input re-issuance lock status is ACTIVE" using(
                 reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
             "Output re-issuance lock status is USED" using(
                 reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
@@ -157,6 +158,37 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     }
 
+    fun verifyDeleteCommand(
+        tx: LedgerTransaction,
+        command: CommandWithParties<Commands>
+    ) {
+        val reIssuanceLockInputs = tx.inputs.filter { it.state.data is ReIssuanceLock<*> }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> }
+
+        requireThat {
+            "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
+            "At least one input other than lock is expected" using otherInputs.isNotEmpty()
+
+            "No outputs of are allowed" using tx.outputs.isEmpty()
+
+            val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
+
+            // verify status
+            "Input re-issuance lock status is ACTIVE" using(
+                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+
+            // verify encumbrance
+            "Input of type ReIssuanceLock must be encumbered" using(reIssuanceLockInputs[0].state.encumbrance != null)
+            otherInputs.forEach {
+                "Input ${it.ref} of type other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
+            }
+
+            // verify signers
+            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
+            "Issuer is required signer" using (command.signers.contains(reIssuanceLockInput.issuer.owningKey))
+        }
+    }
+
     private fun getAttachedLedgerTransaction(tx: LedgerTransaction): List<SignedTransaction> {
         // Constraints on the included attachments.
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
@@ -184,5 +216,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
     interface Commands : CommandData {
         class Create : Commands
         class Use : Commands
+        class Delete: Commands
     }
 }

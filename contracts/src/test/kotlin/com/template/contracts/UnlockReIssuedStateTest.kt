@@ -71,12 +71,12 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
         val reIssuanceLock = createDummyReIssuanceLock(tokenStateAndRefs)
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
-                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
-                    contractState=reIssuanceLock, encumbrance = 1)
                 tokens.forEachIndexed { idx, token ->
                     output(FungibleTokenContract.contractId, reIssuedStateLabel(idx),
-                        contractState=token, encumbrance = 0)
+                        contractState=token, encumbrance = idx+1)
                 }
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
+                    contractState=reIssuanceLock, encumbrance = 0)
             }
 
             transaction {
