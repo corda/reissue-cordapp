@@ -100,6 +100,42 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
     }
 
     @Test
+    fun `Re-issued state can't unlocked if output ReIssuanceLock status is ACTIVE`() {
+        val dummyState = createSimpleDummyState()
+
+        val deleteStateWireTransaction = generateDeleteSimpleDummyStateWireTransaction(dummyState)
+        val deleteStateSignedTransaction = generateSignedTransaction(deleteStateWireTransaction)
+        val deletedSignedTransactionInputStream = generateSignedTransactionByteArrayInputStream(deleteStateSignedTransaction)
+
+        val uploadedDeletedTransactionSecureHash = aliceNode.services.attachments.importAttachment(
+            deletedSignedTransactionInputStream, aliceParty.toString(), null)
+        val deletedStateRef: StateRef = deleteStateSignedTransaction.coreTransaction.inputs[0]
+
+        val reIssuanceLock = createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef(deletedStateRef)))
+
+        aliceNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
+                    contractState=reIssuanceLock, encumbrance = 1)
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
+                    contractState=dummyState, encumbrance = 0)
+            }
+
+            transaction {
+                attachment(uploadedDeletedTransactionSecureHash)
+                input(reIssuanceLockLabel)
+                output(ReIssuanceLockContract.contractId,
+                    reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE))
+                input(reIssuedStateLabel)
+                output(SimpleDummyStateContract.contractId, dummyState)
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
+                fails()
+            }
+        }
+    }
+
+    @Test
     fun `Re-issued state can't be unlocked without attached transaction proving that the original state had been deleted`() {
         val dummyState = createSimpleDummyState()
 
