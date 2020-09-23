@@ -133,7 +133,8 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
             attachedSignedTransactions.forEach { attachedSignedTransaction ->
-                attachedSignedTransaction.coreTransaction as WireTransaction
+                "Attached transaction ${attachedSignedTransaction.id} is WireTransaction" using(
+                    attachedSignedTransaction.coreTransaction is WireTransaction)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(

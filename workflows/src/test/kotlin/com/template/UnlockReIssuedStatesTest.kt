@@ -15,9 +15,8 @@ import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import com.template.states.example.DummyStateWithInvalidEqualsMethod
 import com.template.utils.convertSignedTransactionToByteArray
-import net.corda.core.contracts.PrivacySalt
-import net.corda.core.contracts.TransactionVerificationException
-import net.corda.core.crypto.SecureHash
+import net.corda.core.contracts.*
+import net.corda.core.crypto.*
 import net.corda.core.node.services.queryBy
 import net.corda.core.transactions.*
 import net.corda.testing.core.singleIdentity
@@ -760,13 +759,6 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             listOf(attachmentSecureHash),
             SimpleDummyStateContract.Commands.Update()
         )
-
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(2)))
-        assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
-        assertThat(unencumberedStates[1].state.data, `is`(simpleDummyState.state.data))
     }
 }
 
