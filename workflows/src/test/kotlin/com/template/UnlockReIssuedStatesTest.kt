@@ -5,7 +5,6 @@ import org.hamcrest.Matchers.*
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.template.contracts.example.SimpleDummyStateContract
 import com.template.contracts.example.DummyStateRequiringAcceptanceContract
 import com.template.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
@@ -16,9 +15,11 @@ import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import com.template.states.example.DummyStateWithInvalidEqualsMethod
 import com.template.utils.convertSignedTransactionToByteArray
+import net.corda.core.contracts.PrivacySalt
 import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.queryBy
-import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.transactions.*
 import net.corda.testing.core.singleIdentity
 import org.junit.Test
 
@@ -718,4 +719,58 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
         val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
     }
+
+    @Test
+    fun `Requester can't forge signed transaction by creating another class derived from TraversableTransaction`() {
+        initialiseParties()
+
+        createSimpleDummyState(aliceParty)
+        deleteSimpleDummyState(aliceNode)
+        val signedDeleteTransaction = getSignedTransactions(aliceNode).last()
+
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        val transactionBuilder = TransactionBuilder(notary = notaryParty)
+        transactionBuilder.addInputState(simpleDummyState)
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
+        val initiallySignedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+
+        val wireTransaction = initiallySignedTransaction.coreTransaction as WireTransaction
+        val testWireTransaction = TestWireTransaction(wireTransaction.componentGroups, wireTransaction.privacySalt, id=signedDeleteTransaction.id)
+
+        val forgedSignedTransaction = SignedTransaction(testWireTransaction, signedDeleteTransaction.sigs)
+
+        val signedTransactionByteArray = convertSignedTransactionToByteArray(forgedSignedTransaction)
+        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(signedTransactionByteArray.inputStream(), aliceParty.toString(), null)
+
+        unlockReIssuedState<SimpleDummyState>(
+            aliceNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update()
+        )
+
+        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
+        assertThat(encumberedStates, empty())
+        assertThat(unencumberedStates, hasSize(`is`(2)))
+        assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
+        assertThat(unencumberedStates[1].state.data, `is`(simpleDummyState.state.data))
+    }
 }
+
+class TestWireTransaction(componentGroups: List<ComponentGroup>,
+                          val privacySalt: PrivacySalt = PrivacySalt(),
+                          override val id: SecureHash
+): TraversableTransaction(componentGroups)
