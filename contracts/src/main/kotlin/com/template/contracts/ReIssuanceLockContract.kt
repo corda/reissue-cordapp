@@ -7,6 +7,7 @@ import net.corda.core.contracts.Requirements.using
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.WireTransaction
 
 class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
@@ -132,6 +133,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
             attachedSignedTransactions.forEach { attachedSignedTransaction ->
+                attachedSignedTransaction.coreTransaction as WireTransaction
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(

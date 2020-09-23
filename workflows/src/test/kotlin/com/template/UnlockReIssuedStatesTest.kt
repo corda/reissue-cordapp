@@ -720,7 +720,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 
-    @Test
+    @Test(expected = TransactionVerificationException::class)
     fun `Requester can't forge signed transaction by creating another class derived from TraversableTransaction`() {
         initialiseParties()
 
