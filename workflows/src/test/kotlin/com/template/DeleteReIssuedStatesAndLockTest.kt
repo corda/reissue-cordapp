@@ -13,6 +13,7 @@ import com.template.states.ReIssuanceRequest
 import com.template.states.example.DummyStateRequiringAcceptance
 import com.template.states.example.DummyStateRequiringAllParticipantsSignatures
 import com.template.states.example.SimpleDummyState
+import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.node.services.queryBy
 import org.junit.Test
 
@@ -304,6 +305,41 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0], `is`(simpleDummyStatesToReIssue[0]))
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Re-issued SimpleDummyState and corresponding ReIssuanceLock can't be deleted after they are unlocked`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            simpleDummyStatesToReIssue,
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+
+        deleteSimpleDummyStateForAccount(aliceNode)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+
+        unlockReIssuedState<SimpleDummyState>(
+            aliceNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update()
+        )
+
+        val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
+        val lockState = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)[0]
+        deleteReIssuedStatesAndLock(
+            aliceNode,
+            lockState,
+            reIssuedSimpleDummyStates,
+            SimpleDummyStateContract.Commands.Delete()
+        )
     }
 
 }
