@@ -557,6 +557,23 @@ abstract class AbstractFlowTest {
         return node.services.attachments.importAttachment(transactionByteArray.inputStream(), party.toString(), null)
     }
 
+    fun <T> deleteReIssuedStatesAndLock(
+        node: TestStartedNode,
+        reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
+        reIssuedStates: List<StateAndRef<T>>,
+        command: CommandData,
+        commandSigners: List<AbstractParty>? = null
+        ) where T: ContractState {
+        val signers: List<AbstractParty> = commandSigners ?: listOf(reIssuanceLock.state.data.requester,
+            reIssuanceLock.state.data.issuer)
+
+        val flowFuture = node.services.startFlow(DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command,
+            signers)).resultFuture
+        mockNet.runNetwork()
+        flowFuture.getOrThrow()
+    }
+
+
     fun getSignedTransactions(
         node: TestStartedNode
     ): List<SignedTransaction> {

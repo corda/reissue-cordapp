@@ -268,7 +268,7 @@ class ReIssueStatesTest: AbstractFlowTest() {
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
         val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
         assertThat(encumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, empty())
         assertThat(lockStates, hasSize(`is`(1)))
         assertThat(lockStates[0].state.data.issuer, `is`(issuerParty as AbstractParty))
         assertThat(lockStates[0].state.data.requester, `is`(aliceParty as AbstractParty))

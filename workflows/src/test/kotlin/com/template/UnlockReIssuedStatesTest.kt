@@ -62,7 +62,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
@@ -114,7 +114,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(dummyStateRequiringAcceptance.state.data))
 
@@ -167,7 +167,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(dummyStateRequiringAllParticipantsSignatures.state.data))
 
@@ -220,7 +220,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(tokens[0].state.data))
 
@@ -274,7 +274,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getTokens(aliceNode, encumbered = true)
         val unencumberedStates = getTokens(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(2)))
         assertThat(unencumberedStates.map { it.state.data }, hasItem(tokensToReIssue[0].state.data))
 
@@ -328,7 +328,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getTokens(aliceNode, encumbered = true)
         val unencumberedStates = getTokens(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(2)))
         assertThat(unencumberedStates.map { it.state.data }, `is`(tokensToReIssue.map { it.state.data }))
 
@@ -388,7 +388,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
         val encumberedStates = getTokens(aliceNode, encumbered = true)
         val unencumberedStates = getTokens(aliceNode, encumbered = false)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(2)))
         assertThat(unencumberedStates.map { it.state.data }, hasItem(tokensToReIssue[0].state.data))
 
@@ -474,7 +474,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = false,
             accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
@@ -524,7 +524,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             accountUUID = employeeAliceAccount.identifier.id)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false,
             accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, hasSize(`is`(0)))
+        assertThat(encumberedStates, empty())
         assertThat(unencumberedStates, hasSize(`is`(1)))
         assertThat(unencumberedStates[0].state.data, `is`(simpleDummyState.state.data))
 
