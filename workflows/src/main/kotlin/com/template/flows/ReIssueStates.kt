@@ -19,7 +19,8 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class ReIssueStates<T>(
-    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>
+    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>,
+    private val issuerIsRequiredExitCommandSigner: Boolean = true
 ): FlowLogic<Unit>() where T: ContractState {
 
     @Suspendable
@@ -47,7 +48,12 @@ class ReIssueStates<T>(
 
         require(statesToReIssue.size == reIssuanceRequest.stateRefsToReIssue.size) { "Cannot validate states to re-issue" }
 
-        val reIssuanceLock = ReIssuanceLock(reIssuanceRequest.issuer, reIssuanceRequest.requester, statesToReIssue)
+        val reIssuanceLock = ReIssuanceLock(
+            reIssuanceRequest.issuer,
+            reIssuanceRequest.requester,
+            statesToReIssue,
+            issuerIsRequiredExitTransactionSigner = issuerIsRequiredExitCommandSigner
+        )
 
         val notary = getPreferredNotary(serviceHub)
 

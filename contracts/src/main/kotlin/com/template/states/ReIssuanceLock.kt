@@ -12,8 +12,9 @@ data class ReIssuanceLock<T>(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val originalStates: List<StateAndRef<T>>,
-    val status: ReIssuanceLockStatus = ReIssuanceLockStatus.ACTIVE
-): ContractState where T: ContractState {
+    val status: ReIssuanceLockStatus = ReIssuanceLockStatus.ACTIVE,
+    val issuerIsRequiredExitTransactionSigner: Boolean = true
+    ): ContractState where T: ContractState {
 
     @CordaSerializable
     enum class ReIssuanceLockStatus {

@@ -528,9 +528,11 @@ abstract class AbstractFlowTest {
 
     fun <T> reIssueRequestedStates(
         node: TestStartedNode,
-        reIssuanceRequest: StateAndRef<ReIssuanceRequest>
-    ) where T: ContractState {
-        val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest)).resultFuture
+        reIssuanceRequest: StateAndRef<ReIssuanceRequest>,
+        issuerIsRequiredExitCommandSigner: Boolean
+        ) where T: ContractState {
+        val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest, issuerIsRequiredExitCommandSigner))
+            .resultFuture
         mockNet.runNetwork()
         flowFuture.getOrThrow()
     }

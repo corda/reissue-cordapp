@@ -124,6 +124,12 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             "Output re-issuance lock status is USED" using(
                 reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
 
+            "Re-issuance lock properties hasn't change except for status" using(
+                reIssuanceLockInput == reIssuanceLockOutput.copy(status = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE))
+
+            val issuerIsRequiredExitTransactionSigner = reIssuanceLockOutput.issuerIsRequiredExitTransactionSigner
+            val issuer = reIssuanceLockOutput.issuer
+
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
             val lockedStatesRef = reIssuanceLockInput.originalStates.map { it.ref }
@@ -138,6 +144,10 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                     attachedSignedTransaction.coreTransaction is WireTransaction)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
+                if(issuerIsRequiredExitTransactionSigner) {
+                    "Issuer is signer of attached transaction ${attachedSignedTransaction.id}" using(
+                        attachedSignedTransaction.sigs.map { it.by }.contains(issuer.owningKey))
+                }
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
             }
