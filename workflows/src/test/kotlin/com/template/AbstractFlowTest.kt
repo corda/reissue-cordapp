@@ -1,5 +1,6 @@
 package com.template
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
@@ -35,6 +36,8 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
@@ -184,10 +187,6 @@ abstract class AbstractFlowTest {
     fun initialisePartiesForAccountsOnDifferentHosts() {
         initialiseParties()
 
-//        val flowFuture = issuerNode.services.startFlow(CreateAndShareAccount("issuer", listOf(aliceParty))).resultFuture
-//        mockNet.runNetwork()
-//        flowFuture.getOrThrow()
-
         employeeIssuerAccount = createAccount(issuerNode, "Issuer")
         employeeAliceAccount = createAccount(aliceNode, "Alice")
         employeeBobAccount = createAccount(bobNode, "Bob")
@@ -229,9 +228,10 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         account: AccountInfo
     ): AnonymousParty {
-        val flowFuture = node.services.startFlow(RequestKeyForAccount(account)).resultFuture
-        mockNet.runNetwork()
-        return flowFuture.getOrThrow()
+        return runFlow(
+            node,
+            RequestKeyForAccount(account)
+        )
     }
 
     fun shareAccountInfo(
@@ -267,18 +267,20 @@ abstract class AbstractFlowTest {
     fun createSimpleDummyState(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateSimpleDummyState(owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            issuerNode,
+            CreateSimpleDummyState(owner)
+        )
     }
 
     fun createSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
     ) {
-        val flowFuture = node.services.startFlow(CreateSimpleDummyStateForAccount(employeeIssuerParty, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            CreateSimpleDummyStateForAccount(employeeIssuerParty, owner)
+        )
     }
 
     fun updateSimpleDummyState(
@@ -286,9 +288,10 @@ abstract class AbstractFlowTest {
         owner: Party
     ) {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleDummyState(simpleDummyStateStateAndRef, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UpdateSimpleDummyState(simpleDummyStateStateAndRef, owner)
+        )
     }
 
     fun updateSimpleDummyStateForAccount(
@@ -296,27 +299,30 @@ abstract class AbstractFlowTest {
         owner: AbstractParty
     ) {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateSimpleDummyStateForAccount(simpleDummyStateStateAndRef, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UpdateSimpleDummyStateForAccount(simpleDummyStateStateAndRef, owner)
+        )
     }
 
     fun deleteSimpleDummyState(
         node: TestStartedNode
     ) {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleDummyState(simpleDummyStateStateAndRef, issuerParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteSimpleDummyState(simpleDummyStateStateAndRef, issuerParty)
+        )
     }
 
     fun deleteSimpleDummyStateForAccount(
         node: TestStartedNode
     ) {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteSimpleDummyStateForAccount(simpleDummyStateStateAndRef)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteSimpleDummyStateForAccount(simpleDummyStateStateAndRef)
+        )
     }
 
     // dummy state requiring acceptance
@@ -324,9 +330,10 @@ abstract class AbstractFlowTest {
     fun createDummyStateRequiringAcceptance(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAcceptance(owner, acceptorParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            issuerNode,
+            CreateDummyStateRequiringAcceptance(owner, acceptorParty)
+        )
     }
 
     fun updateDummyStateRequiringAcceptance(
@@ -334,19 +341,20 @@ abstract class AbstractFlowTest {
         owner: Party
     ) {
         val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
-        val flowFuture = node.services.startFlow(
-            UpdateDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UpdateDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef, owner)
+        )
     }
 
     fun deleteDummyStateRequiringAcceptance(
         node: TestStartedNode
     ) {
         val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef)
+        )
     }
 
     // dummy state requiring all participants to sign
@@ -354,9 +362,10 @@ abstract class AbstractFlowTest {
     fun createDummyStateRequiringAllParticipantsSignatures(
         owner: Party
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateDummyStateRequiringAllParticipantsSignatures(owner, acceptorParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            issuerNode,
+            CreateDummyStateRequiringAllParticipantsSignatures(owner, acceptorParty)
+        )
     }
 
     fun updateDummyStateRequiringAllParticipantsSignatures(
@@ -364,19 +373,20 @@ abstract class AbstractFlowTest {
         owner: Party
     ) {
         val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
-        val flowFuture = node.services.startFlow(
-            UpdateDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UpdateDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef, owner)
+        )
     }
 
     fun deleteDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode
     ) {
         val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
-        val flowFuture = node.services.startFlow(DeleteDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef)
+        )
     }
 
     // tokens
@@ -391,9 +401,10 @@ abstract class AbstractFlowTest {
         holder: Party,
         tokenAmount: Long
     ) {
-        val flowFuture = issuerNode.services.startFlow(IssueTokens(holder, tokenAmount)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            issuerNode,
+            IssueTokens(holder, tokenAmount)
+        )
     }
 
     fun transferTokens(
@@ -401,27 +412,30 @@ abstract class AbstractFlowTest {
         newHolder: Party,
         tokenAmount: Long
     ) {
-        val flowFuture = node.services.startFlow(TransferTokens(issuerParty, newHolder, tokenAmount)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            TransferTokens(issuerParty, newHolder, tokenAmount)
+        )
     }
 
     fun redeemTokens(
         node: TestStartedNode,
         tokens: List<StateAndRef<FungibleToken>>
     ) {
-        val flowFuture = node.services.startFlow(RedeemTokens(tokens, issuerParty)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            RedeemTokens(tokens, issuerParty)
+        )
     }
 
     fun getTokens(
         node: TestStartedNode,
         encumbered: Boolean = false
     ): List<StateAndRef<FungibleToken>> {
-        val tokensFuture = node.services.startFlow(ListTokensFlow()).resultFuture
-        mockNet.runNetwork()
-        val tokens = tokensFuture.getOrThrow()
+        val tokens = runFlow(
+            node,
+            ListTokensFlow()
+        )
         return filterStates(tokens, encumbered)
     }
 
@@ -431,9 +445,10 @@ abstract class AbstractFlowTest {
         owner: Party,
         quantity: Int
     ) {
-        val flowFuture = issuerNode.services.startFlow(CreateDummyStateWithInvalidEqualsMethod(owner, quantity)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            issuerNode,
+            CreateDummyStateWithInvalidEqualsMethod(owner, quantity)
+        )
     }
 
     fun updateDummyStateWithInvalidEqualsMethod(
@@ -441,18 +456,20 @@ abstract class AbstractFlowTest {
         owner: Party
     ) {
         val dummyStateWithInvalidEqualsMethodStateAndRef = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
-        val flowFuture = node.services.startFlow(UpdateDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef, owner)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UpdateDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef, owner)
+        )
     }
 
     fun deleteDummyStateWithInvalidEqualsMethod(
         node: TestStartedNode,
         dummyStateWithInvalidEqualsMethodStateAndRef: StateAndRef<DummyStateWithInvalidEqualsMethod> = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
     ) {
-        val flowFuture = node.services.startFlow(DeleteDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef)
+        )
     }
 
     // common
@@ -490,10 +507,10 @@ abstract class AbstractFlowTest {
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
+        )
     }
 
     fun <T> createReIssuanceRequestAndShareRequiredTransactions(
@@ -504,11 +521,11 @@ abstract class AbstractFlowTest {
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
     ) where T: ContractState {
-        val flowLogic = RequestReIssuanceAndShareRequiredTransactions<T>(
-            issuer, statesToReIssue, command, commandSigners, requester)
-        val flowFuture = node.services.startFlow(flowLogic).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            RequestReIssuanceAndShareRequiredTransactions<T>(issuer, statesToReIssue, command, commandSigners,
+                requester)
+        )
     }
 
     inline fun <reified T : ContractState> unlockReIssuedState(
@@ -520,10 +537,10 @@ abstract class AbstractFlowTest {
         lockStateAndRef: StateAndRef<ReIssuanceLock<T>> = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
     ) {
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        val flowFuture = node.services.startFlow(UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef,
-            attachmentSecureHashes, command, signers)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command, signers)
+        )
     }
 
     fun <T> reIssueRequestedStates(
@@ -531,19 +548,20 @@ abstract class AbstractFlowTest {
         reIssuanceRequest: StateAndRef<ReIssuanceRequest>,
         issuerIsRequiredExitCommandSigner: Boolean
         ) where T: ContractState {
-        val flowFuture = node.services.startFlow(ReIssueStates<T>(reIssuanceRequest, issuerIsRequiredExitCommandSigner))
-            .resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            ReIssueStates<T>(reIssuanceRequest, issuerIsRequiredExitCommandSigner)
+        )
     }
 
     fun <T> rejectReIssuanceRequested(
         node: TestStartedNode,
         reIssuanceRequest: StateAndRef<ReIssuanceRequest>
     ) where T: ContractState {
-        val flowFuture = node.services.startFlow(RejectReIssuanceRequest<T>(reIssuanceRequest)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            RejectReIssuanceRequest<T>(reIssuanceRequest)
+        )
     }
 
     fun uploadDeletedStateAttachment(
@@ -552,9 +570,11 @@ abstract class AbstractFlowTest {
     ): SecureHash {
         val party = node.info.singleIdentity()
 
-        val flowFuture = node.services.startFlow(GenerateTransactionByteArray(deleteStateTransactionId)).resultFuture
         mockNet.runNetwork()
-        val transactionByteArray = flowFuture.getOrThrow()
+        val transactionByteArray = runFlow(
+            node,
+            GenerateTransactionByteArray(deleteStateTransactionId)
+        )
 
         return node.services.attachments.importAttachment(transactionByteArray.inputStream(), party.toString(), null)
     }
@@ -568,11 +588,10 @@ abstract class AbstractFlowTest {
         ) where T: ContractState {
         val signers: List<AbstractParty> = commandSigners ?: listOf(reIssuanceLock.state.data.requester,
             reIssuanceLock.state.data.issuer)
-
-        val flowFuture = node.services.startFlow(DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command,
-            signers)).resultFuture
-        mockNet.runNetwork()
-        flowFuture.getOrThrow()
+        runFlow(
+            node,
+            DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command, signers)
+        )
     }
 
 
@@ -598,4 +617,28 @@ abstract class AbstractFlowTest {
         return ledgerGraphService.getBackchain(setOf(txId))
     }
 
+    fun <T> runFlow(
+        node: TestStartedNode,
+        flowLogic: FlowLogic<T>
+    ): T {
+        val flowFuture = node.services.startFlow(flowLogic).resultFuture
+        mockNet.runNetwork()
+        return flowFuture.getOrThrow()
+    }
+
+    @InitiatingFlow
+    class FlowWrapper<T>(
+        private val flow: FlowLogic<T>,
+        private val throwError: Boolean
+    ) : FlowLogic<T>() {
+
+        @Suspendable
+        override fun call(): T {
+            if (throwError) {
+                error("ERROR")
+            }
+            return flow.call()
+
+        }
+    }
 }
