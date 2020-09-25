@@ -139,11 +139,13 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             attachedSignedTransactions.forEach { attachedSignedTransaction ->
                 val attachedWireTransaction = attachedSignedTransaction.coreTransaction as? WireTransaction
-                "Attached transaction ${attachedSignedTransaction.id} is WireTransaction" using(
+                "Attached CoreTransaction ${attachedSignedTransaction.id} can be cast to WireTransaction" using(
                     attachedWireTransaction != null)
                 attachedWireTransaction!!
-                "Id of attached transaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
-                    attachedSignedTransaction.id == attachedWireTransaction.merkleTree.hash)
+                "Id of attached SignedTransaction ${attachedSignedTransaction.id} is equal to id of WireTransaction" using(
+                    attachedSignedTransaction.id == attachedWireTransaction.id)
+                "Id of attached WireTransaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
+                    attachedWireTransaction.id == attachedWireTransaction.merkleTree.hash)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
                 if(issuerIsRequiredExitTransactionSigner) {
