@@ -18,8 +18,8 @@ import net.corda.core.utilities.unwrap
 class DeleteReIssuedStatesAndLock<T>(
     private val reIssuanceLockStateAndRef: StateAndRef<ReIssuanceLock<T>>,
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
-    private val exitCommand: CommandData,
-    private val reIssuedStatesSigners: List<AbstractParty> = listOf(reIssuanceLockStateAndRef.state.data.requester,
+    private val assetExitCommand: CommandData,
+    private val assetExitSigners: List<AbstractParty> = listOf(reIssuanceLockStateAndRef.state.data.requester,
         reIssuanceLockStateAndRef.state.data.issuer)
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
@@ -31,21 +31,19 @@ class DeleteReIssuedStatesAndLock<T>(
         val issuer = reIssuanceLock.issuer
         val lockSigners = listOf(requester, issuer)
         val lockSignersKeys = lockSigners.map { it.owningKey }
-        val reIssuedStatesSignersKeys = reIssuedStatesSigners.map { it.owningKey }
-
-//        val reIssuedStatesSigners = updateSigners.map { it.owningKey }
+        val reIssuedStatesSignersKeys = assetExitSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
 
         reIssuedStateAndRefs.forEach { reIssuedStateAndRef ->
             transactionBuilder.addInputState(reIssuedStateAndRef)
         }
-        transactionBuilder.addCommand(exitCommand, reIssuedStatesSignersKeys)
+        transactionBuilder.addCommand(assetExitCommand, reIssuedStatesSignersKeys)
 
         transactionBuilder.addInputState(reIssuanceLockStateAndRef)
         transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Delete(), lockSignersKeys)
 
-        val signers =(lockSigners + reIssuedStatesSigners).distinct()
+        val signers =(lockSigners + assetExitSigners).distinct()
 
         val localSigners = signers.filter { serviceHub.identityService.partyFromKey(it.owningKey)!! == ourIdentity }
         val localSignersKeys = localSigners.map { it.owningKey }

@@ -20,8 +20,8 @@ class UnlockReIssuedStates<T>(
     private val reIssuedStateAndRefs: List<StateAndRef<T>>,
     private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
     private val deletedStateTransactionHashes: List<SecureHash>,
-    private val updateCommand: CommandData, // unencumber state command
-    private val updateSigners: List<AbstractParty> = listOf(reIssuanceLock.state.data.requester)
+    private val assetUpdateCommand: CommandData, // unencumber state command
+    private val extraAssetUpdateSigners: List<AbstractParty> = listOf()
 ): FlowLogic<Unit>() where T: ContractState {
     @Suspendable
     override fun call() {
@@ -32,7 +32,8 @@ class UnlockReIssuedStates<T>(
         val notary = getPreferredNotary(serviceHub)
         val lockSigners = listOf(requester.owningKey)
 
-        val reIssuedStatesSigners = updateSigners.map { it.owningKey }
+        val assetUpdateSigners = listOf(reIssuanceLock.state.data.requester) + extraAssetUpdateSigners
+        val reIssuedStatesSigners = assetUpdateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
 
@@ -40,7 +41,7 @@ class UnlockReIssuedStates<T>(
             transactionBuilder.addInputState(reIssuedStateAndRef)
             transactionBuilder.addOutputState(reIssuedStateAndRef.state.data)
         }
-        transactionBuilder.addCommand(updateCommand, reIssuedStatesSigners)
+        transactionBuilder.addCommand(assetUpdateCommand, reIssuedStatesSigners)
 
         var usedReIssuanceLock = (reIssuanceLock.state.data).copy(
             status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
@@ -60,7 +61,7 @@ class UnlockReIssuedStates<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-        val signers = (updateSigners + reIssuanceLock.state.data.issuer).distinct()
+        val signers = (assetUpdateSigners + reIssuanceLock.state.data.issuer).distinct()
         val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
