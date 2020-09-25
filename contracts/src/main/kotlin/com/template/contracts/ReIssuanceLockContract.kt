@@ -5,9 +5,7 @@ import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
 import net.corda.core.serialization.deserialize
-import net.corda.core.transactions.LedgerTransaction
-import net.corda.core.transactions.SignedTransaction
-import net.corda.core.transactions.WireTransaction
+import net.corda.core.transactions.*
 
 class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
@@ -140,8 +138,12 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
             attachedSignedTransactions.forEach { attachedSignedTransaction ->
+                val attachedWireTransaction = attachedSignedTransaction.coreTransaction as? WireTransaction
                 "Attached transaction ${attachedSignedTransaction.id} is WireTransaction" using(
-                    attachedSignedTransaction.coreTransaction is WireTransaction)
+                    attachedWireTransaction != null)
+                attachedWireTransaction!!
+                "Id of attached transaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
+                    attachedSignedTransaction.id == attachedWireTransaction.merkleTree.hash)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
                 if(issuerIsRequiredExitTransactionSigner) {
