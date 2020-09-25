@@ -37,6 +37,8 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*>  && it.data !is ReIssuanceRequest }
 
         requireThat {
+            //// command constraints
+
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
             "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
@@ -50,31 +52,11 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceRequest = reIssuanceRequestInputs[0]
             val reIssuanceLock = reIssuanceLockOutputs[0]
 
-            // verify status
-            "Re-issuance lock status is ACTIVE" using(
-                reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
-
             // verify requester & issuer
             "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
                 reIssuanceRequest.requester == reIssuanceLock.requester)
             "Issuer is the same in both ReIssuanceRequest and ReIssuanceLock" using (
                 reIssuanceRequest.issuer == reIssuanceLock.issuer)
-
-            // verify participants
-            "Requester is a participant" using(reIssuanceLock.participants.contains(reIssuanceLock.requester))
-            "Issuer is a participant" using(reIssuanceLock.participants.contains(reIssuanceLock.issuer))
-
-            // verify state data
-            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
-                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
-
-            // verify encumbrance
-            reIssuanceLock.originalStates.forEach {
-                "States referenced in lock object must be unencumbered" using (it.state.encumbrance  == null)
-            }
-            otherOutputs.forEach {
-                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
-            }
 
             val firstReIssuedState = reIssuanceLock.originalStates[0]
             (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
@@ -91,6 +73,25 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify signers
             "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
+
+            //// state constraints
+
+            // verify status
+            "Re-issuance lock status is ACTIVE" using(
+                reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+
+            // verify state data
+            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
+                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+
+            // verify encumbrance
+            reIssuanceLock.originalStates.forEach {
+                "Original states can't be encumbered" using (it.state.encumbrance  == null)
+            }
+            otherOutputs.forEach {
+                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
+            }
+
         }
     }
 
@@ -119,7 +120,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
                 reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
-            "Output re-issuance lock status is USED" using(
+            "Output re-issuance lock status is INACTIVE" using(
                 reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
 
             "Re-issuance lock properties hasn't change except for status" using(
@@ -181,11 +182,10 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
         requireThat {
             "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
-            "At least one input other than lock is expected" using otherInputs.isNotEmpty()
-
-            "No outputs of are allowed" using tx.outputs.isEmpty()
-
             val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
+            "Number of other inputs is equal to originalStates length" using (
+                otherInputs.size == reIssuanceLockInput.originalStates.size)
+            "No outputs of are allowed" using tx.outputs.isEmpty()
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(

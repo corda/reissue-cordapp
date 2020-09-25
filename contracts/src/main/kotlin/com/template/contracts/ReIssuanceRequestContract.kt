@@ -26,15 +26,23 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         command: CommandWithParties<Commands>
     ) {
         requireThat {
+            // command constraints
             "No inputs are allowed" using tx.inputs.isEmpty()
             "Exactly one output is expected" using (tx.outputs.size == 1)
-
             "Output is of type ReIssuanceRequest" using (tx.outputs[0].data is ReIssuanceRequest)
             val reIssuanceRequest = tx.outputs[0].data as ReIssuanceRequest
 
-            "There must be positive number of states to re-issue" using (reIssuanceRequest.stateRefsToReIssue.isNotEmpty())
-
             "Requester is required signer" using (command.signers.contains(reIssuanceRequest.requester.owningKey))
+
+            // universal constraints
+            "Issuer and requester must be different parties" using(
+                reIssuanceRequest.issuer != reIssuanceRequest.requester)
+
+            // state constraints
+            "There must be positive number of states to re-issue" using (
+                reIssuanceRequest.stateRefsToReIssue.isNotEmpty())
+            "Asset issuance signers must contain issuer" using(
+                reIssuanceRequest.assetIssuanceSigners.contains(reIssuanceRequest.issuer))
         }
     }
 
@@ -49,6 +57,7 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         val reIssuanceLockOutputs = tx.outputsOfType<ReIssuanceLock<T>>()
 
         requireThat {
+            // command constraints
             "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
             "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
 
@@ -59,6 +68,10 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
             "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
 
             // the rest of the logic is included in ReIssuanceLock contract
+
+            // universal constraints
+            "Issuer and requester must be different parties" using(
+                reIssuanceRequest.issuer != reIssuanceRequest.requester)
         }
     }
 
@@ -69,14 +82,17 @@ class ReIssuanceRequestContract<T>: Contract where T: ContractState {
         val reIssuanceRequestInputs = tx.inputsOfType<ReIssuanceRequest>()
 
         requireThat {
+            // command constraints
             "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
             "No inputs of other than ReIssuanceRequest are allowed" using (tx.inputs.size == 1)
-
             "No outputs are allowed" using (tx.outputs.isEmpty())
 
             val reIssuanceRequest = reIssuanceRequestInputs[0]
             "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
 
+            // universal constraints
+            "Issuer and requester must be different parties" using(
+                reIssuanceRequest.issuer != reIssuanceRequest.requester)
         }
     }
 
