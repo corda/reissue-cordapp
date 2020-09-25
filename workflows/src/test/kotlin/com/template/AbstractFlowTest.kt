@@ -518,7 +518,7 @@ abstract class AbstractFlowTest {
         statesToReIssue: List<StateAndRef<T>>,
         command: CommandData,
         issuer: AbstractParty,
-        commandSigners: List<AbstractParty> = listOf(issuer),
+        commandSigners: List<AbstractParty> = listOf(),
         requester: AbstractParty? = null
     ) where T: ContractState {
         runFlow(

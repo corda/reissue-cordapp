@@ -58,7 +58,7 @@ class ReIssueStates<T>(
         val notary = getPreferredNotary(serviceHub)
 
         val lockSigners = listOf(issuer.owningKey)
-        val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
+        val reIssuedStatesSigners = reIssuanceRequest.assetIssuanceSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
@@ -75,7 +75,7 @@ class ReIssueStates<T>(
                     encumbrance = encumbrance)
                 encumbrance += 1
             }
-        transactionBuilder.addCommand(reIssuanceRequest.issuanceCommand, reIssuedStatesSigners)
+        transactionBuilder.addCommand(reIssuanceRequest.assetIssuanceCommand, reIssuedStatesSigners)
 
         transactionBuilder.addOutputState(
             state = reIssuanceLock,
@@ -90,7 +90,7 @@ class ReIssueStates<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-        val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
+        val signers = (reIssuanceRequest.assetIssuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))

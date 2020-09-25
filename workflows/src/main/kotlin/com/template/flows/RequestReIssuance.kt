@@ -19,7 +19,7 @@ class RequestReIssuance<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReIssue: List<StateRef>,
     private val issuanceCommand: CommandData,
-    private val issuanceSigners: List<AbstractParty> = listOf(issuer),
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<Unit>() where T: ContractState {
 
@@ -30,6 +30,8 @@ class RequestReIssuance<T>(
             require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
         }
         val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
+
+        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
 
         val signers = listOf(requesterAbstractParty.owningKey).distinct()
 

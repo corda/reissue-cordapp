@@ -11,8 +11,8 @@ data class ReIssuanceRequest(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val stateRefsToReIssue: List<StateRef>,
-    val issuanceCommand: CommandData,
-    val issuanceSigners: List<AbstractParty>
+    val assetIssuanceCommand: CommandData,
+    val assetIssuanceSigners: List<AbstractParty>
 ): ContractState {
 
     override val participants: List<AbstractParty>
