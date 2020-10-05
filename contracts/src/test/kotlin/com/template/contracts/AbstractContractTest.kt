@@ -13,7 +13,6 @@ import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.DUMMY_NOTARY_NAME
@@ -26,9 +25,6 @@ import net.corda.testing.node.internal.findCordapp
 import org.junit.After
 import org.junit.Before
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 abstract class AbstractContractTest {
 
@@ -134,9 +130,11 @@ abstract class AbstractContractTest {
     }
 
     fun <T> createDummyReIssuanceLock(
-        stateAndRefList: List<StateAndRef<T>>
+        stateAndRefList: List<StateAndRef<T>>,
+        status: ReIssuanceLock.ReIssuanceLockStatus = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE,
+        issuerIsRequiredSigner: Boolean = true
     ): ReIssuanceLock<T> where T: ContractState {
-        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList)
+        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList, status, issuerIsRequiredSigner)
     }
 
     fun generateSignedTransactionByteArrayInputStream(

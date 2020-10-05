@@ -33,7 +33,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
@@ -62,7 +63,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
@@ -91,7 +93,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
@@ -120,7 +123,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
 
         val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
@@ -150,7 +154,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
 
         val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
@@ -180,7 +185,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(employeeNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(employeeNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = true,
             accountUUID = employeeAliceAccount.identifier.id)
@@ -212,7 +218,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true,
             accountUUID = employeeAliceAccount.identifier.id)
@@ -242,7 +249,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
     }
 
     @Test // issuer doesn't have an information about state being consumed
@@ -262,13 +270,14 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
         val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)
         assertThat(encumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates, hasSize(`is`(0)))
+        assertThat(unencumberedStates, empty())
         assertThat(lockStates, hasSize(`is`(1)))
         assertThat(lockStates[0].state.data.issuer, `is`(issuerParty as AbstractParty))
         assertThat(lockStates[0].state.data.requester, `is`(aliceParty as AbstractParty))
@@ -293,7 +302,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         updateDummyStateRequiringAcceptance(aliceNode, bobParty)
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
     }
 
     @Test
@@ -310,7 +320,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<SimpleDummyState>(bobNode, reIssuanceRequest)
+        reIssueRequestedStates<SimpleDummyState>(bobNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
@@ -339,7 +350,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -357,7 +369,8 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reIssuanceRequest)
+        reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -375,8 +388,37 @@ class ReIssueStatesTest: AbstractFlowTest() {
         )
 
         val reIssuanceRequest = bobNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
-        reIssueRequestedStates<FungibleToken>(bobNode, reIssuanceRequest)
+        reIssueRequestedStates<FungibleToken>(bobNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = true)
 
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `State can't be re-issued twice`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest1 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest2 = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[1]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest1,
+            issuerIsRequiredExitCommandSigner = false)
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest2,
+            issuerIsRequiredExitCommandSigner = false)
+
+    }
 }

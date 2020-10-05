@@ -6,7 +6,7 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 
 @BelongsToContract(SimpleDummyStateContract::class)
-class SimpleDummyState(
+data class SimpleDummyState(
     val owner: AbstractParty
 ): ContractState {
     override val participants: List<AbstractParty>

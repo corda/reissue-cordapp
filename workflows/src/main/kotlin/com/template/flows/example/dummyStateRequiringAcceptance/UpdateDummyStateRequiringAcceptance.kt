@@ -25,8 +25,7 @@ class UpdateDummyStateRequiringAcceptance(
 
         val signers = setOf(owner.owningKey, newOwner.owningKey, acceptor.owningKey).toList()
 
-        var newStateRequiringAcceptance = dummyStateRequiringAcceptanceStateAndRef.state.data
-        newStateRequiringAcceptance.owner = newOwner
+        var newStateRequiringAcceptance = dummyStateRequiringAcceptanceStateAndRef.state.data.copy(owner = newOwner)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addInputState(dummyStateRequiringAcceptanceStateAndRef)

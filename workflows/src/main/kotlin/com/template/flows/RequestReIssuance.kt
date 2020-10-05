@@ -18,8 +18,8 @@ import net.corda.core.transactions.TransactionBuilder
 class RequestReIssuance<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReIssue: List<StateRef>,
-    private val issuanceCommand: CommandData,
-    private val issuanceSigners: List<AbstractParty> = listOf(issuer),
+    private val assetIssuanceCommand: CommandData,
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<Unit>() where T: ContractState {
 
@@ -31,9 +31,11 @@ class RequestReIssuance<T>(
         }
         val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
 
+        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
+
         val signers = listOf(requesterAbstractParty.owningKey).distinct()
 
-        val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, stateRefsToReIssue, issuanceCommand, issuanceSigners)
+        val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, stateRefsToReIssue, assetIssuanceCommand, issuanceSigners)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addOutputState(reIssuanceRequest)

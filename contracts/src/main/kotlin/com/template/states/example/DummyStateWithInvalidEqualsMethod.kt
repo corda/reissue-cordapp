@@ -7,7 +7,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 
 @BelongsToContract(DummyStateWithInvalidEqualsMethodContract::class)
-class DummyStateWithInvalidEqualsMethod(
+data class DummyStateWithInvalidEqualsMethod(
     var owner: Party,
     val issuer: Party,
     val quantity: Int

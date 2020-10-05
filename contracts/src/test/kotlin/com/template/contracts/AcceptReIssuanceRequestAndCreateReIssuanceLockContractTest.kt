@@ -3,6 +3,7 @@ package com.template.contracts
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.template.contracts.example.SimpleDummyStateContract
+import com.template.states.ReIssuanceLock
 import net.corda.testing.node.ledger
 import org.junit.Test
 
@@ -49,6 +50,29 @@ class AcceptReIssuanceRequestAndCreateReIssuanceLockContractTest: AbstractContra
                 command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
                 command(listOf(issuerParty.owningKey), IssueTokenCommand(issuedTokenType, listOf(0, 1)))
                 verifies()
+            }
+        }
+    }
+
+    @Test
+    fun `State can't be re-issued if lock status is INACTIVE`() {
+        val dummyReIssuanceRequest = createDummySimpleStateReIssuanceRequest(listOf(createDummyRef()))
+        issuerNode.services.ledger(notary = notaryParty) {
+            unverifiedTransaction {
+                output(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+            }
+
+            transaction {
+                input(ReIssuanceRequestContract.contractId, dummyReIssuanceRequest)
+                output(ReIssuanceLockContract.contractId, reIssuanceLockLabel,
+                    contractState=createDummyReIssuanceLock(listOf(createSimpleDummyStateAndRef()),
+                        ReIssuanceLock.ReIssuanceLockStatus.INACTIVE), encumbrance = 1)
+                output(SimpleDummyStateContract.contractId, reIssuedStateLabel,
+                    contractState=createSimpleDummyState(), encumbrance = 0)
+                command(listOf(issuerParty.owningKey), ReIssuanceRequestContract.Commands.Accept())
+                command(listOf(issuerParty.owningKey), ReIssuanceLockContract.Commands.Create())
+                command(listOf(issuerParty.owningKey), SimpleDummyStateContract.Commands.Create())
+                fails()
             }
         }
     }

@@ -25,7 +25,7 @@ class UpdateDummyStateWithInvalidEqualsMethod(
         val signers = setOf(owner.owningKey, newOwner.owningKey, issuer.owningKey).toList()
 
         var dummyStateRequiringAllParticipantsSignatures = dummyStateWithInvalidEqualsMethodStateAndRef.state.data
-        dummyStateRequiringAllParticipantsSignatures.owner = newOwner
+            .copy(owner = newOwner)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addInputState(dummyStateWithInvalidEqualsMethodStateAndRef)

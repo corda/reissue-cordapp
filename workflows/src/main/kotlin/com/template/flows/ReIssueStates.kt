@@ -19,7 +19,8 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class ReIssueStates<T>(
-    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>
+    private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>,
+    private val issuerIsRequiredExitCommandSigner: Boolean = true
 ): FlowLogic<Unit>() where T: ContractState {
 
     @Suspendable
@@ -31,19 +32,33 @@ class ReIssueStates<T>(
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
         // we don't use withExternalIds as transaction can be only shared with a host
-        val criteria = QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+
         @Suppress("UNCHECKED_CAST")
         val statesToReIssue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
-            criteria=criteria).states as List<StateAndRef<T>>
+            criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reIssuanceRequest.stateRefsToReIssue)
+        ).states as List<StateAndRef<T>>
+
+        @Suppress("UNCHECKED_CAST")
+        val locks: List<StateAndRef<ReIssuanceLock<T>>> = serviceHub.vaultService.queryBy<ReIssuanceLock<ContractState>>()
+            .states as List<StateAndRef<ReIssuanceLock<T>>>
+        val reIssuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
+        reIssuanceRequest.stateRefsToReIssue.forEach {
+            require(!reIssuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
+        }
 
         require(statesToReIssue.size == reIssuanceRequest.stateRefsToReIssue.size) { "Cannot validate states to re-issue" }
 
-        val reIssuanceLock = ReIssuanceLock(reIssuanceRequest.issuer, reIssuanceRequest.requester, statesToReIssue)
+        val reIssuanceLock = ReIssuanceLock(
+            reIssuanceRequest.issuer,
+            reIssuanceRequest.requester,
+            statesToReIssue,
+            issuerIsRequiredExitTransactionSigner = issuerIsRequiredExitCommandSigner
+        )
 
         val notary = getPreferredNotary(serviceHub)
 
         val lockSigners = listOf(issuer.owningKey)
-        val reIssuedStatesSigners = reIssuanceRequest.issuanceSigners.map { it.owningKey }
+        val reIssuedStatesSigners = reIssuanceRequest.assetIssuanceSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reIssuanceRequestStateAndRef)
@@ -60,7 +75,7 @@ class ReIssueStates<T>(
                     encumbrance = encumbrance)
                 encumbrance += 1
             }
-        transactionBuilder.addCommand(reIssuanceRequest.issuanceCommand, reIssuedStatesSigners)
+        transactionBuilder.addCommand(reIssuanceRequest.assetIssuanceCommand, reIssuedStatesSigners)
 
         transactionBuilder.addOutputState(
             state = reIssuanceLock,
@@ -75,7 +90,7 @@ class ReIssueStates<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-        val signers = (reIssuanceRequest.issuanceSigners + issuer).distinct()
+        val signers = (reIssuanceRequest.assetIssuanceSigners + issuer).distinct()
         val otherParticipants = reIssuanceRequest.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))

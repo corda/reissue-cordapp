@@ -4,11 +4,8 @@ import com.template.states.ReIssuanceLock
 import com.template.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
-import net.corda.core.crypto.Base58
-import net.corda.core.crypto.SecureHash
 import net.corda.core.serialization.deserialize
-import net.corda.core.transactions.LedgerTransaction
-import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.*
 
 class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
@@ -20,6 +17,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         val command = tx.commands.requireSingleCommand<Commands>()
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
+            is Commands.Use -> verifyUseCommand(tx, command)
             is Commands.Delete -> verifyDeleteCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
@@ -39,6 +37,8 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*>  && it.data !is ReIssuanceRequest }
 
         requireThat {
+            //// command constraints
+
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
             "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
@@ -58,22 +58,6 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             "Issuer is the same in both ReIssuanceRequest and ReIssuanceLock" using (
                 reIssuanceRequest.issuer == reIssuanceLock.issuer)
 
-            // verify participants
-            "Participants in re-issuance lock must contain all participants from states to be re-issued" using (
-                reIssuanceLock.participants.containsAll(reIssuanceLock.originalStates[0].state.data.participants))
-
-            // verify state data
-            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
-                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
-
-            // verify encumbrance
-            reIssuanceLock.originalStates.forEach {
-                "States referenced in lock object must be unencumbered" using (it.state.encumbrance  == null)
-            }
-            otherOutputs.forEach {
-                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
-            }
-
             val firstReIssuedState = reIssuanceLock.originalStates[0]
             (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
                 val reIssuedState = reIssuanceLock.originalStates[it]
@@ -89,10 +73,29 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify signers
             "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
+
+            //// state constraints
+
+            // verify status
+            "Re-issuance lock status is ACTIVE" using(
+                reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+
+            // verify state data
+            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
+                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+
+            // verify encumbrance
+            reIssuanceLock.originalStates.forEach {
+                "Original states can't be encumbered" using (it.state.encumbrance  == null)
+            }
+            otherOutputs.forEach {
+                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
+            }
+
         }
     }
 
-    fun verifyDeleteCommand(
+    fun verifyUseCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
@@ -105,16 +108,30 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         requireThat {
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
-            "No outputs of type ReIssuanceLock are allowed" using reIssuanceLockOutputs.isEmpty()
+            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
 
             "At least one input other than lock is expected" using otherInputs.isNotEmpty()
             "The same number of inputs and outputs other than lock is expected" using (
                 otherInputs.size == otherOutputs.size)
 
-            val reIssuanceLock = reIssuanceLockInputs[0]
+            val reIssuanceLockInput = reIssuanceLockInputs[0]
+            val reIssuanceLockOutput = reIssuanceLockOutputs[0]
+
+            // verify status
+            "Input re-issuance lock status is ACTIVE" using(
+                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+            "Output re-issuance lock status is INACTIVE" using(
+                reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
+
+            "Re-issuance lock properties hasn't change except for status" using(
+                reIssuanceLockInput == reIssuanceLockOutput.copy(status = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE))
+
+            val issuerIsRequiredExitTransactionSigner = reIssuanceLockOutput.issuerIsRequiredExitTransactionSigner
+            val issuer = reIssuanceLockOutput.issuer
+
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
-            val lockedStatesRef = reIssuanceLock.originalStates.map { it.ref }
+            val lockedStatesRef = reIssuanceLockInput.originalStates.map { it.ref }
 
             "All locked states are inputs of attached transactions" using (
                 attachedSignedTransactions.flatMap { it.inputs }.containsAll(lockedStatesRef))
@@ -122,12 +139,23 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
             attachedSignedTransactions.forEach { attachedSignedTransaction ->
+                val attachedWireTransaction = attachedSignedTransaction.coreTransaction as? WireTransaction
+                "Attached CoreTransaction ${attachedSignedTransaction.id} can be cast to WireTransaction" using(
+                    attachedWireTransaction != null)
+                attachedWireTransaction!!
+                "Id of attached SignedTransaction ${attachedSignedTransaction.id} is equal to id of WireTransaction" using(
+                    attachedSignedTransaction.id == attachedWireTransaction.id)
+                "Id of attached WireTransaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
+                    attachedWireTransaction.id == attachedWireTransaction.merkleTree.hash)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
+                if(issuerIsRequiredExitTransactionSigner) {
+                    "Issuer is signer of attached transaction ${attachedSignedTransaction.id}" using(
+                        attachedSignedTransaction.sigs.map { it.by }.contains(issuer.owningKey))
+                }
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
             }
-
 
             // verify encumbrance
             otherInputs.forEach {
@@ -140,9 +168,39 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                 otherInputs.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet())
 
             // verify signers
-            "Requester is required signer" using (command.signers.contains(reIssuanceLock.requester.owningKey))
+            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
         }
 
+    }
+
+    fun verifyDeleteCommand(
+        tx: LedgerTransaction,
+        command: CommandWithParties<Commands>
+    ) {
+        val reIssuanceLockInputs = tx.inputs.filter { it.state.data is ReIssuanceLock<*> }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> }
+
+        requireThat {
+            "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
+            val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
+            "Number of other inputs is equal to originalStates length" using (
+                otherInputs.size == reIssuanceLockInput.originalStates.size)
+            "No outputs of are allowed" using tx.outputs.isEmpty()
+
+            // verify status
+            "Input re-issuance lock status is ACTIVE" using(
+                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+
+            // verify encumbrance
+            "Input of type ReIssuanceLock must be encumbered" using(reIssuanceLockInputs[0].state.encumbrance != null)
+            otherInputs.forEach {
+                "Input ${it.ref} of type other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
+            }
+
+            // verify signers
+            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
+            "Issuer is required signer" using (command.signers.contains(reIssuanceLockInput.issuer.owningKey))
+        }
     }
 
     private fun getAttachedLedgerTransaction(tx: LedgerTransaction): List<SignedTransaction> {
@@ -171,6 +229,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
     interface Commands : CommandData {
         class Create : Commands
-        class Delete : Commands
+        class Use : Commands
+        class Delete: Commands
     }
 }
