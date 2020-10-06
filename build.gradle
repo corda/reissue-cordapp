@@ -46,6 +46,23 @@ plugins {
     id "com.jfrog.artifactory" version "4.7.5"
 }
 
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryUsername') || !ext.cordaArtifactoryUsername?.trim()) {
+    ext.cordaArtifactoryUsername = System.getenv('CORDA_ARTIFACTORY_USERNAME')
+            ?: System.getProperty('corda.artifactory.username')
+}
+
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryPassword') || !ext.cordaArtifactoryPassword?.trim()) {
+    ext.cordaArtifactoryPassword = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            ?: System.getProperty('corda.artifactory.password')
+}
+
+// Tell the user if we can't proceed.
+if (!ext.cordaArtifactoryUsername?.trim() || !ext.cordaArtifactoryPassword?.trim()) {
+    throw new IllegalArgumentException("ERROR: Either 'cordaArtifactoryUsername' or 'cordaArtifactoryPassword' is null!")
+}
+
 allprojects { //Properties that you need to compile your project (The application)
     apply from: "${rootProject.projectDir}/repositories.gradle"
     apply plugin: 'kotlin'
@@ -218,9 +235,9 @@ artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
-            repoKey = 'corda-lib-dev'
-            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            repoKey =  System.getenv('CORDA_ARTIFACTORY_REPOKEY') ?: System.getProperty('corda.artifactory.repokey')
+            username = cordaArtifactoryUsername
+            password = cordaArtifactoryPassword
         }
 
         defaults {
