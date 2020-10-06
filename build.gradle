@@ -1,31 +1,5 @@
 buildscript { //properties that you need to build the project
 
-    Properties constants = new Properties()
-    file("$projectDir/./constants.properties").withInputStream { constants.load(it) }
-
-    ext {
-        corda_release_group = constants.getProperty("cordaReleaseGroup")
-        corda_core_release_group =  constants.getProperty("cordaCoreReleaseGroup")
-        corda_release_version = constants.getProperty("cordaVersion")
-        corda_core_release_version = constants.getProperty("cordaCoreVersion")
-        corda_gradle_plugins_version = constants.getProperty("gradlePluginsVersion")
-        kotlin_version = constants.getProperty("kotlinVersion")
-        junit_version = constants.getProperty("junitVersion")
-        quasar_version = constants.getProperty("quasarVersion")
-        log4j_version = constants.getProperty("log4jVersion")
-        slf4j_version = constants.getProperty("slf4jVersion")
-        corda_platform_version = constants.getProperty("platformVersion").toInteger()
-        //springboot
-        spring_boot_version = '2.0.2.RELEASE'
-        spring_boot_gradle_plugin_version = '2.0.2.RELEASE'
-        accounts_release_version = '1.0'
-        accounts_release_group = 'com.r3.corda.lib.accounts'
-        confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0"
-        tokens_release_version = '1.2'
-        tokens_release_group = 'com.r3.corda.lib.tokens'
-    }
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -38,7 +12,6 @@ buildscript { //properties that you need to build the project
         classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_gradle_plugin_version"
     }
 }
 
@@ -79,8 +52,8 @@ allprojects { //Properties that you need to compile your project (The applicatio
         maven {
             url "https://software.r3.com/artifactory/r3-corda-dev"
             credentials {
-                username = cordaArtifactoryUsername
-                password = cordaArtifactoryPassword
+                username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+                password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
             }
         }
     }
@@ -235,9 +208,9 @@ artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
-            repoKey =  System.getenv('CORDA_ARTIFACTORY_REPOKEY') ?: System.getProperty('corda.artifactory.repokey')
-            username = cordaArtifactoryUsername
-            password = cordaArtifactoryPassword
+            repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
+            username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+            password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
 
         defaults {
