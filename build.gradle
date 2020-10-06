@@ -1,31 +1,5 @@
 buildscript { //properties that you need to build the project
 
-    Properties constants = new Properties()
-    file("$projectDir/./constants.properties").withInputStream { constants.load(it) }
-
-    ext {
-        corda_release_group = constants.getProperty("cordaReleaseGroup")
-        corda_core_release_group =  constants.getProperty("cordaCoreReleaseGroup")
-        corda_release_version = constants.getProperty("cordaVersion")
-        corda_core_release_version = constants.getProperty("cordaCoreVersion")
-        corda_gradle_plugins_version = constants.getProperty("gradlePluginsVersion")
-        kotlin_version = constants.getProperty("kotlinVersion")
-        junit_version = constants.getProperty("junitVersion")
-        quasar_version = constants.getProperty("quasarVersion")
-        log4j_version = constants.getProperty("log4jVersion")
-        slf4j_version = constants.getProperty("slf4jVersion")
-        corda_platform_version = constants.getProperty("platformVersion").toInteger()
-        //springboot
-        spring_boot_version = '2.0.2.RELEASE'
-        spring_boot_gradle_plugin_version = '2.0.2.RELEASE'
-        accounts_release_version = '1.0'
-        accounts_release_group = 'com.r3.corda.lib.accounts'
-        confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0"
-        tokens_release_version = '1.2'
-        tokens_release_group = 'com.r3.corda.lib.tokens'
-    }
-
     repositories {
         mavenLocal()
         mavenCentral()
@@ -38,11 +12,36 @@ buildscript { //properties that you need to build the project
         classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_gradle_plugin_version"
     }
 }
 
+plugins {
+    id "com.jfrog.artifactory" version "4.7.5"
+}
+
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryUsername') || !ext.cordaArtifactoryUsername?.trim()) {
+    ext.cordaArtifactoryUsername = System.getenv('CORDA_ARTIFACTORY_USERNAME')
+            ?: System.getenv('ARTIFACTORY_USERNAME')
+            ?: System.getProperty('corda.artifactory.username')
+}
+
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryPassword') || !ext.cordaArtifactoryPassword?.trim()) {
+    ext.cordaArtifactoryPassword = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            ?: System.getenv('ARTIFACTORY_PASSWORD')
+            ?: System.getProperty('corda.artifactory.password')
+}
+
+// Tell the user if we can't proceed.
+if (!ext.cordaArtifactoryUsername?.trim() || !ext.cordaArtifactoryPassword?.trim()) {
+    throw new IllegalArgumentException("ERROR: Either 'cordaArtifactoryUsername' or 'cordaArtifactoryPassword' is null!")
+}
+
 allprojects { //Properties that you need to compile your project (The application)
+    version reissuance_version
+    group reissuance_group
+
     apply from: "${rootProject.projectDir}/repositories.gradle"
     apply plugin: 'kotlin'
 
@@ -166,4 +165,63 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 
+}
+
+
+// Don't publish an empty "modules" JAR.
+def publishProjects = [
+        project(":contracts"),
+        project(":workflows")
+]
+
+configure(publishProjects) { subproject ->
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.artifactory'
+
+    task sourceJar(type: Jar, dependsOn: subproject.classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: subproject.javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    task install(dependsOn: 'publishToMavenLocal')
+
+    publishing {
+        publications {
+            create(subproject.name, MavenPublication) {
+                from components.java
+
+                groupId subproject.group
+                artifactId "reissuance-cordapp-${subproject.name}"
+                artifact tasks.sourceJar
+                artifact tasks.javadocJar
+
+                pom {
+                    description = subproject.description
+                }
+            }
+        }
+    }
+}
+
+
+artifactory {
+    publish {
+        contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
+        repository {
+            repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
+            username = cordaArtifactoryUsername
+            password = cordaArtifactoryPassword
+        }
+
+        defaults {
+            if (publishProjects.contains(project)) {
+                publications(project.name)
+            }
+        }
+    }
 }
