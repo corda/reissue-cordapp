@@ -19,16 +19,6 @@ plugins {
     id "com.jfrog.artifactory" version "4.7.5"
 }
 
-// username is not provided
-if (!System.getenv('ARTIFACTORY_USERNAME') && !System.getProperty('corda.artifactory.username')) {
-    throw new IllegalArgumentException("Both ARTIFACTORY_USERNAME and corda.artifactory.username are null!")
-}
-
-// password is not provided
-if (!System.getenv('ARTIFACTORY_PASSWORD') && !System.getProperty('corda.artifactory.password')) {
-    throw new IllegalArgumentException("Both ARTIFACTORY_PASSWORD and corda.artifactory.password are null!")
-}
-
 allprojects { //Properties that you need to compile your project (The application)
     version reissuance_version
     group reissuance_group
