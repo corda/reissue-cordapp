@@ -20,13 +20,13 @@ plugins {
 }
 
 // username is not provided
-if (!System.getenv('ARTIFACTORY_USERNAME') && !System.getProperty('corda.artifactory.username')) {
-    throw new IllegalArgumentException("Both ARTIFACTORY_USERNAME and corda.artifactory.username are null!")
+if (!System.getenv('CORDA_CORDA_ARTIFACTORY_USERNAME') && !System.getProperty('corda.artifactory.username')) {
+    throw new IllegalArgumentException("Both CORDA_CORDA_ARTIFACTORY_USERNAME and corda.artifactory.username are null!")
 }
 
 // password is not provided
-if (!System.getenv('ARTIFACTORY_PASSWORD') && !System.getProperty('corda.artifactory.password')) {
-    throw new IllegalArgumentException("Both ARTIFACTORY_PASSWORD and corda.artifactory.password are null!")
+if (!System.getenv('CORDA_ARTIFACTORY_PASSWORD') && !System.getProperty('corda.artifactory.password')) {
+    throw new IllegalArgumentException("Both CORDA_ARTIFACTORY_PASSWORD and corda.artifactory.password are null!")
 }
 
 allprojects { //Properties that you need to compile your project (The application)
@@ -48,8 +48,8 @@ allprojects { //Properties that you need to compile your project (The applicatio
         maven {
             url "https://software.r3.com/artifactory/r3-corda-dev"
             credentials {
-                username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-                password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
             }
         }
     }
@@ -205,8 +205,8 @@ artifactory {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
             repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
-            username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-            password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
 
         defaults {

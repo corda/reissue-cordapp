@@ -34,8 +34,8 @@ pipeline {
             steps {
                 timeout(30) {
                     sh '''
-                    export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
-                    export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
+                    export CORDA_ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
+                    export CORDA_ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
                     ./gradlew clean test --info
                     '''
                 }
@@ -45,8 +45,8 @@ pipeline {
         stage('Publish SNAPSHOT') {
             steps {
                 sh '''#!/bin/bash
-                        export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
-                        export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
+                        export CORDA_ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
+                        export CORDA_ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
                         VERSION="$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{printf $2}')"
                         if [[ $VERSION == *"SNAPSHOT"* ]]; then
                             echo "Building a SNAPSHOT"
