@@ -21,3 +21,8 @@ dependencies {
     cordaCompile "$accounts_release_group:accounts-contracts:$accounts_release_version"
     cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
 }
+
+test {
+    minHeapSize = "512m"
+    maxHeapSize = "2048m"
+}
