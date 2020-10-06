@@ -19,14 +19,23 @@ plugins {
     id "com.jfrog.artifactory" version "4.7.5"
 }
 
-// username is not provided
-if (!System.getenv('CORDA_CORDA_ARTIFACTORY_USERNAME') && !System.getProperty('corda.artifactory.username')) {
-    throw new IllegalArgumentException("Both CORDA_CORDA_ARTIFACTORY_USERNAME and corda.artifactory.username are null!")
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryUsername') || !ext.cordaArtifactoryUsername?.trim()) {
+    ext.cordaArtifactoryUsername = System.getenv('CORDA_ARTIFACTORY_USERNAME')
+            ?: System.getenv('ARTIFACTORY_USERNAME')
+            ?: System.getProperty('corda.artifactory.username')
 }
 
-// password is not provided
-if (!System.getenv('CORDA_ARTIFACTORY_PASSWORD') && !System.getProperty('corda.artifactory.password')) {
-    throw new IllegalArgumentException("Both CORDA_ARTIFACTORY_PASSWORD and corda.artifactory.password are null!")
+// You can define this property in ~/.gradle/gradle.properties on your dev box.
+if (! project.hasProperty('cordaArtifactoryPassword') || !ext.cordaArtifactoryPassword?.trim()) {
+    ext.cordaArtifactoryPassword = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            ?: System.getenv('ARTIFACTORY_PASSWORD')
+            ?: System.getProperty('corda.artifactory.password')
+}
+
+// Tell the user if we can't proceed.
+if (!ext.cordaArtifactoryUsername?.trim() || !ext.cordaArtifactoryPassword?.trim()) {
+    throw new IllegalArgumentException("ERROR: Either 'cordaArtifactoryUsername' or 'cordaArtifactoryPassword' is null!")
 }
 
 allprojects { //Properties that you need to compile your project (The application)
@@ -48,8 +57,8 @@ allprojects { //Properties that you need to compile your project (The applicatio
         maven {
             url "https://software.r3.com/artifactory/r3-corda-dev"
             credentials {
-                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+                username = cordaArtifactoryUsername
+                password = cordaArtifactoryPassword
             }
         }
     }
@@ -205,8 +214,8 @@ artifactory {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
             repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
-            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            username = cordaArtifactoryUsername
+            password = cordaArtifactoryPassword
         }
 
         defaults {
