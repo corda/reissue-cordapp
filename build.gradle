@@ -19,21 +19,14 @@ plugins {
     id "com.jfrog.artifactory" version "4.7.5"
 }
 
-// You can define this property in ~/.gradle/gradle.properties on your dev box.
-if (! project.hasProperty('cordaArtifactoryUsername') || !ext.cordaArtifactoryUsername?.trim()) {
-    ext.cordaArtifactoryUsername = System.getenv('CORDA_ARTIFACTORY_USERNAME')
-            ?: System.getProperty('corda.artifactory.username')
+// username is not provided
+if (!System.getenv('ARTIFACTORY_USERNAME') && !System.getProperty('corda.artifactory.username')) {
+    throw new IllegalArgumentException("Both ARTIFACTORY_USERNAME and corda.artifactory.username are null!")
 }
 
-// You can define this property in ~/.gradle/gradle.properties on your dev box.
-if (! project.hasProperty('cordaArtifactoryPassword') || !ext.cordaArtifactoryPassword?.trim()) {
-    ext.cordaArtifactoryPassword = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
-            ?: System.getProperty('corda.artifactory.password')
-}
-
-// Tell the user if we can't proceed.
-if (!ext.cordaArtifactoryUsername?.trim() || !ext.cordaArtifactoryPassword?.trim()) {
-    throw new IllegalArgumentException("ERROR: Either 'cordaArtifactoryUsername' or 'cordaArtifactoryPassword' is null!")
+// password is not provided
+if (!System.getenv('ARTIFACTORY_PASSWORD') && !System.getProperty('corda.artifactory.password')) {
+    throw new IllegalArgumentException("Both ARTIFACTORY_PASSWORD and corda.artifactory.password are null!")
 }
 
 allprojects { //Properties that you need to compile your project (The application)
