@@ -5,8 +5,8 @@ cordapp {
     targetPlatformVersion corda_platform_version.toInteger()
     minimumPlatformVersion corda_platform_version.toInteger()
     contract {
-        name "Template Contracts"
-        vendor "Corda Open Source"
+        name "re-issuance - contracts"
+        vendor "R3"
         licence "Apache License, Version 2.0"
         versionId 1
     }

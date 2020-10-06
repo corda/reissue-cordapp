@@ -37,6 +37,9 @@ if (!ext.cordaArtifactoryUsername?.trim() || !ext.cordaArtifactoryPassword?.trim
 }
 
 allprojects { //Properties that you need to compile your project (The application)
+    version reissuance_version
+    group reissuance_group
+
     apply from: "${rootProject.projectDir}/repositories.gradle"
     apply plugin: 'kotlin'
 
@@ -191,7 +194,7 @@ configure(publishProjects) { subproject ->
                 from components.java
 
                 groupId subproject.group
-                artifactId "re-issuance-${subproject.name}"
+                artifactId "reissuance-cordapp-${subproject.name}"
                 artifact tasks.sourceJar
                 artifact tasks.javadocJar
 
