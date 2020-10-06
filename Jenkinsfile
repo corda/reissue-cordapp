@@ -33,7 +33,11 @@ pipeline {
         stage('Tests') {
             steps {
                 timeout(30) {
-                    sh "./gradlew clean test --info"
+                    sh '''
+                    export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
+                    export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
+                    ./gradlew clean test --info
+                    '''
                 }
             }
         }
