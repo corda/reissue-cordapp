@@ -1,2 +1,4 @@
 include 'workflows'
 include 'contracts'
+include 'dummy_contracts'
+

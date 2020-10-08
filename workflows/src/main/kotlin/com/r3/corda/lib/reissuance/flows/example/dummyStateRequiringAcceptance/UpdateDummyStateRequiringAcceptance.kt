@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.flows.example.dummyStateRequiringAcceptance
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.reissuance.contracts.example.DummyStateRequiringAcceptanceContract
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*

@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.flows.example.simpleDummyState
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty

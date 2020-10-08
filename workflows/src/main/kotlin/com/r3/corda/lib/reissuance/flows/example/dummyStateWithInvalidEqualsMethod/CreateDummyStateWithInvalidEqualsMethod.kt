@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.flows.example.dummyStateWithInvalidEqualsMethod
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.reissuance.contracts.example.DummyStateWithInvalidEqualsMethodContract
-import com.r3.corda.lib.reissuance.states.example.DummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateWithInvalidEqualsMethodContract
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.requireThat
 import net.corda.core.flows.*

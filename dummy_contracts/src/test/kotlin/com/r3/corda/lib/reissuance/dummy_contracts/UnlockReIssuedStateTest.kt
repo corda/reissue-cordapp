@@ -1,8 +1,8 @@
-package com.r3.corda.lib.reissuance.contracts
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
+import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand

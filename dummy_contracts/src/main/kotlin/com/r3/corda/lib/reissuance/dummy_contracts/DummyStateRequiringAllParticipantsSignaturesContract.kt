@@ -1,6 +1,6 @@
-package com.r3.corda.lib.reissuance.contracts.example
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 

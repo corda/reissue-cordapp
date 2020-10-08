@@ -1,9 +1,8 @@
-package com.r3.corda.lib.reissuance.contracts
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -50,7 +49,8 @@ abstract class AbstractContractTest {
             cordappsForAllNodes = listOf(
                 findCordapp("net.corda.testing.contracts"),
                 findCordapp("com.r3.corda.lib.tokens.contracts"),
-                findCordapp("com.r3.corda.lib.reissuance.contracts")
+                findCordapp("com.r3.corda.lib.reissuance.contracts"),
+                findCordapp("com.r3.corda.lib.reissuance.dummy_contracts")
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(

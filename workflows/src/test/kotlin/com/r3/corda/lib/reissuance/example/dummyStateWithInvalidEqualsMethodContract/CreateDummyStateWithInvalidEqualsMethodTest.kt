@@ -1,7 +1,7 @@
 package com.r3.corda.lib.reissuance.example.dummyStateWithInvalidEqualsMethodContract
 
 import com.r3.corda.lib.reissuance.AbstractFlowTest
-import com.r3.corda.lib.reissuance.states.example.DummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 import org.hamcrest.Matchers.hasSize

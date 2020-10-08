@@ -1,6 +1,6 @@
-package com.r3.corda.lib.reissuance.states.example
+package com.r3.corda.lib.reissuance.dummy_states
 
-import com.r3.corda.lib.reissuance.contracts.example.DummyStateRequiringAcceptanceContract
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
@@ -34,6 +34,5 @@ data class DummyStateRequiringAcceptance(
         result = 31 * result + acceptor.hashCode()
         return result
     }
-
 
 }

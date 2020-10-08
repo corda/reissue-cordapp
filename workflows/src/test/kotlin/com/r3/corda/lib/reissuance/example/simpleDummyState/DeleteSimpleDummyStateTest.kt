@@ -1,7 +1,7 @@
 package com.r3.corda.lib.reissuance.example.simpleDummyState
 
 import com.r3.corda.lib.reissuance.AbstractFlowTest
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import org.hamcrest.MatcherAssert.*
 import org.hamcrest.Matchers.empty
 import org.junit.Test

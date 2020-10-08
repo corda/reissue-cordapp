@@ -1,6 +1,6 @@
-package com.r3.corda.lib.reissuance.contracts.example
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.states.example.DummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 

@@ -1,6 +1,6 @@
-package com.r3.corda.lib.reissuance.contracts
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
+import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
@@ -33,7 +33,7 @@ class DeleteLockAndReIssuedStatesTest: AbstractContractTest() {
     }
 
     @Test
-    fun `Re-issuance lock and manny re-issued state are deleted`() {
+    fun `Re-issuance lock and many re-issued state are deleted`() {
         val tokens = listOf(createToken(), createToken())
         val tokenIndices = tokens.indices.toList()
         val reIssuanceLock = createDummyReIssuanceLock(listOf(createTokenStateAndRef(), createTokenStateAndRef()))

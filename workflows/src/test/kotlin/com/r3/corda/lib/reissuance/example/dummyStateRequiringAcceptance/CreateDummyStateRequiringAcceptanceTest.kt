@@ -3,7 +3,7 @@ package com.r3.corda.lib.reissuance.example.dummyStateRequiringAcceptance
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasSize
 import com.r3.corda.lib.reissuance.AbstractFlowTest
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import org.hamcrest.Matchers.`is`
 import org.junit.Test
 

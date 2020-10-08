@@ -1,13 +1,13 @@
 package com.r3.corda.lib.reissuance
 
-import com.r3.corda.lib.reissuance.contracts.example.DummyStateRequiringAcceptanceContract
-import com.r3.corda.lib.reissuance.contracts.example.DummyStateRequiringAllParticipantsSignaturesContract
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAllParticipantsSignaturesContract
+import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAcceptance
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAllParticipantsSignatures
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken

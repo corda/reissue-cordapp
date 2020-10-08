@@ -1,7 +1,8 @@
-package com.r3.corda.lib.reissuance.contracts
+package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract
-import com.r3.corda.lib.reissuance.contracts.example.SimpleDummyStateContract.*
+import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
+import com.r3.corda.lib.reissuance.contracts.ReIssuanceRequestContract
+import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract.*
 import net.corda.testing.node.ledger
 import org.junit.Test
 

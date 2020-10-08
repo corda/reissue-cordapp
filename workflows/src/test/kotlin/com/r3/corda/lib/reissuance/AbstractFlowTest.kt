@@ -23,10 +23,10 @@ import com.r3.corda.lib.reissuance.flows.example.tokens.RedeemTokens
 import com.r3.corda.lib.reissuance.flows.example.tokens.TransferTokens
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAcceptance
-import com.r3.corda.lib.reissuance.states.example.DummyStateRequiringAllParticipantsSignatures
-import com.r3.corda.lib.reissuance.states.example.DummyStateWithInvalidEqualsMethod
-import com.r3.corda.lib.reissuance.states.example.SimpleDummyState
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
@@ -116,6 +116,7 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.accounts.workflows"),
                 findCordapp("com.r3.corda.lib.ci.workflows"),
                 findCordapp("com.r3.corda.lib.reissuance.contracts"),
+                findCordapp("com.r3.corda.lib.reissuance.dummy_contracts"),
                 findCordapp("com.r3.corda.lib.reissuance.flows"),
                 findCordapp("com.r3.dr.ledgergraph")
             ),

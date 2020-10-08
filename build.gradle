@@ -101,6 +101,7 @@ dependencies {
     // CorDapp dependencies.
     cordapp project(":workflows")
     cordapp project(":contracts")
+    cordapp project(":dummy_contracts")
 
     cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
     cordaCompile "org.apache.logging.log4j:log4j-web:${log4j_version}"
@@ -134,6 +135,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         projectCordapp {
             deploy = false
         }
+        cordapp project(':dummy_contracts')
         cordapp project(':contracts')
         cordapp project(':workflows')
     }
