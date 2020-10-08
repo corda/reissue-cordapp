@@ -13,6 +13,7 @@ import org.hamcrest.Matchers.*
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.flows.SendTransactionFlow
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.queryBy
 import org.junit.Test
@@ -259,15 +260,15 @@ class ReIssueStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-
         updateSimpleDummyState(aliceNode, bobParty)
 
-        createReIssuanceRequestAndShareRequiredTransactions(
+        createReIssuanceRequest<SimpleDummyState>(
             aliceNode,
-            listOf(simpleDummyState),
+            listOf(simpleDummyState.ref),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
+        shareTransaction(aliceNode, issuerParty, simpleDummyState.ref.txhash)
 
         val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,

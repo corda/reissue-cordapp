@@ -6,6 +6,7 @@ import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.reissuance.flows.*
+import com.r3.corda.lib.reissuance.flows.example.ShareTransactionWithIssuer
 import com.r3.corda.lib.reissuance.flows.example.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.flows.example.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.flows.example.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
@@ -525,6 +526,17 @@ abstract class AbstractFlowTest {
             node,
             RequestReIssuanceAndShareRequiredTransactions<T>(issuer, statesToReIssue.map { it.ref }, command,
                 commandSigners, requester)
+        )
+    }
+
+    fun shareTransaction(
+        node: TestStartedNode,
+        issuer: Party,
+        transactionId: SecureHash
+    ) {
+        runFlow(
+            node,
+            ShareTransactionWithIssuer(issuer, transactionId)
         )
     }
 

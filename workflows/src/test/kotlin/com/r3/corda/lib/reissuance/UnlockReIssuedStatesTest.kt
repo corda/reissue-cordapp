@@ -603,7 +603,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
 
         unlockReIssuedState<SimpleDummyState>(
-            aliceNode, 
+            aliceNode,
             listOf(attachmentSecureHash),
             SimpleDummyStateContract.Commands.Update()
         )
@@ -700,9 +700,9 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             SimpleDummyStateContract.Commands.Update()
         )
 
-        createReIssuanceRequestAndShareRequiredTransactions(
+        createReIssuanceRequest<SimpleDummyState>(
             aliceNode,
-            listOf(simpleDummyState),
+            listOf(simpleDummyState.ref),
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
