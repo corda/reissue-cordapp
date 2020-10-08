@@ -12,29 +12,29 @@ import net.corda.core.node.StatesToRecord
 @StartableByRPC
 class RequestReIssuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
-    private val statesToReIssue: List<StateAndRef<T>>,
-    private val issuanceCommand: CommandData,
-    private val issuanceSigners: List<AbstractParty> = listOf(issuer),
+    private val stateRefsToReIssue: List<StateAndRef<T>>,
+    private val assetIssuanceCommand: CommandData,
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(issuer),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<Unit>() where T: ContractState {
 
     @Suspendable
     override fun call() {
         subFlow(
-            RequestReIssuance<T>(issuer, statesToReIssue.map{ it.ref }, issuanceCommand, issuanceSigners, requester)
+            RequestReIssuance<T>(issuer, stateRefsToReIssue.map{ it.ref }, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
         )
 
         val requesterIdentity = requester ?: ourIdentity
 
         // all states need to have the same participants
-        val participants = statesToReIssue[0].state.data.participants
+        val participants = stateRefsToReIssue[0].state.data.participants
 
         val requesterHost = serviceHub.identityService.partyFromKey(requesterIdentity.owningKey)!!
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
 
         // if issuer is a participant, they already have access to those transactions
         if(!participants.contains(issuer) && requesterHost != issuerHost) {
-            val transactionHashes = statesToReIssue.map { it.ref.txhash }
+            val transactionHashes = stateRefsToReIssue.map { it.ref.txhash }
             val transactionsToSend = transactionHashes.map {
                 serviceHub.validatedTransactions.getTransaction(it)
                     ?: throw FlowException("Can't find transaction with hash $it")
