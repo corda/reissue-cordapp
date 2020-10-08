@@ -4,15 +4,18 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.StateRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.StatesToRecord
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 
 @InitiatingFlow
 @StartableByRPC
 class RequestReIssuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
-    private val stateRefsToReIssue: List<StateAndRef<T>>,
+    private val stateRefsToReIssue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(issuer),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
@@ -21,20 +24,25 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
     @Suspendable
     override fun call() {
         subFlow(
-            RequestReIssuance<T>(issuer, stateRefsToReIssue.map{ it.ref }, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
+            RequestReIssuance<T>(issuer, stateRefsToReIssue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
         )
 
         val requesterIdentity = requester ?: ourIdentity
 
+        @Suppress("UNCHECKED_CAST")
+        val statesToReIssue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
+            criteria= QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReIssue)
+        ).states as List<StateAndRef<T>>
+
         // all states need to have the same participants
-        val participants = stateRefsToReIssue[0].state.data.participants
+        val participants = statesToReIssue[0].state.data.participants
 
         val requesterHost = serviceHub.identityService.partyFromKey(requesterIdentity.owningKey)!!
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
 
         // if issuer is a participant, they already have access to those transactions
         if(!participants.contains(issuer) && requesterHost != issuerHost) {
-            val transactionHashes = stateRefsToReIssue.map { it.ref.txhash }
+            val transactionHashes = stateRefsToReIssue.map { it.txhash }
             val transactionsToSend = transactionHashes.map {
                 serviceHub.validatedTransactions.getTransaction(it)
                     ?: throw FlowException("Can't find transaction with hash $it")

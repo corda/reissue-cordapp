@@ -523,8 +523,8 @@ abstract class AbstractFlowTest {
     ) where T: ContractState {
         runFlow(
             node,
-            RequestReIssuanceAndShareRequiredTransactions<T>(issuer, statesToReIssue, command, commandSigners,
-                requester)
+            RequestReIssuanceAndShareRequiredTransactions<T>(issuer, statesToReIssue.map { it.ref }, command,
+                commandSigners, requester)
         )
     }
 
