@@ -5,7 +5,7 @@ cordapp {
     targetPlatformVersion corda_platform_version.toInteger()
     minimumPlatformVersion corda_platform_version.toInteger()
     contract {
-        name "re-issuance - contracts"
+        name "re-issuance - dummy contracts"
         vendor "R3"
         licence "Apache License, Version 2.0"
         versionId 1
@@ -20,4 +20,12 @@ dependencies {
 
     cordaCompile "$accounts_release_group:accounts-contracts:$accounts_release_version"
     cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
+
+    // CorDapp dependencies.
+    cordapp project(":contracts")
+}
+
+test {
+    minHeapSize = "512m"
+    maxHeapSize = "2048m"
 }

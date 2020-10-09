@@ -1,2 +1,4 @@
-include 'workflows'
+include 'dummy_contracts'
+include 'dummy_workflows'
 include 'contracts'
+include 'workflows'
