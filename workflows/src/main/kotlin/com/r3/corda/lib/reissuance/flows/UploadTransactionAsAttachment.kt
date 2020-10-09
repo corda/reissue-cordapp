@@ -7,13 +7,14 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 
 @StartableByRPC
-class GenerateTransactionByteArray(
+class UploadTransactionAsAttachment(
     private val transactionId: SecureHash
-): FlowLogic<ByteArray>()  {
+): FlowLogic<SecureHash>()  {
     @Suspendable
-    override fun call(): ByteArray {
+    override fun call(): SecureHash {
         val signedTransaction = serviceHub.validatedTransactions.track().snapshot
             .findLast { it.tx.id == transactionId }!!
-        return convertSignedTransactionToByteArray(signedTransaction)
+        val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
+        return serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
     }
 }
