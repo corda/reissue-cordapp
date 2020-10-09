@@ -581,15 +581,11 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         deleteStateTransactionId: SecureHash = getLedgerTransactions(node).last().id
     ): SecureHash {
-        val party = node.info.singleIdentity()
-
         mockNet.runNetwork()
-        val transactionByteArray = runFlow(
+        return runFlow(
             node,
-            GenerateTransactionByteArray(deleteStateTransactionId)
+            UploadTransactionAsAttachment(deleteStateTransactionId)
         )
-
-        return node.services.attachments.importAttachment(transactionByteArray.inputStream(), party.toString(), null)
     }
 
     fun <T> deleteReIssuedStatesAndLock(
