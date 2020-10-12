@@ -5,6 +5,7 @@ import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -14,9 +15,9 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class DeleteDummyStateRequiringAcceptance(
     private val dummyStateRequiringAcceptanceStateAndRef: StateAndRef<DummyStateRequiringAcceptance>
-): FlowLogic<Unit>() {
+): FlowLogic<SecureHash>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val owner = ourIdentity
         val issuer = dummyStateRequiringAcceptanceStateAndRef.state.data.issuer
         val acceptor = dummyStateRequiringAcceptanceStateAndRef.state.data.acceptor
@@ -42,12 +43,12 @@ class DeleteDummyStateRequiringAcceptance(
 
         val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = fullySignedTransaction,
                 sessions = signersSessions + otherParticipantsSession
             )
-        )
+        ).id
     }
 }
 

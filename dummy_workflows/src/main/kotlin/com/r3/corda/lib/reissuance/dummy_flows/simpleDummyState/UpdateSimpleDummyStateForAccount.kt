@@ -6,6 +6,7 @@ import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.requireThat
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.StatesToRecord
@@ -17,9 +18,9 @@ import net.corda.core.transactions.TransactionBuilder
 class UpdateSimpleDummyStateForAccount(
     private val simpleDummyStateStateAndRef: StateAndRef<SimpleDummyState>,
     private val newOwner: AbstractParty
-): FlowLogic<Unit>() {
+): FlowLogic<SecureHash>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val owner = simpleDummyStateStateAndRef.state.data.owner
 
         val ownerHost = serviceHub.identityService.partyFromKey(owner.owningKey)!!
@@ -47,12 +48,12 @@ class UpdateSimpleDummyStateForAccount(
 
         signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = signersSessions
             )
-        )
+        ).id
     }
 }
 

@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -15,9 +16,9 @@ import net.corda.core.utilities.unwrap
 class CreateDummyStateRequiringAcceptance(
     private val owner: Party,
     private val acceptor: Party
-): FlowLogic<Unit>() {
+): FlowLogic<SecureHash>() {
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val issuer = ourIdentity
         val signers = listOf(issuer.owningKey, acceptor.owningKey)
 
@@ -40,12 +41,12 @@ class CreateDummyStateRequiringAcceptance(
 
         val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = fullySignedTransaction,
                 sessions = signersSessions + otherParticipantsSession
             )
-        )
+        ).id
     }
 }
 
