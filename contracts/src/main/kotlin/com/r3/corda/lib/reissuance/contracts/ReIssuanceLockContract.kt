@@ -4,6 +4,9 @@ import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.MerkleTree
+import net.corda.core.crypto.SecureHash
+import net.corda.core.crypto.componentHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.*
 
@@ -17,7 +20,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         val command = tx.commands.requireSingleCommand<Commands>()
         when (command.value) {
             is Commands.Create -> verifyCreateCommand(tx, command)
-            is Commands.Use -> verifyUseCommand(tx, command)
+            is Commands.Deactivate -> verifyDeactivateCommand(tx, command)
             is Commands.Delete -> verifyDeleteCommand(tx, command)
             else -> throw IllegalArgumentException("Command not supported")
         }
@@ -95,16 +98,14 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         }
     }
 
-    fun verifyUseCommand(
+    fun verifyDeactivateCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
         val reIssuanceLockInputs = tx.inputsOfType<ReIssuanceLock<T>>()
         val reIssuanceLockOutputs = tx.outputsOfType<ReIssuanceLock<T>>()
 
-        val otherInputs = tx.inputs.filter { val b = it.state.data !is ReIssuanceLock<*>
-            b
-        }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> }
         val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*> }
 
         requireThat {
@@ -149,6 +150,8 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
                     attachedSignedTransaction.id == attachedWireTransaction.id)
                 "Id of attached WireTransaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
                     attachedWireTransaction.id == attachedWireTransaction.merkleTree.hash)
+                "Merkle tree of attached transaction ${attachedSignedTransaction.id} is valid" using (
+                    generateWireTransactionMerkleTree(attachedWireTransaction) == attachedWireTransaction.merkleTree)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
                 if(issuerIsRequiredExitTransactionSigner) {
@@ -229,9 +232,35 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         return attachedSignedTransactions
     }
 
+    private fun generateWireTransactionMerkleTree(
+        wireTransaction: WireTransaction
+    ): MerkleTree {
+        val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
+            wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed { internalIndex, internalIt -> componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) }) }.toMap()
+        }
+        val availableComponentHashes = wireTransaction.componentGroups.map {
+            Pair(it.groupIndex, it.components.mapIndexed {
+                internalIndex, internalIt -> componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) }) }.toMap()
+        val groupsMerkleRoots: Map<Int, SecureHash> by lazy {
+            availableComponentHashes.map { Pair(it.key, MerkleTree.getMerkleTree(it.value).hash) }.toMap()
+        }
+        val groupHashes: List<SecureHash> by lazy {
+            val listOfLeaves = mutableListOf<SecureHash>()
+            // Even if empty and not used, we should at least send oneHashes for each known
+            // or received but unknown (thus, bigger than known ordinal) component groups.
+            for (i in 0..wireTransaction.componentGroups.map { it.groupIndex }.max()!!) {
+                val root = groupsMerkleRoots[i] ?: SecureHash.allOnesHash
+                listOfLeaves.add(root)
+            }
+            listOfLeaves
+        }
+        return MerkleTree.getMerkleTree(groupHashes)
+
+    }
+
     interface Commands : CommandData {
         class Create : Commands
-        class Use : Commands
+        class Deactivate : Commands
         class Delete: Commands
     }
 }

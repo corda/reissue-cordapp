@@ -487,15 +487,15 @@ abstract class AbstractFlowTest {
             node.services.vaultService.queryBy<T>(
                 criteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUUID))
             ).states
-        if(encumbered == null)
-            return states
         return filterStates(states, encumbered)
     }
 
     inline fun <reified T : ContractState> filterStates(
         states: List<StateAndRef<T>>,
-        encumbered: Boolean
+        encumbered: Boolean?
     ): List<StateAndRef<T>> {
+        if(encumbered == null)
+            return states
         if(encumbered)
             return states.filter { it.state.encumbrance != null }
         return states.filter { it.state.encumbrance == null }
@@ -581,7 +581,6 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         deleteStateTransactionId: SecureHash
     ): SecureHash {
-        mockNet.runNetwork()
         return runFlow(
             node,
             UploadTransactionAsAttachment(deleteStateTransactionId)

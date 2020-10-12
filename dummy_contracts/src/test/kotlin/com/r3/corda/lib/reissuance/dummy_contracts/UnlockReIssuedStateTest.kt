@@ -48,7 +48,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                     reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 verifies()
             }
@@ -86,7 +86,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                     reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 verifies()
             }
@@ -131,7 +131,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 output(ReIssuanceLockContract.contractId,
                     reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
 
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices))
                 verifies()
             }
@@ -168,7 +168,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                     reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -205,7 +205,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                     reIssuanceLock.copy(status = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE))
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -235,7 +235,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -270,7 +270,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -304,7 +304,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -338,7 +338,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -403,7 +403,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 attachment(uploadedDeletedTransactionSecureHash)
                 input(reIssuanceLockLabel)
                 output(SimpleDummyStateContract.contractId, dummyState)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }
@@ -437,7 +437,7 @@ class UnlockReIssuedStateTest: AbstractContractTest() {
                 input(reIssuanceLockLabel)
                 input(reIssuedStateLabel)
                 output(SimpleDummyStateContract.contractId, "", contractState=dummyState, encumbrance = 0)
-                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Use())
+                command(listOf(aliceParty.owningKey), ReIssuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
             }

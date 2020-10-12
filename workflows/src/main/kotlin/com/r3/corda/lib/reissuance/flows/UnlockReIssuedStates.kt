@@ -48,7 +48,7 @@ class UnlockReIssuedStates<T>(
 
         transactionBuilder.addInputState(reIssuanceLock)
         transactionBuilder.addOutputState(inactiveReIssuanceLock)
-        transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Use(), lockSigners)
+        transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Deactivate(), lockSigners)
 
         deletedStateTransactionHashes.forEach { deletedStateTransactionHash ->
             transactionBuilder.addAttachment(deletedStateTransactionHash)
