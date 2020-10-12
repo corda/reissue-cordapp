@@ -338,7 +338,9 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         unlockReIssuedState<SimpleDummyState>(
             aliceNode,
             listOf(attachmentSecureHash),
-            SimpleDummyStateContract.Commands.Update()
+            SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
         )
 
         val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)

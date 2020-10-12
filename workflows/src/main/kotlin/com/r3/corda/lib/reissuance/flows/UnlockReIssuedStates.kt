@@ -22,9 +22,9 @@ class UnlockReIssuedStates<T>(
     private val deletedStateTransactionHashes: List<SecureHash>,
     private val assetUpdateCommand: CommandData, // unencumber state command
     private val extraAssetUpdateSigners: List<AbstractParty> = listOf()
-): FlowLogic<Unit>() where T: ContractState {
+): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val requester = reIssuanceLock.state.data.requester
         val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
         require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
@@ -72,12 +72,12 @@ class UnlockReIssuedStates<T>(
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSigners))
         }
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = signersSessions + otherParticipantsSessions
             )
-        )
+        ).id
     }
 
 }

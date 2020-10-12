@@ -8,6 +8,7 @@ import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
@@ -21,10 +22,10 @@ import net.corda.core.utilities.unwrap
 class ReIssueStates<T>(
     private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>,
     private val issuerIsRequiredExitCommandSigner: Boolean = true
-): FlowLogic<Unit>() where T: ContractState {
+): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val reIssuanceRequest = reIssuanceRequestStateAndRef.state.data
 
         val issuer = reIssuanceRequest.issuer
@@ -101,12 +102,12 @@ class ReIssueStates<T>(
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions))
         }
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = signersSessions + otherParticipantsSessions
             )
-        )
+        ).id
     }
 
 }

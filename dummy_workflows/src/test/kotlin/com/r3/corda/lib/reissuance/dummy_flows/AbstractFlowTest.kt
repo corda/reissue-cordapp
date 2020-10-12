@@ -268,8 +268,8 @@ abstract class AbstractFlowTest {
 
     fun createSimpleDummyState(
         owner: Party
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             issuerNode,
             CreateSimpleDummyState(owner)
         )
@@ -278,8 +278,8 @@ abstract class AbstractFlowTest {
     fun createSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             node,
             CreateSimpleDummyStateForAccount(employeeIssuerParty, owner)
         )
@@ -299,9 +299,9 @@ abstract class AbstractFlowTest {
     fun updateSimpleDummyStateForAccount(
         node: TestStartedNode,
         owner: AbstractParty
-    ) {
+    ): SecureHash {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             UpdateSimpleDummyStateForAccount(simpleDummyStateStateAndRef, owner)
         )
@@ -331,8 +331,8 @@ abstract class AbstractFlowTest {
 
     fun createDummyStateRequiringAcceptance(
         owner: Party
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             issuerNode,
             CreateDummyStateRequiringAcceptance(owner, acceptorParty)
         )
@@ -363,8 +363,8 @@ abstract class AbstractFlowTest {
 
     fun createDummyStateRequiringAllParticipantsSignatures(
         owner: Party
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             issuerNode,
             CreateDummyStateRequiringAllParticipantsSignatures(owner, acceptorParty)
         )
@@ -373,9 +373,9 @@ abstract class AbstractFlowTest {
     fun updateDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode,
         owner: Party
-    ) {
+    ): SecureHash {
         val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             UpdateDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef, owner)
         )
@@ -402,8 +402,8 @@ abstract class AbstractFlowTest {
     fun issueTokens(
         holder: Party,
         tokenAmount: Long
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             issuerNode,
             IssueTokens(holder, tokenAmount)
         )
@@ -413,8 +413,8 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         newHolder: Party,
         tokenAmount: Long
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             node,
             TransferTokens(issuerParty, newHolder, tokenAmount)
         )
@@ -446,8 +446,8 @@ abstract class AbstractFlowTest {
     fun createDummyStateWithInvalidEqualsMethod(
         owner: Party,
         quantity: Int
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             issuerNode,
             CreateDummyStateWithInvalidEqualsMethod(owner, quantity)
         )
@@ -456,9 +456,9 @@ abstract class AbstractFlowTest {
     fun updateDummyStateWithInvalidEqualsMethod(
         node: TestStartedNode,
         owner: Party
-    ) {
+    ): SecureHash {
         val dummyStateWithInvalidEqualsMethodStateAndRef = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             UpdateDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef, owner)
         )
@@ -508,8 +508,8 @@ abstract class AbstractFlowTest {
         issuer: AbstractParty,
         commandSigners: List<AbstractParty> = listOf(issuer),
         requester: AbstractParty? = null
-    ) where T: ContractState {
-        runFlow(
+    ): SecureHash where T: ContractState {
+        return runFlow(
             node,
             RequestReIssuance<T>(issuer, stateRefsToReIssue, command, commandSigners, requester)
         )
@@ -522,8 +522,8 @@ abstract class AbstractFlowTest {
         issuer: AbstractParty,
         commandSigners: List<AbstractParty> = listOf(),
         requester: AbstractParty? = null
-    ) where T: ContractState {
-        runFlow(
+    ): SecureHash where T: ContractState {
+        return runFlow(
             node,
             RequestReIssuanceAndShareRequiredTransactions<T>(issuer, statesToReIssue.map { it.ref }, command,
                 commandSigners, requester)
@@ -545,12 +545,12 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         attachmentSecureHashes: List<SecureHash>,
         command: CommandData,
-        commandSigners: List<AbstractParty>? = null,
-        reIssuedStateAndRefs: List<StateAndRef<T>> = getStateAndRefs<T>(node, true),
-        lockStateAndRef: StateAndRef<ReIssuanceLock<T>> = getStateAndRefs<ReIssuanceLock<T>>(node, encumbered = true)[0]
-    ) {
+        reIssuedStateAndRefs: List<StateAndRef<T>>,
+        lockStateAndRef: StateAndRef<ReIssuanceLock<T>>,
+        commandSigners: List<AbstractParty>? = null
+    ): SecureHash {
         val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
-        runFlow(
+        return runFlow(
             node,
             UnlockReIssuedStates(reIssuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command, signers)
         )
@@ -560,8 +560,8 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         reIssuanceRequest: StateAndRef<ReIssuanceRequest>,
         issuerIsRequiredExitCommandSigner: Boolean
-        ) where T: ContractState {
-        runFlow(
+        ) : SecureHash where T: ContractState {
+        return runFlow(
             node,
             ReIssueStates<T>(reIssuanceRequest, issuerIsRequiredExitCommandSigner)
         )
@@ -570,8 +570,8 @@ abstract class AbstractFlowTest {
     fun <T> rejectReIssuanceRequested(
         node: TestStartedNode,
         reIssuanceRequest: StateAndRef<ReIssuanceRequest>
-    ) where T: ContractState {
-        runFlow(
+    ): SecureHash where T: ContractState {
+        return runFlow(
             node,
             RejectReIssuanceRequest<T>(reIssuanceRequest)
         )
@@ -594,15 +594,14 @@ abstract class AbstractFlowTest {
         reIssuedStates: List<StateAndRef<T>>,
         command: CommandData,
         commandSigners: List<AbstractParty>? = null
-        ) where T: ContractState {
+        ): SecureHash where T: ContractState {
         val signers: List<AbstractParty> = commandSigners ?: listOf(reIssuanceLock.state.data.requester,
             reIssuanceLock.state.data.issuer)
-        runFlow(
+        return runFlow(
             node,
             DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command, signers)
         )
     }
-
 
     fun getSignedTransactions(
         node: TestStartedNode

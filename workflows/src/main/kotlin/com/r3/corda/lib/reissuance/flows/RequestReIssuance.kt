@@ -7,6 +7,7 @@ import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
@@ -21,10 +22,10 @@ class RequestReIssuance<T>(
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
-) : FlowLogic<Unit>() where T: ContractState {
+) : FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         if(requester != null) {
             val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
             require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
@@ -49,12 +50,12 @@ class RequestReIssuance<T>(
             if(ourIdentity != issuerHost) initiateFlow(issuerHost) else null
         )
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = sessions
             )
-        )
+        ).id
     }
 }
 

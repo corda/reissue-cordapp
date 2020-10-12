@@ -6,6 +6,7 @@ import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -14,10 +15,10 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByRPC
 class RejectReIssuanceRequest<T>(
     private val reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>
-): FlowLogic<Unit>() where T: ContractState {
+): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val reIssuanceRequest = reIssuanceRequestStateAndRef.state.data
 
         val issuer = reIssuanceRequest.issuer
@@ -39,12 +40,12 @@ class RejectReIssuanceRequest<T>(
 
         val sessions = if(requesterHost == ourIdentity) listOf() else listOf(initiateFlow(requesterHost))
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = sessions
             )
-        )
+        ).id
     }
 
 }
