@@ -288,9 +288,9 @@ abstract class AbstractFlowTest {
     fun updateSimpleDummyState(
         node: TestStartedNode,
         owner: Party
-    ) {
+    ): SecureHash {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             UpdateSimpleDummyState(simpleDummyStateStateAndRef, owner)
         )
@@ -309,9 +309,9 @@ abstract class AbstractFlowTest {
 
     fun deleteSimpleDummyState(
         node: TestStartedNode
-    ) {
+    ): SecureHash {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             DeleteSimpleDummyState(simpleDummyStateStateAndRef, issuerParty)
         )
@@ -319,9 +319,9 @@ abstract class AbstractFlowTest {
 
     fun deleteSimpleDummyStateForAccount(
         node: TestStartedNode
-    ) {
+    ): SecureHash {
         val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             DeleteSimpleDummyStateForAccount(simpleDummyStateStateAndRef)
         )
@@ -341,9 +341,9 @@ abstract class AbstractFlowTest {
     fun updateDummyStateRequiringAcceptance(
         node: TestStartedNode,
         owner: Party
-    ) {
+    ): SecureHash {
         val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             UpdateDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef, owner)
         )
@@ -351,9 +351,9 @@ abstract class AbstractFlowTest {
 
     fun deleteDummyStateRequiringAcceptance(
         node: TestStartedNode
-    ) {
+    ): SecureHash {
         val dummyStateRequiringAcceptanceStateAndRef = getStateAndRefs<DummyStateRequiringAcceptance>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             DeleteDummyStateRequiringAcceptance(dummyStateRequiringAcceptanceStateAndRef)
         )
@@ -383,9 +383,9 @@ abstract class AbstractFlowTest {
 
     fun deleteDummyStateRequiringAllParticipantsSignatures(
         node: TestStartedNode
-    ) {
+    ): SecureHash {
         val dummyStateRequiringAllParticipantsSignaturesStateAndRef = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(node)[0]
-        runFlow(
+        return runFlow(
             node,
             DeleteDummyStateRequiringAllParticipantsSignatures(dummyStateRequiringAllParticipantsSignaturesStateAndRef)
         )
@@ -423,8 +423,8 @@ abstract class AbstractFlowTest {
     fun redeemTokens(
         node: TestStartedNode,
         tokens: List<StateAndRef<FungibleToken>>
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             node,
             RedeemTokens(tokens, issuerParty)
         )
@@ -467,8 +467,8 @@ abstract class AbstractFlowTest {
     fun deleteDummyStateWithInvalidEqualsMethod(
         node: TestStartedNode,
         dummyStateWithInvalidEqualsMethodStateAndRef: StateAndRef<DummyStateWithInvalidEqualsMethod> = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(node)[0]
-    ) {
-        runFlow(
+    ): SecureHash {
+        return runFlow(
             node,
             DeleteDummyStateWithInvalidEqualsMethod(dummyStateWithInvalidEqualsMethodStateAndRef)
         )
@@ -579,7 +579,7 @@ abstract class AbstractFlowTest {
 
     fun uploadDeletedStateAttachment(
         node: TestStartedNode,
-        deleteStateTransactionId: SecureHash = getLedgerTransactions(node).last().id
+        deleteStateTransactionId: SecureHash
     ): SecureHash {
         mockNet.runNetwork()
         return runFlow(
@@ -635,19 +635,4 @@ abstract class AbstractFlowTest {
         return flowFuture.getOrThrow()
     }
 
-    @InitiatingFlow
-    class FlowWrapper<T>(
-        private val flow: FlowLogic<T>,
-        private val throwError: Boolean
-    ) : FlowLogic<T>() {
-
-        @Suspendable
-        override fun call(): T {
-            if (throwError) {
-                error("ERROR")
-            }
-            return flow.call()
-
-        }
-    }
 }

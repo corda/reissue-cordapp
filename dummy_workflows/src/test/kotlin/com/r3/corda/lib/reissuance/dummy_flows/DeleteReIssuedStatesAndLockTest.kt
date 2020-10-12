@@ -332,8 +332,8 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
-        deleteSimpleDummyStateForAccount(aliceNode)
-        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+        val exitTransactionId = deleteSimpleDummyStateForAccount(aliceNode)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
 
         unlockReIssuedState<SimpleDummyState>(
             aliceNode,
