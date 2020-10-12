@@ -332,13 +332,15 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
-        deleteSimpleDummyStateForAccount(aliceNode)
-        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode)
+        val exitTransactionId = deleteSimpleDummyStateForAccount(aliceNode)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
 
         unlockReIssuedState<SimpleDummyState>(
             aliceNode,
             listOf(attachmentSecureHash),
-            SimpleDummyStateContract.Commands.Update()
+            SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
         )
 
         val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)

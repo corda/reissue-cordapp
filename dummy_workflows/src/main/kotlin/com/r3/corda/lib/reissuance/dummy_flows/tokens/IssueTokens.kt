@@ -10,6 +10,7 @@ import com.r3.corda.lib.tokens.workflows.internal.flows.finality.ObserverAwareFi
 import com.r3.corda.lib.tokens.workflows.utilities.addTokenTypeJar
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.Amount
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
@@ -19,10 +20,10 @@ import net.corda.core.transactions.TransactionBuilder
 class IssueTokens(
     private val tokenHolderParty: Party,
     private val tokensNum: Long
-) : FlowLogic<Unit>() {
+) : FlowLogic<SecureHash>() {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val issuerParty: Party = ourIdentity
         val issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
         val amount = Amount(tokensNum, issuedTokenType)
@@ -33,12 +34,12 @@ class IssueTokens(
         addTokenTypeJar(token, transactionBuilder)
 
         val holderSession = initiateFlow(tokenHolderParty)
-        subFlow(
+        return subFlow(
             ObserverAwareFinalityFlow(
                 transactionBuilder = transactionBuilder,
                 allSessions = listOf(holderSession)
             )
-        )
+        ).id
     }
 }
 

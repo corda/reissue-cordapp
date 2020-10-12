@@ -7,6 +7,7 @@ import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.transactions.SignedTransaction
@@ -21,9 +22,9 @@ class DeleteReIssuedStatesAndLock<T>(
     private val assetExitCommand: CommandData,
     private val assetExitSigners: List<AbstractParty> = listOf(reIssuanceLockStateAndRef.state.data.requester,
         reIssuanceLockStateAndRef.state.data.issuer)
-): FlowLogic<Unit>() where T: ContractState {
+): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val notary = getPreferredNotary(serviceHub)
 
         val reIssuanceLock = reIssuanceLockStateAndRef.state.data
@@ -61,12 +62,12 @@ class DeleteReIssuedStatesAndLock<T>(
             signedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, signersSessions, localSignersKeys))
         }
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = signersSessions + otherParticipantsSessions
             )
-        )
+        ).id
     }
 
 }

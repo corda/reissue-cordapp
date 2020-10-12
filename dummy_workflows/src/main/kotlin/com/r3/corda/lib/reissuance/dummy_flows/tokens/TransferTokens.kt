@@ -8,6 +8,7 @@ import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.Amount
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
@@ -19,10 +20,10 @@ class TransferTokens(
     private val issuer: Party,
     private val newTokenHolderParty: Party,
     private val tokensNum: Long
-) : FlowLogic<Unit>() {
+) : FlowLogic<SecureHash>() {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val holderParty: Party = ourIdentity
 
         val signers = listOf(
@@ -51,12 +52,12 @@ class TransferTokens(
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder)
 
         val newHolderSession = initiateFlow(newTokenHolderParty)
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = listOf(newHolderSession)
             )
-        )
+        ).id
     }
 
     private fun splitTokensIntoTokensToTransferAndChange(

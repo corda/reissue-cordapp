@@ -6,6 +6,7 @@ import com.r3.corda.lib.tokens.workflows.flows.redeem.addTokensToRedeem
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.requireThat
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
@@ -17,10 +18,10 @@ import net.corda.core.transactions.TransactionBuilder
 class RedeemTokens(
     private val tokens: List<StateAndRef<FungibleToken>>,
     private val issuer: Party
-) : FlowLogic<Unit>() {
+) : FlowLogic<SecureHash>() {
 
     @Suspendable
-    override fun call() {
+    override fun call(): SecureHash {
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         addTokensToRedeem(transactionBuilder, tokens, null)
 
@@ -31,12 +32,12 @@ class RedeemTokens(
         val sessions = listOf(issuerSession)
         val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTransaction, sessions))
 
-        subFlow(
+        return subFlow(
             FinalityFlow(
                 transaction = fullySignedTransaction,
                 sessions = sessions
             )
-        )
+        ).id
     }
 
 }

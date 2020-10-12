@@ -5,6 +5,7 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
+import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.StatesToRecord
@@ -19,11 +20,11 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(issuer),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
-) : FlowLogic<Unit>() where T: ContractState {
+) : FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
-    override fun call() {
-        subFlow(
+    override fun call(): SecureHash {
+        val requestReIssuanceTransactionId = subFlow(
             RequestReIssuance<T>(issuer, stateRefsToReIssue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
         )
 
@@ -53,6 +54,7 @@ class RequestReIssuanceAndShareRequiredTransactions<T>(
                 subFlow(SendTransactionFlow(sendToSession, signedTransaction))
             }
         }
+        return requestReIssuanceTransactionId
     }
 
 }
