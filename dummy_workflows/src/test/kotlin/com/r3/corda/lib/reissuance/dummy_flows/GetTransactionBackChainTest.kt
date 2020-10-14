@@ -19,7 +19,7 @@ class GetTransactionBackChainTest: AbstractFlowTest() {
     @Test
     fun `Back-chain for linearly updated state is correct`() {
         initialiseParties()
-        var transactionIds = mutableListOf<SecureHash>()
+        val transactionIds = mutableListOf<SecureHash>()
         transactionIds.add(createSimpleDummyState(aliceParty))
         transactionIds.add(updateSimpleDummyState(aliceNode, bobParty))
         transactionIds.add(updateSimpleDummyState(bobNode, charlieParty))
@@ -36,7 +36,7 @@ class GetTransactionBackChainTest: AbstractFlowTest() {
     @Test
     fun `Back-chain for not linearly updated state is correct`() {
         initialiseParties()
-        var transactionIds = mutableListOf<SecureHash>()
+        val transactionIds = mutableListOf<SecureHash>()
         transactionIds.add(issueTokens(aliceParty, 50))
         transactionIds.add(transferTokens(aliceNode, bobParty, 20))
         transactionIds.add(transferTokens(aliceNode, charlieParty, 20))

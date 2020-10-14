@@ -28,19 +28,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val issuanceTransactionId = createSimpleDummyState(aliceParty)
-        val update1TransactionId = updateSimpleDummyState(aliceNode, bobParty)
-        val update2TransactionId = updateSimpleDummyState(bobNode, charlieParty)
-        val update3TransactionId = updateSimpleDummyState(charlieNode, aliceParty)
-        val update4TransactionId = updateSimpleDummyState(aliceNode, bobParty)
-        val update5TransactionId = updateSimpleDummyState(bobNode, charlieParty)
-        val update6TransactionId = updateSimpleDummyState(charlieNode, aliceParty)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createSimpleDummyState(aliceParty))
+        transactionIds.add(updateSimpleDummyState(aliceNode, bobParty))
+        transactionIds.add(updateSimpleDummyState(bobNode, charlieParty))
+        transactionIds.add(updateSimpleDummyState(charlieNode, aliceParty))
+        transactionIds.add(updateSimpleDummyState(aliceNode, bobParty))
+        transactionIds.add(updateSimpleDummyState(bobNode, charlieParty))
+        transactionIds.add(updateSimpleDummyState(charlieNode, aliceParty))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         val requestReIssuanceTransactionId = createReIssuanceRequestAndShareRequiredTransactions(aliceNode,
@@ -76,19 +75,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued DummyStateRequiringAcceptance is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val issuanceTransactionId = createDummyStateRequiringAcceptance(aliceParty)
-        val update1TransactionId = updateDummyStateRequiringAcceptance(aliceNode, bobParty)
-        val update2TransactionId = updateDummyStateRequiringAcceptance(bobNode, charlieParty)
-        val update3TransactionId = updateDummyStateRequiringAcceptance(charlieNode, aliceParty)
-        val update4TransactionId = updateDummyStateRequiringAcceptance(aliceNode, bobParty)
-        val update5TransactionId = updateDummyStateRequiringAcceptance(bobNode, charlieParty)
-        val update6TransactionId = updateDummyStateRequiringAcceptance(charlieNode, aliceParty)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createDummyStateRequiringAcceptance(aliceParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(aliceNode, bobParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(bobNode, charlieParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(charlieNode, aliceParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(aliceNode, bobParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(bobNode, charlieParty))
+        transactionIds.add(updateDummyStateRequiringAcceptance(charlieNode, aliceParty))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
         val requestReIssuanceTransactionId = createReIssuanceRequestAndShareRequiredTransactions(
@@ -129,19 +127,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `DummyStateRequiringAllParticipantsSignatures is re-issued`() {
         initialiseParties()
-        val issuanceTransactionId = createDummyStateRequiringAllParticipantsSignatures(aliceParty)
-        val update1TransactionId = updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty)
-        val update2TransactionId = updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty)
-        val update3TransactionId = updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty)
-        val update4TransactionId = updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty)
-        val update5TransactionId = updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty)
-        val update6TransactionId = updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createDummyStateRequiringAllParticipantsSignatures(aliceParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty))
+        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
 
@@ -185,19 +182,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued token is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val issuanceTransactionId = issueTokens(aliceParty, 50)
-        val update1TransactionId = transferTokens(aliceNode, bobParty, 50)
-        val update2TransactionId = transferTokens(bobNode, charlieParty, 50)
-        val update3TransactionId = transferTokens(charlieNode, aliceParty, 50)
-        val update4TransactionId = transferTokens(aliceNode, bobParty, 50)
-        val update5TransactionId = transferTokens(bobNode, charlieParty, 50)
-        val update6TransactionId = transferTokens(charlieNode, aliceParty, 50)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(issueTokens(aliceParty, 50))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 50))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 50))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 50))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 50))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 50))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 50))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val tokens = getTokens(aliceNode)
         val tokenIndices = tokens.indices.toList()
@@ -240,19 +236,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issue just part of tokens`() {
         initialiseParties()
-        val issuanceTransactionId = issueTokens(aliceParty, 50)
-        val update1TransactionId = transferTokens(aliceNode, bobParty, 40)
-        val update2TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update3TransactionId = transferTokens(charlieNode, aliceParty, 30)
-        val update4TransactionId = transferTokens(aliceNode, bobParty, 30)
-        val update5TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update6TransactionId = transferTokens(charlieNode, aliceParty, 30)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(issueTokens(aliceParty, 50))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 40))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val tokensToReIssue = listOf(getTokens(aliceNode)[1]) // 30 tokens
         val indicesList = listOf(0)
@@ -295,19 +290,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued tokens are unencumbered after the original state is deleted`() {
         initialiseParties()
-        val issuanceTransactionId = issueTokens(aliceParty, 50)
-        val update1TransactionId = transferTokens(aliceNode, bobParty, 40)
-        val update2TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update3TransactionId = transferTokens(charlieNode, aliceParty, 30)
-        val update4TransactionId = transferTokens(aliceNode, bobParty, 30)
-        val update5TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update6TransactionId = transferTokens(charlieNode, aliceParty, 30)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(issueTokens(aliceParty, 50))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 40))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val tokensToReIssue = getTokens(aliceNode)
         val tokenIndices = tokensToReIssue.indices.toList()
@@ -349,19 +343,18 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Many exit transactions`() {
         initialiseParties()
-        val issuanceTransactionId = issueTokens(aliceParty, 50)
-        val update1TransactionId = transferTokens(aliceNode, bobParty, 30)
-        val update2TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update3TransactionId = transferTokens(charlieNode, aliceParty, 30)
-        val update4TransactionId = transferTokens(aliceNode, bobParty, 30)
-        val update5TransactionId = transferTokens(bobNode, charlieParty, 30)
-        val update6TransactionId = transferTokens(charlieNode, aliceParty, 30)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(issueTokens(aliceParty, 50))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
+        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
+        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
+        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
 
-        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, update6TransactionId)
-        val expectedBackChainBeforeReIssuance = setOf(issuanceTransactionId, update1TransactionId,
-            update2TransactionId, update3TransactionId, update4TransactionId, update5TransactionId,
-            update6TransactionId)
-        assertThat(transactionBackChainBeforeReIssuance, `is`(expectedBackChainBeforeReIssuance))
+        val transactionBackChainBeforeReIssuance = getTransactionBackChain(aliceNode, transactionIds.last())
+        assertThat(transactionBackChainBeforeReIssuance, hasSize(`is`(transactionIds.size)))
+        assertThat(transactionBackChainBeforeReIssuance, hasItems(*transactionIds.toTypedArray()))
 
         val tokensToReIssue = getTokens(aliceNode)
         val indicesList = tokensToReIssue.indices.toList()
