@@ -1,6 +1,5 @@
 package com.r3.corda.lib.reissuance.dummy_flows
 
-import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
@@ -29,7 +28,6 @@ import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
-import com.r3.dr.ledgergraph.services.LedgerGraphService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -117,8 +115,7 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.reissuance.contracts"),
                 findCordapp("com.r3.corda.lib.reissuance.dummy_contracts"),
                 findCordapp("com.r3.corda.lib.reissuance.flows"),
-                findCordapp("com.r3.corda.lib.reissuance.dummy_flows"),
-                findCordapp("com.r3.dr.ledgergraph")
+                findCordapp("com.r3.corda.lib.reissuance.dummy_flows")
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(
@@ -164,8 +161,6 @@ abstract class AbstractFlowTest {
         debbieParty = debbieNode.info.singleIdentity()
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
-
-        aliceNode.services.cordaService(LedgerGraphService::class.java).waitForInitialization()
     }
 
     fun initialisePartiesForAccountsOnTheSameHost() {
@@ -620,8 +615,10 @@ abstract class AbstractFlowTest {
         node: TestStartedNode,
         txId: SecureHash
     ): Set<SecureHash> {
-        val ledgerGraphService = node.services.cordaService(LedgerGraphService::class.java)
-        return ledgerGraphService.getBackchain(setOf(txId))
+        return runFlow(
+            node,
+            GetTransactionBackChain(txId)
+        )
     }
 
     fun <T> runFlow(

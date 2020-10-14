@@ -44,9 +44,6 @@ dependencies {
     cordaCompile "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
     cordaCompile "$tokens_release_group:tokens-workflows:$tokens_release_version"
-
-    implementation "com.r3:ledger-graph:1.2-SNAPSHOT"
-    testImplementation "com.r3:ledger-graph:1.2-SNAPSHOT"
 }
 
 test {
