@@ -53,14 +53,6 @@ allprojects { //Properties that you need to compile your project (The applicatio
         maven { url 'https://jitpack.io' }
         maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
         maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
-
-        maven {
-            url "https://software.r3.com/artifactory/r3-corda-dev"
-            credentials {
-                username = cordaArtifactoryUsername
-                password = cordaArtifactoryPassword
-            }
-        }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {

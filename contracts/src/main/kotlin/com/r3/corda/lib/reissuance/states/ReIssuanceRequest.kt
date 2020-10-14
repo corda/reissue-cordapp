@@ -18,4 +18,28 @@ data class ReIssuanceRequest(
     override val participants: List<AbstractParty>
         get() = listOf(issuer, requester)
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ReIssuanceRequest
+
+        if (issuer != other.issuer) return false
+        if (requester != other.requester) return false
+        if (stateRefsToReIssue != other.stateRefsToReIssue) return false
+        if (assetIssuanceCommand != other.assetIssuanceCommand) return false
+        if (assetIssuanceSigners != other.assetIssuanceSigners) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = issuer.hashCode()
+        result = 31 * result + requester.hashCode()
+        result = 31 * result + stateRefsToReIssue.hashCode()
+        result = 31 * result + assetIssuanceCommand.hashCode()
+        result = 31 * result + assetIssuanceSigners.hashCode()
+        return result
+    }
+
 }
