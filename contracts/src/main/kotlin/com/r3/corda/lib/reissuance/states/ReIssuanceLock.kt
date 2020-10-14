@@ -25,4 +25,28 @@ data class ReIssuanceLock<T>(
     override val participants: List<AbstractParty>
         get() = listOf(issuer, requester)
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ReIssuanceLock<*>
+
+        if (issuer != other.issuer) return false
+        if (requester != other.requester) return false
+        if (originalStates != other.originalStates) return false
+        if (status != other.status) return false
+        if (issuerIsRequiredExitTransactionSigner != other.issuerIsRequiredExitTransactionSigner) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = issuer.hashCode()
+        result = 31 * result + requester.hashCode()
+        result = 31 * result + originalStates.hashCode()
+        result = 31 * result + status.hashCode()
+        result = 31 * result + issuerIsRequiredExitTransactionSigner.hashCode()
+        return result
+    }
+
 }
