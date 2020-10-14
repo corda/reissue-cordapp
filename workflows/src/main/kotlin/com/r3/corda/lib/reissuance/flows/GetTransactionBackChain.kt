@@ -21,20 +21,20 @@ class GetTransactionBackChain(
     private fun getTransactionBackChain(
         transactionId: SecureHash,
         visitedTransactions: MutableSet<SecureHash>,
-        transactionsToVisitQueue: MutableSet<SecureHash>
+        transactionsToVisit: MutableSet<SecureHash>
     ): Set<SecureHash> {
         val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
             ?: throw BackChainException("Cannot find transaction with id $transactionId")
 
-        transactionsToVisitQueue.remove(transactionId)
+        transactionsToVisit.remove(transactionId)
         visitedTransactions.add(transactionId)
 
-        transactionsToVisitQueue.addAll(signedTransaction.inputs.map { it.txhash })
+        transactionsToVisit.addAll(signedTransaction.inputs.map { it.txhash })
 
-        if(transactionsToVisitQueue.isEmpty())
+        if(transactionsToVisit.isEmpty())
             return visitedTransactions
-        return getTransactionBackChain(transactionsToVisitQueue.elementAt(0), visitedTransactions,
-            transactionsToVisitQueue)
+        return getTransactionBackChain(transactionsToVisit.elementAt(0), visitedTransactions,
+            transactionsToVisit)
     }
 
     class BackChainException(
