@@ -471,6 +471,16 @@ abstract class AbstractFlowTest {
 
     // common
 
+    fun deleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode
+    ): SecureHash {
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        return runFlow(
+            node,
+            DeleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(simpleDummyStateStateAndRef, issuerParty)
+        )
+    }
+
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
         encumbered: Boolean? = null,

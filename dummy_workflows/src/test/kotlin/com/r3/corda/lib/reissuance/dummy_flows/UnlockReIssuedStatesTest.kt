@@ -378,6 +378,31 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             reIssueStatesTransactionId, unlockReIssuedStatesTransactionId))
     }
 
+    @Test(expected = TransactionVerificationException::class)
+    fun `DeleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod can't be used to unlock re-issued SimpleDummyState `() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReIssuanceRequestAndShareRequiredTransactions(aliceNode,
+            listOf(simpleDummyState), SimpleDummyStateContract.Commands.Create(), issuerParty)
+
+        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
+
+        val exitTransactionId = deleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(aliceNode)
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
+
+        unlockReIssuedState(
+            aliceNode, listOf(attachmentSecureHash), SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+        )
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `Only requester can unlock re-issued state`() {
         initialiseParties()
