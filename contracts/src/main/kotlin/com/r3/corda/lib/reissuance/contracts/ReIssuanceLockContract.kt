@@ -236,13 +236,22 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         wireTransaction: WireTransaction
     ): MerkleTree {
         val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
-            wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed { internalIndex, internalIt -> componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) }) }.toMap()
+            wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed {
+                internalIndex, internalIt ->
+                componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
+            }.toMap()
         }
+
         val availableComponentHashes = wireTransaction.componentGroups.map {
             Pair(it.groupIndex, it.components.mapIndexed {
-                internalIndex, internalIt -> componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) }) }.toMap()
+                internalIndex, internalIt ->
+                componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
+        }.toMap()
+
         val groupsMerkleRoots: Map<Int, SecureHash> by lazy {
-            availableComponentHashes.map { Pair(it.key, MerkleTree.getMerkleTree(it.value).hash) }.toMap()
+            availableComponentHashes.map {
+                Pair(it.key, MerkleTree.getMerkleTree(it.value).hash)
+            }.toMap()
         }
         val groupHashes: List<SecureHash> by lazy {
             val listOfLeaves = mutableListOf<SecureHash>()
