@@ -30,7 +30,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(issuerNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
@@ -58,7 +58,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             listOf(issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
@@ -86,7 +86,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
@@ -114,7 +114,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<FungibleToken>(issuerNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
@@ -143,7 +143,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(employeeNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(employeeNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode,
@@ -175,7 +175,7 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(aliceNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(issuerNode, reIssuanceRequest)
 
         val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode,

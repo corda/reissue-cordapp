@@ -31,7 +31,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
@@ -60,7 +60,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             extraIssuanceCommandSigners
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
@@ -89,7 +89,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             extraIssuanceCommandSigners
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
@@ -116,7 +116,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
@@ -146,7 +146,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(issuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(aliceParty.owningKey))
@@ -177,7 +177,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequests = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(employeeNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(employeeIssuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(employeeAliceParty.owningKey))
@@ -204,7 +204,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequests = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(issuerNode)
         assertThat(reIssuanceRequests, hasSize(`is`(1)))
         assertThat(reIssuanceRequests[0].state.data.issuer.owningKey, `is`(employeeIssuerParty.owningKey))
         assertThat(reIssuanceRequests[0].state.data.requester.owningKey, `is`(employeeAliceParty.owningKey))
