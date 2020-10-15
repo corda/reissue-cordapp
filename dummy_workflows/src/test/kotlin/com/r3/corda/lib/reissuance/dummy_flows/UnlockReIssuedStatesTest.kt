@@ -18,17 +18,69 @@ import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.*
 import net.corda.core.crypto.*
-import net.corda.core.node.services.queryBy
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.Party
 import net.corda.core.transactions.*
 import net.corda.testing.core.singleIdentity
+import net.corda.testing.node.internal.TestStartedNode
 import org.junit.Test
 
 class UnlockReIssuedStatesTest: AbstractFlowTest() {
 
+    private fun createStateAndGenerateBackChain(
+        createState: (Party) -> SecureHash,
+        updateState: (TestStartedNode, Party) -> SecureHash
+    ): List<SecureHash> {
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createState(aliceParty))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        return transactionIds
+    }
+
+    private fun createStateAndGenerateBackChainForAccount(
+        createState: (TestStartedNode, AbstractParty) -> SecureHash,
+        updateState: (TestStartedNode, AbstractParty) -> SecureHash,
+        onOneNode: Boolean
+    ): List<SecureHash> {
+        val (issuer, alice, bob, charlie) = if(onOneNode) (0..4).map { employeeNode } else
+            listOf(issuerNode, aliceNode, bobNode, charlieNode)
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createState(issuer, employeeAliceParty))
+        transactionIds.add(updateState(alice, employeeBobParty))
+        transactionIds.add(updateState(bob, employeeCharlieParty))
+        transactionIds.add(updateState(charlie, employeeAliceParty))
+        transactionIds.add(updateState(alice, employeeBobParty))
+        transactionIds.add(updateState(bob, employeeCharlieParty))
+        transactionIds.add(updateState(charlie, employeeAliceParty))
+        return transactionIds
+    }
+
+    private fun createStateAndGenerateBackChain(
+        createState: (Party, Long) -> SecureHash,
+        updateState: (TestStartedNode, Party, Long) -> SecureHash,
+        args: List<Long>
+    ): List<SecureHash> {
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createState(aliceParty, args[0]))
+        transactionIds.add(updateState(aliceNode, bobParty, args[1]))
+        transactionIds.add(updateState(bobNode, charlieParty, args[2]))
+        transactionIds.add(updateState(charlieNode, aliceParty, args[3]))
+        transactionIds.add(updateState(aliceNode, bobParty, args[4]))
+        transactionIds.add(updateState(bobNode, charlieParty, args[5]))
+        transactionIds.add(updateState(charlieNode, aliceParty, args[6]))
+        return transactionIds
+    }
+
     private fun verifyTransactionBackChain(
-        expectedTransactionIds: List<SecureHash>
+        expectedTransactionIds: List<SecureHash>,
+        node: TestStartedNode = aliceNode
     ) {
-        val transactionBackChain = getTransactionBackChain(aliceNode, expectedTransactionIds.last())
+        val transactionBackChain = getTransactionBackChain(node, expectedTransactionIds.last())
         assertThat(transactionBackChain, hasSize(`is`(expectedTransactionIds.size)))
         assertThat(transactionBackChain, hasItems(*expectedTransactionIds.toTypedArray()))    
     }
@@ -36,15 +88,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(createSimpleDummyState(aliceParty))
-        transactionIds.add(updateSimpleDummyState(aliceNode, bobParty))
-        transactionIds.add(updateSimpleDummyState(bobNode, charlieParty))
-        transactionIds.add(updateSimpleDummyState(charlieNode, aliceParty))
-        transactionIds.add(updateSimpleDummyState(aliceNode, bobParty))
-        transactionIds.add(updateSimpleDummyState(bobNode, charlieParty))
-        transactionIds.add(updateSimpleDummyState(charlieNode, aliceParty))
-
+        val transactionIds = createStateAndGenerateBackChain(::createSimpleDummyState, ::updateSimpleDummyState)
         verifyTransactionBackChain(transactionIds)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
@@ -79,15 +123,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued DummyStateRequiringAcceptance is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(createDummyStateRequiringAcceptance(aliceParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(aliceNode, bobParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(bobNode, charlieParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(charlieNode, aliceParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(aliceNode, bobParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(bobNode, charlieParty))
-        transactionIds.add(updateDummyStateRequiringAcceptance(charlieNode, aliceParty))
-
+        val transactionIds = createStateAndGenerateBackChain(::createDummyStateRequiringAcceptance,
+            ::updateDummyStateRequiringAcceptance)
         verifyTransactionBackChain(transactionIds)
 
         val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
@@ -127,15 +164,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `DummyStateRequiringAllParticipantsSignatures is re-issued`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(createDummyStateRequiringAllParticipantsSignatures(aliceParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(aliceNode, bobParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(bobNode, charlieParty))
-        transactionIds.add(updateDummyStateRequiringAllParticipantsSignatures(charlieNode, aliceParty))
-
+        val transactionIds = createStateAndGenerateBackChain(::createDummyStateRequiringAllParticipantsSignatures,
+            ::updateDummyStateRequiringAllParticipantsSignatures)
         verifyTransactionBackChain(transactionIds)
 
         val dummyStateRequiringAllParticipantsSignatures = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)[0]
@@ -178,15 +208,7 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued token is unencumbered after the original state is deleted`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(issueTokens(aliceParty, 50))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 50))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 50))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 50))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 50))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 50))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 50))
-
+        val transactionIds = createStateAndGenerateBackChain(::issueTokens, ::transferTokens, (0..7).map { 50L })
         verifyTransactionBackChain(transactionIds)
 
         val tokens = getTokens(aliceNode)
@@ -228,15 +250,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issue just part of tokens`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(issueTokens(aliceParty, 50))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 40))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-
+        val transactionIds = createStateAndGenerateBackChain(::issueTokens, ::transferTokens,
+            listOf(50, 40, 30, 30, 30, 30, 30))
         verifyTransactionBackChain(transactionIds)
 
         val tokensToReIssue = listOf(getTokens(aliceNode)[1]) // 30 tokens
@@ -278,15 +293,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Re-issued tokens are unencumbered after the original state is deleted`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(issueTokens(aliceParty, 50))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 40))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-
+        val transactionIds = createStateAndGenerateBackChain(::issueTokens, ::transferTokens,
+            listOf(50, 40, 30, 30, 30, 30, 30))
         verifyTransactionBackChain(transactionIds)
 
         val tokensToReIssue = getTokens(aliceNode)
@@ -327,15 +335,8 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `Many exit transactions`() {
         initialiseParties()
-        val transactionIds = mutableListOf<SecureHash>()
-        transactionIds.add(issueTokens(aliceParty, 50))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-        transactionIds.add(transferTokens(aliceNode, bobParty, 30))
-        transactionIds.add(transferTokens(bobNode, charlieParty, 30))
-        transactionIds.add(transferTokens(charlieNode, aliceParty, 30))
-
+        val transactionIds = createStateAndGenerateBackChain(::issueTokens, ::transferTokens,
+            listOf(50, 40, 30, 30, 30, 30, 30))
         verifyTransactionBackChain(transactionIds)
 
         val tokensToReIssue = getTokens(aliceNode)
@@ -441,13 +442,9 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleDummyState re-issued - accounts on the same host`() {
         initialisePartiesForAccountsOnTheSameHost()
-        createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeCharlieParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeBobParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeCharlieParty)
-        updateSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
+        val transactionIds = createStateAndGenerateBackChainForAccount(::createSimpleDummyStateForAccount,
+            ::updateSimpleDummyStateForAccount, onOneNode = true)
+        verifyTransactionBackChain(transactionIds, node = employeeNode)
 
         val transactionsBeforeReIssuance = getLedgerTransactions(employeeNode)
         assertThat(transactionsBeforeReIssuance.size, `is`(12)) // including 5 create account transactions
@@ -500,13 +497,9 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test
     fun `SimpleDummyState re-issued - accounts on different hosts`() {
         initialisePartiesForAccountsOnDifferentHosts()
-        createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
-        updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
-        updateSimpleDummyStateForAccount(bobNode, employeeCharlieParty)
-        updateSimpleDummyStateForAccount(charlieNode, employeeAliceParty)
-        updateSimpleDummyStateForAccount(aliceNode, employeeBobParty)
-        updateSimpleDummyStateForAccount(bobNode, employeeCharlieParty)
-        updateSimpleDummyStateForAccount(charlieNode, employeeAliceParty)
+        val transactionIds = createStateAndGenerateBackChainForAccount(::createSimpleDummyStateForAccount,
+            ::updateSimpleDummyStateForAccount, onOneNode = false)
+        verifyTransactionBackChain(transactionIds)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode, accountUUID = employeeAliceAccount.identifier.id)[0]
         createReIssuanceRequestAndShareRequiredTransactions(
@@ -751,7 +744,6 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
     @Test(expected = TransactionVerificationException::class)
     fun `Requester can't forge signed transaction by creating another class derived from TraversableTransaction`() {
         initialiseParties()
-
         createSimpleDummyState(aliceParty)
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val signedDeleteTransaction = getSignedTransactions(aliceNode).last()
