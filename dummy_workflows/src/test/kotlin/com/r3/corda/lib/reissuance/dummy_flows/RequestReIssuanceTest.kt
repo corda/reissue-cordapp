@@ -55,8 +55,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         verifyReIssuanceRequests(reIssuanceRequests, issuanceCommandData, statesToBeReIssued)
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
-        assertThat(simpleDummyStatesAvailableToIssuer[0], `is`(statesToBeReIssued[0]))
+        assertThat(simpleDummyStatesAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
     @Test
@@ -79,8 +78,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         verifyReIssuanceRequests(reIssuanceRequests, issuanceCommandData, statesToBeReIssued, extraIssuanceCommandSigners)
 
         val dummyStatesRequiringAcceptanceAvailableToIssuer = getStateAndRefs<DummyStateRequiringAcceptance>(issuerNode)
-        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer, hasSize(`is`(1)))
-        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer[0], `is`(statesToBeReIssued[0]))
+        assertThat(dummyStatesRequiringAcceptanceAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
     @Test
@@ -104,8 +102,7 @@ class RequestReIssuanceTest: AbstractFlowTest() {
 
         val dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
             issuerNode)
-        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer, hasSize(`is`(1)))
-        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer[0], `is`(statesToBeReIssued[0]))
+        assertThat(dummyStatesRequiringAllParticipantsSignaturesAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
     @Test
@@ -126,7 +123,6 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         verifyReIssuanceRequests(reIssuanceRequests, issuanceCommandData, statesToBeReIssued)
 
         val tokensAvailableToIssuer = getStateAndRefs<FungibleToken>(issuerNode)
-        assertThat(tokensAvailableToIssuer, hasSize(`is`(1)))
         assertThat(tokensAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
@@ -149,7 +145,6 @@ class RequestReIssuanceTest: AbstractFlowTest() {
         verifyReIssuanceRequests(reIssuanceRequests, issuanceCommandData, statesToBeReIssued)
 
         val tokensAvailableToIssuer = getStateAndRefs<FungibleToken>(issuerNode)
-        assertThat(tokensAvailableToIssuer, hasSize(`is`(2)))
         assertThat(tokensAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
@@ -174,7 +169,6 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(employeeNode) // available to node, not account
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
         assertThat(simpleDummyStatesAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
@@ -199,7 +193,6 @@ class RequestReIssuanceTest: AbstractFlowTest() {
             issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
 
         val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode) // available to node, not account
-        assertThat(simpleDummyStatesAvailableToIssuer, hasSize(`is`(1)))
         assertThat(simpleDummyStatesAvailableToIssuer, `is`(statesToBeReIssued))
     }
 
