@@ -75,8 +75,40 @@ class DummyStateRequiringAcceptanceContract: Contract {
     }
 
     interface Commands : CommandData {
-        class Create : Commands
-        class Update: Commands
-        class Delete : Commands
+        class Create : Commands {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+                return true
+            }
+
+            override fun hashCode(): Int {
+                return javaClass.hashCode()
+            }
+        }
+
+        class Update: Commands {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+                return true
+            }
+
+            override fun hashCode(): Int {
+                return javaClass.hashCode()
+            }
+        }
+
+        class Delete : Commands {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+                return true
+            }
+
+            override fun hashCode(): Int {
+                return javaClass.hashCode()
+            }
+        }
     }
 }
