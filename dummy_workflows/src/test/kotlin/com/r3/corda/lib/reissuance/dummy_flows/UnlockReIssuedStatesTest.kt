@@ -708,9 +708,9 @@ class UnlockReIssuedStatesTest: AbstractFlowTest() {
             getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
         )
     }
-}
 
-class TestWireTransaction(componentGroups: List<ComponentGroup>,
-                          val privacySalt: PrivacySalt = PrivacySalt(),
-                          override val id: SecureHash
-): TraversableTransaction(componentGroups)
+    class TestWireTransaction(componentGroups: List<ComponentGroup>,
+                              val privacySalt: PrivacySalt = PrivacySalt(),
+                              override val id: SecureHash
+    ): TraversableTransaction(componentGroups)
+}
