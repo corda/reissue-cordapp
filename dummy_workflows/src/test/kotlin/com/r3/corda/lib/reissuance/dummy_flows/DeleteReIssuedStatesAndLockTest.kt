@@ -1,5 +1,7 @@
 package com.r3.corda.lib.reissuance.dummy_flows
 
+import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAllParticipantsSignaturesContract
 import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
@@ -8,13 +10,25 @@ import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
+import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
+import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
+import net.corda.core.contracts.CommandData
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateAndRef
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import net.corda.core.contracts.TransactionVerificationException
+import net.corda.core.crypto.SecureHash
+import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.queryBy
+import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.unwrap
 import org.junit.Test
 
 class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
@@ -346,6 +360,33 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
         val lockState = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)[0]
         deleteReIssuedStatesAndLock(
+            aliceNode,
+            lockState,
+            reIssuedSimpleDummyStates,
+            SimpleDummyStateContract.Commands.Delete()
+        )
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Make sure delete transaction can't produce any outputs`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            simpleDummyStatesToReIssue,
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
+
+        val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val lockState = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)[0]
+        updatedDeleteReIssuedStatesAndLock(
             aliceNode,
             lockState,
             reIssuedSimpleDummyStates,

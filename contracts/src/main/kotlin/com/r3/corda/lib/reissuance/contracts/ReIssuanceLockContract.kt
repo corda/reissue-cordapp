@@ -190,7 +190,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
             "Number of other inputs is equal to originalStates length" using (
                 otherInputs.size == reIssuanceLockInput.originalStates.size)
-            "No outputs of are allowed" using tx.outputs.isEmpty()
+            "No outputs are allowed" using tx.outputs.isEmpty()
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(

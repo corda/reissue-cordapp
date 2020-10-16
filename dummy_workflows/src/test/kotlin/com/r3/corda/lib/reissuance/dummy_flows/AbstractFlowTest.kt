@@ -4,6 +4,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.UpdatedDeleteReIssuedStatesAndLock
 import com.r3.corda.lib.reissuance.flows.*
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
@@ -603,6 +604,21 @@ abstract class AbstractFlowTest {
         return runFlow(
             node,
             DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command, signers)
+        )
+    }
+
+    fun updatedDeleteReIssuedStatesAndLock(
+        node: TestStartedNode,
+        reIssuanceLock: StateAndRef<ReIssuanceLock<SimpleDummyState>>,
+        reIssuedStates: List<StateAndRef<SimpleDummyState>>,
+        command: CommandData,
+        commandSigners: List<AbstractParty>? = null
+    ): SecureHash {
+        val signers: List<AbstractParty> = commandSigners ?: listOf(reIssuanceLock.state.data.requester,
+            reIssuanceLock.state.data.issuer)
+        return runFlow(
+            node,
+            UpdatedDeleteReIssuedStatesAndLock(reIssuanceLock, reIssuedStates, command, signers)
         )
     }
 
