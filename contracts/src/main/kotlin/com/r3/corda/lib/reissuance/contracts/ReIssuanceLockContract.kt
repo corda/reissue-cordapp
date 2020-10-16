@@ -190,7 +190,7 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
             val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
             "Number of other inputs is equal to originalStates length" using (
                 otherInputs.size == reIssuanceLockInput.originalStates.size)
-            "No outputs of are allowed" using tx.outputs.isEmpty()
+            "No outputs are allowed" using tx.outputs.isEmpty()
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
@@ -236,13 +236,22 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         wireTransaction: WireTransaction
     ): MerkleTree {
         val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
-            wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed { internalIndex, internalIt -> componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) }) }.toMap()
+            wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed {
+                internalIndex, internalIt ->
+                componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
+            }.toMap()
         }
+
         val availableComponentHashes = wireTransaction.componentGroups.map {
             Pair(it.groupIndex, it.components.mapIndexed {
-                internalIndex, internalIt -> componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) }) }.toMap()
+                internalIndex, internalIt ->
+                componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
+        }.toMap()
+
         val groupsMerkleRoots: Map<Int, SecureHash> by lazy {
-            availableComponentHashes.map { Pair(it.key, MerkleTree.getMerkleTree(it.value).hash) }.toMap()
+            availableComponentHashes.map {
+                Pair(it.key, MerkleTree.getMerkleTree(it.value).hash)
+            }.toMap()
         }
         val groupHashes: List<SecureHash> by lazy {
             val listOfLeaves = mutableListOf<SecureHash>()

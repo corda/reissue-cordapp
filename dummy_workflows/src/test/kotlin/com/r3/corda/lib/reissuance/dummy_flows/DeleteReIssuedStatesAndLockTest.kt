@@ -11,28 +11,44 @@ import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateAndRef
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import net.corda.core.contracts.TransactionVerificationException
-import net.corda.core.node.services.queryBy
+import net.corda.testing.node.internal.TestStartedNode
 import org.junit.Test
+import java.util.*
 
 class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
+
+    private inline fun <reified T> verifyDeletedReIssuedStatesAndLock(
+        statesToReIssue: List<StateAndRef<T>>,
+        accountUUID: UUID? = null,
+        node: TestStartedNode = aliceNode,
+        extraUnencumberedStates: Int = 0
+    ) where T: ContractState {
+        val encumberedStates = getStateAndRefs<T>(node, encumbered = true, accountUUID = accountUUID)
+        val unencumberedStates = getStateAndRefs<T>(node, encumbered = false, accountUUID = accountUUID)
+        assertThat(encumberedStates, empty())
+        assertThat(unencumberedStates, hasSize(`is`(statesToReIssue.size + extraUnencumberedStates)))
+        assertThat(unencumberedStates, hasItems(*statesToReIssue.toTypedArray()))
+    }
 
     @Test
     fun `Re-issued SimpleDummyState and corresponding ReIssuanceLock are deleted`() {
         initialiseParties()
         createSimpleDummyState(aliceParty)
 
-        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
+        val statesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            simpleDummyStatesToReIssue,
+            statesToReIssue,
             SimpleDummyStateContract.Commands.Create(),
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = false)
 
@@ -45,11 +61,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             SimpleDummyStateContract.Commands.Delete()
         )
 
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(simpleDummyStatesToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue)
     }
 
     @Test
@@ -57,16 +69,16 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
 
-        val dummyStatesRequiringAcceptanceToReIssue = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)
+        val statesToReIssue = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            dummyStatesRequiringAcceptanceToReIssue,
+            statesToReIssue,
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
             listOf(issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -80,11 +92,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             listOf(issuerParty, aliceParty, acceptorParty)
         )
 
-        val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(dummyStatesRequiringAcceptanceToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue)
     }
 
     @Test
@@ -92,18 +100,16 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         initialiseParties()
         createDummyStateRequiringAllParticipantsSignatures(aliceParty)
 
-        val dummyStatesRequiringAllParticipantsSignaturesToReIssue =
-            getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)
-
+        val statesToReIssue = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            dummyStatesRequiringAllParticipantsSignaturesToReIssue,
+            statesToReIssue,
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -118,13 +124,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             listOf(issuerParty, aliceParty, acceptorParty)
         )
 
-        val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
-            aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
-            aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(dummyStatesRequiringAllParticipantsSignaturesToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue)
     }
 
     @Test
@@ -132,17 +132,16 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         initialiseParties()
         issueTokens(aliceParty, 50)
 
-        val tokensToReIssue = getTokens(aliceNode)
-        val tokenIndices = tokensToReIssue.indices.toList()
-
+        val statesToReIssue = getTokens(aliceNode)
+        val tokenIndices = statesToReIssue.indices.toList()
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokensToReIssue,
+            statesToReIssue,
             IssueTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -155,11 +154,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             RedeemTokenCommand(issuedTokenType, tokenIndices, listOf())
         )
 
-        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(tokensToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue)
     }
 
     @Test
@@ -170,17 +165,17 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         transferTokens(bobNode, aliceParty, 30)
 
         val tokens = getTokens(aliceNode)
-        val tokensToReIssue = listOf(tokens[1]) // 30 tokens
+        val statesToReIssue = listOf(tokens[1]) // 30 tokens
         val tokenIndices = listOf(0)
 
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokensToReIssue,
+            statesToReIssue,
             IssueTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -193,11 +188,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             RedeemTokenCommand(issuedTokenType, tokenIndices, listOf())
         )
 
-        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(2)))
-        assertThat(unencumberedStates, `is`(tokens))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue, extraUnencumberedStates = 1)
     }
 
     @Test
@@ -207,17 +198,16 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         transferTokens(aliceNode, bobParty, 30)
         transferTokens(bobNode, aliceParty, 30)
 
-        val tokensToReIssue = getTokens(aliceNode)
-        val tokenIndices = tokensToReIssue.indices.toList()
-
+        val statesToReIssue = getTokens(aliceNode)
+        val tokenIndices = statesToReIssue.indices.toList()
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            tokensToReIssue,
+            statesToReIssue,
             IssueTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<FungibleToken>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -230,11 +220,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             RedeemTokenCommand(issuedTokenType, tokenIndices, listOf())
         )
 
-        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(2)))
-        assertThat(unencumberedStates, `is`(tokensToReIssue))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue)
     }
 
     @Test
@@ -242,17 +228,17 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnTheSameHost()
         createSimpleDummyStateForAccount(employeeNode, employeeAliceParty)
 
-        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(employeeNode,
+        val statesToReIssue = getStateAndRefs<SimpleDummyState>(employeeNode,
             accountUUID = employeeAliceAccount.identifier.id)
         createReIssuanceRequestAndShareRequiredTransactions(
             employeeNode,
-            simpleDummyStatesToReIssue,
+            statesToReIssue,
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(employeeNode)[0]
         reIssueRequestedStates<SimpleDummyState>(employeeNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -267,13 +253,8 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             SimpleDummyStateContract.Commands.Delete()
         )
 
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = true,
-            accountUUID = employeeAliceAccount.identifier.id)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = false,
-            accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(simpleDummyStatesToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue, accountUUID = employeeAliceAccount.identifier.id,
+            node = employeeNode)
     }
 
     @Test
@@ -281,17 +262,17 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         initialisePartiesForAccountsOnDifferentHosts()
         createSimpleDummyStateForAccount(issuerNode, employeeAliceParty)
 
-        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode,
+        val statesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode,
             accountUUID = employeeAliceAccount.identifier.id)
         createReIssuanceRequestAndShareRequiredTransactions(
             aliceNode,
-            simpleDummyStatesToReIssue,
+            statesToReIssue,
             SimpleDummyStateContract.Commands.Create(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(aliceNode)[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -306,13 +287,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             SimpleDummyStateContract.Commands.Delete()
         )
 
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true,
-            accountUUID = employeeAliceAccount.identifier.id)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false,
-            accountUUID = employeeAliceAccount.identifier.id)
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(unencumberedStates[0], `is`(simpleDummyStatesToReIssue[0]))
+        verifyDeletedReIssuedStatesAndLock(statesToReIssue, accountUUID = employeeAliceAccount.identifier.id)
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -328,7 +303,7 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
             issuerIsRequiredExitCommandSigner = true)
 
@@ -346,6 +321,33 @@ class DeleteReIssuedStatesAndLockTest: AbstractFlowTest() {
         val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode)
         val lockState = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)[0]
         deleteReIssuedStatesAndLock(
+            aliceNode,
+            lockState,
+            reIssuedSimpleDummyStates,
+            SimpleDummyStateContract.Commands.Delete()
+        )
+    }
+
+    @Test(expected = TransactionVerificationException::class)
+    fun `Make sure delete transaction can't produce any outputs`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyStatesToReIssue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
+        createReIssuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            simpleDummyStatesToReIssue,
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
+        reIssueRequestedStates<SimpleDummyState>(issuerNode, reIssuanceRequest,
+            issuerIsRequiredExitCommandSigner = false)
+
+        val reIssuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val lockState = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)[0]
+        updatedDeleteReIssuedStatesAndLock(
             aliceNode,
             lockState,
             reIssuedSimpleDummyStates,

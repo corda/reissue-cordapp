@@ -12,10 +12,27 @@ import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipan
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import net.corda.core.node.services.queryBy
+import net.corda.core.contracts.ContractState
+import net.corda.testing.node.internal.TestStartedNode
 import org.junit.Test
+import java.util.*
 
 class RejectReIssuanceRequestTest: AbstractFlowTest() {
+
+    private inline fun <reified T> verifyReIssuanceRequestRejection(
+        node: TestStartedNode = aliceNode,
+        accountUUID: UUID? = null
+    ) where T: ContractState {
+        val encumberedStates = getStateAndRefs<T>(node, encumbered = true, accountUUID = accountUUID)
+        val unencumberedStates = getStateAndRefs<T>(node, encumbered = false, accountUUID = accountUUID)
+        val lockStates = getStateAndRefs<ReIssuanceLock<T>>(node, accountUUID = accountUUID)
+        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(node, accountUUID = accountUUID)
+
+        assertThat(encumberedStates, empty())
+        assertThat(unencumberedStates, hasSize(`is`(1)))
+        assertThat(lockStates, empty())
+        assertThat(reIssuanceRequests, empty())
+    }
 
     @Test
     fun `SimpleDummyState re-issuance request is rejected`() {
@@ -30,18 +47,9 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(issuerNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(aliceNode)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<SimpleDummyState>()
     }
 
     @Test
@@ -58,18 +66,9 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             listOf(issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<DummyStateRequiringAcceptance>(issuerNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<DummyStateRequiringAcceptance>>(aliceNode)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(aliceNode)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<DummyStateRequiringAcceptance>()
     }
 
     @Test
@@ -86,18 +85,9 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             listOf(aliceParty, issuerParty, acceptorParty)
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<DummyStateRequiringAllParticipantsSignatures>>(aliceNode)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(aliceNode)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<DummyStateRequiringAllParticipantsSignatures>()
     }
 
     @Test
@@ -114,18 +104,9 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             issuerParty
         )
 
-        val reIssuanceRequest = issuerNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(issuerNode)[0]
         rejectReIssuanceRequested<FungibleToken>(issuerNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
-        val unencumberedStates = getStateAndRefs<FungibleToken>(aliceNode, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<FungibleToken>>(aliceNode)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(aliceNode)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<FungibleToken>()
     }
 
     @Test
@@ -143,22 +124,10 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = employeeNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(employeeNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(employeeNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode,
-            accountUUID = employeeAliceAccount.identifier.id, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(employeeNode,
-            accountUUID = employeeAliceAccount.identifier.id, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(employeeNode,
-            accountUUID = employeeAliceAccount.identifier.id)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(employeeNode,
-            accountUUID = employeeAliceAccount.identifier.id)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id,
+            node = employeeNode)
     }
 
     @Test
@@ -175,22 +144,9 @@ class RejectReIssuanceRequestTest: AbstractFlowTest() {
             requester = employeeAliceParty
         )
 
-        val reIssuanceRequest = aliceNode.services.vaultService.queryBy<ReIssuanceRequest>().states[0]
+        val reIssuanceRequest = getStateAndRefs<ReIssuanceRequest>(aliceNode)[0]
         rejectReIssuanceRequested<SimpleDummyState>(issuerNode, reIssuanceRequest)
-
-        val encumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode,
-            accountUUID = employeeAliceAccount.identifier.id, encumbered = true)
-        val unencumberedStates = getStateAndRefs<SimpleDummyState>(aliceNode,
-            accountUUID = employeeAliceAccount.identifier.id, encumbered = false)
-        val lockStates = getStateAndRefs<ReIssuanceLock<SimpleDummyState>>(aliceNode,
-            accountUUID = employeeAliceAccount.identifier.id)
-        val reIssuanceRequests = getStateAndRefs<ReIssuanceRequest>(aliceNode,
-            accountUUID = employeeAliceAccount.identifier.id)
-
-        assertThat(encumberedStates, empty())
-        assertThat(unencumberedStates, hasSize(`is`(1)))
-        assertThat(lockStates, empty())
-        assertThat(reIssuanceRequests, empty())
+        verifyReIssuanceRequestRejection<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id)
     }
 
 }

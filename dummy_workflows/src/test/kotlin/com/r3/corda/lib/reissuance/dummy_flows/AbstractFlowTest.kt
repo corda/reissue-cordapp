@@ -4,21 +4,22 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.UpdatedDeleteReIssuedStatesAndLock
 import com.r3.corda.lib.reissuance.flows.*
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.CreateDummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.DeleteDummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.UpdateDummyStateWithInvalidEqualsMethod
-import com.r3.corda.lib.reissuance.dummy_flows.simpleDummyState.*
-import com.r3.corda.lib.reissuance.dummy_flows.tokens.IssueTokens
-import com.r3.corda.lib.reissuance.dummy_flows.tokens.ListTokensFlow
-import com.r3.corda.lib.reissuance.dummy_flows.tokens.RedeemTokens
-import com.r3.corda.lib.reissuance.dummy_flows.tokens.TransferTokens
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.simpleDummyState.*
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.IssueTokens
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.ListTokensFlow
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.RedeemTokens
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.TransferTokens
 import com.r3.corda.lib.reissuance.states.ReIssuanceLock
 import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
@@ -35,7 +36,6 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
@@ -471,6 +471,16 @@ abstract class AbstractFlowTest {
 
     // common
 
+    fun deleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(
+        node: TestStartedNode
+    ): SecureHash {
+        val simpleDummyStateStateAndRef = getStateAndRefs<SimpleDummyState>(node)[0]
+        return runFlow(
+            node,
+            DeleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(simpleDummyStateStateAndRef, issuerParty)
+        )
+    }
+
     inline fun <reified T : ContractState> getStateAndRefs(
         node: TestStartedNode,
         encumbered: Boolean? = null,
@@ -594,6 +604,21 @@ abstract class AbstractFlowTest {
         return runFlow(
             node,
             DeleteReIssuedStatesAndLock<T>(reIssuanceLock, reIssuedStates, command, signers)
+        )
+    }
+
+    fun updatedDeleteReIssuedStatesAndLock(
+        node: TestStartedNode,
+        reIssuanceLock: StateAndRef<ReIssuanceLock<SimpleDummyState>>,
+        reIssuedStates: List<StateAndRef<SimpleDummyState>>,
+        command: CommandData,
+        commandSigners: List<AbstractParty>? = null
+    ): SecureHash {
+        val signers: List<AbstractParty> = commandSigners ?: listOf(reIssuanceLock.state.data.requester,
+            reIssuanceLock.state.data.issuer)
+        return runFlow(
+            node,
+            UpdatedDeleteReIssuedStatesAndLock(reIssuanceLock, reIssuedStates, command, signers)
         )
     }
 
