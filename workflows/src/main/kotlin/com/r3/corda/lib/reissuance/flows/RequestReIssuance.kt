@@ -45,6 +45,7 @@ class RequestReIssuance<T>(
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
+        // don't create a session if issuer and requester are accounts on the same node
         val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         val sessions = listOfNotNull(
             if(ourIdentity != issuerHost) initiateFlow(issuerHost) else null
