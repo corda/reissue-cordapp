@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.reissuance.contracts.ReIssuanceRequestContract
-import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
+import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -16,9 +16,9 @@ import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
-class RequestReIssuance<T>(
+class RequestReissuance<T>(
     private val issuer: AbstractParty,
-    private val stateRefsToReIssue: List<StateRef>,
+    private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(),
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
@@ -36,11 +36,11 @@ class RequestReIssuance<T>(
 
         val signers = listOf(requesterAbstractParty.owningKey).distinct()
 
-        val reIssuanceRequest = ReIssuanceRequest(issuer, requesterAbstractParty, stateRefsToReIssue, assetIssuanceCommand, issuanceSigners)
+        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue, assetIssuanceCommand, issuanceSigners)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addOutputState(reIssuanceRequest)
-        transactionBuilder.addCommand(ReIssuanceRequestContract.Commands.Create(), signers)
+        transactionBuilder.addOutputState(reissuanceRequest)
+        transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
@@ -60,8 +60,8 @@ class RequestReIssuance<T>(
     }
 }
 
-@InitiatedBy(RequestReIssuance::class)
-class RequestReIssuanceResponder(
+@InitiatedBy(RequestReissuance::class)
+class RequestReissuanceResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<Unit>() {
     @Suspendable

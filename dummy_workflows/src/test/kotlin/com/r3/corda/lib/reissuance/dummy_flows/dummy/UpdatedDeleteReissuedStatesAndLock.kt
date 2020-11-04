@@ -1,48 +1,59 @@
-package com.r3.corda.lib.reissuance.flows
+package com.r3.corda.lib.reissuance.dummy_flows.dummy
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
-import com.r3.corda.lib.reissuance.states.ReIssuanceLock
+import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateWithInvalidEqualsMethodContract
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
+import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
+import com.r3.corda.lib.reissuance.flows.SendSignerFlags
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
-import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
-class DeleteReIssuedStatesAndLock<T>(
-    private val reIssuanceLockStateAndRef: StateAndRef<ReIssuanceLock<T>>,
-    private val reIssuedStateAndRefs: List<StateAndRef<T>>,
+class UpdatedDeleteReissuedStatesAndLock(
+    private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock<SimpleDummyState>>,
+    private val reissuedStateAndRefs: List<StateAndRef<SimpleDummyState>>,
     private val assetExitCommand: CommandData,
-    private val assetExitSigners: List<AbstractParty> = listOf(reIssuanceLockStateAndRef.state.data.requester,
-        reIssuanceLockStateAndRef.state.data.issuer)
-): FlowLogic<SecureHash>() where T: ContractState {
+    private val assetExitSigners: List<AbstractParty> = listOf(reissuanceLockStateAndRef.state.data.requester,
+        reissuanceLockStateAndRef.state.data.issuer)
+): FlowLogic<SecureHash>() {
     @Suspendable
     override fun call(): SecureHash {
         val notary = getPreferredNotary(serviceHub)
 
-        val reIssuanceLock = reIssuanceLockStateAndRef.state.data
-        val requester = reIssuanceLock.requester
-        val issuer = reIssuanceLock.issuer
+        val reissuanceLock = reissuanceLockStateAndRef.state.data
+        val requester = reissuanceLock.requester
+        val issuer = reissuanceLock.issuer
         val lockSigners = listOf(requester, issuer)
         val lockSignersKeys = lockSigners.map { it.owningKey }
-        val reIssuedStatesSignersKeys = assetExitSigners.map { it.owningKey }
+        val reissuedStatesSignersKeys = assetExitSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
 
-        reIssuedStateAndRefs.forEach { reIssuedStateAndRef ->
-            transactionBuilder.addInputState(reIssuedStateAndRef)
+        reissuedStateAndRefs.forEach { reissuedStateAndRef ->
+            transactionBuilder.addInputState(reissuedStateAndRef)
         }
-        transactionBuilder.addCommand(assetExitCommand, reIssuedStatesSignersKeys)
+        transactionBuilder.addCommand(assetExitCommand, reissuedStatesSignersKeys)
 
-        transactionBuilder.addInputState(reIssuanceLockStateAndRef)
-        transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Delete(), lockSignersKeys)
+        transactionBuilder.addInputState(reissuanceLockStateAndRef)
+        transactionBuilder.addCommand(ReissuanceLockContract.Commands.Delete(), lockSignersKeys)
+
+        // extra functionality
+        transactionBuilder.addOutputState(DummyStateWithInvalidEqualsMethod(ourIdentity, issuer as Party, 1))
+        transactionBuilder.addCommand(DummyStateWithInvalidEqualsMethodContract.Commands.Create(),
+            reissuedStatesSignersKeys)
+        // end of extra functionality
 
         val signers =(lockSigners + assetExitSigners).distinct()
 
@@ -52,7 +63,7 @@ class DeleteReIssuedStatesAndLock<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSignersKeys)
 
-        val otherParticipants = reIssuanceLock.participants.filter { !signers.contains(it) }
+        val otherParticipants = reissuanceLock.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
         val otherParticipantsSessions = subFlow(GenerateRequiredFlowSessions(otherParticipants))
@@ -72,8 +83,8 @@ class DeleteReIssuedStatesAndLock<T>(
 
 }
 
-@InitiatedBy(DeleteReIssuedStatesAndLock::class)
-class DeleteReIssuedStatesAndLockResponder(
+@InitiatedBy(UpdatedDeleteReissuedStatesAndLock::class)
+class UpdatedDeleteReissuedStatesAndLockResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

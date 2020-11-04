@@ -1,23 +1,23 @@
 package com.r3.corda.lib.reissuance.states
 
-import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
+import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.AbstractParty
 import net.corda.core.serialization.CordaSerializable
 
-@BelongsToContract(ReIssuanceLockContract::class)
-data class ReIssuanceLock<T>(
+@BelongsToContract(ReissuanceLockContract::class)
+data class ReissuanceLock<T>(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val originalStates: List<StateAndRef<T>>,
-    val status: ReIssuanceLockStatus = ReIssuanceLockStatus.ACTIVE,
+    val status: ReissuanceLockStatus = ReissuanceLockStatus.ACTIVE,
     val issuerIsRequiredExitTransactionSigner: Boolean = true
     ): ContractState where T: ContractState {
 
     @CordaSerializable
-    enum class ReIssuanceLockStatus {
+    enum class ReissuanceLockStatus {
         ACTIVE,
         INACTIVE
     }
@@ -29,7 +29,7 @@ data class ReIssuanceLock<T>(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ReIssuanceLock<*>
+        other as ReissuanceLock<*>
 
         if (issuer != other.issuer) return false
         if (requester != other.requester) return false

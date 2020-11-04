@@ -42,32 +42,32 @@ cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
 
 # Re-issuance flows
 ## Requesting re-issuance
-`RequestReIssuanceAndShareRequiredTransactions` flow is used to request re-issuance and share required transaction with 
+`RequestReissuanceAndShareRequiredTransactions` flow is used to request re-issuance and share required transaction with 
 an issuer.
 
 Parameters:
 * `issuer: AbstractParty`
-* `stateRefsToReIssue: List<StateRef>`
+* `stateRefsToReissue: List<StateRef>`
 * `assetIssuanceCommand: CommandData` - command which is supposed to be used to issue the new asset
 * `extraAssetIssuanceSigners: List<AbstractParty>` - required issuance signers other than issuer, empty list by default
 * `requester: AbstractParty?` - needs to be provided only when requester is an account, should be null otherwise 
 which is a default value
 
 ## Accept re-issuance request
-`ReIssueStates` is used to accept re-issuance request, create a locked copy of the original states, and a re-issuance 
+`ReissueStates` is used to accept re-issuance request, create a locked copy of the original states, and a re-issuance 
 lock object which enforces successful re-issuance and is used to prevent cheating.
 
 Parameters:
-* `reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>`
+* `reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>`
 * `issuerIsRequiredExitCommandSigner: Boolean` - determines whether issuer signature is checked in asset 
 state exit transaction verification (see [Requester unlocks re-issued states](#requester-unlocks-re-issued-states),
 true by default
 
 ## Reject re-issuance request
-`RejectReIssuanceRequest` is used to reject re-issuance request.
+`RejectReissuanceRequest` is used to reject re-issuance request.
 
 Parameters:
-* `reIssuanceRequestStateAndRef: StateAndRef<ReIssuanceRequest>`
+* `reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>`
 
 ## Transform transaction into byte array
 `GenerateTransactionByteArray` is used to transform a transaction into a byte array to be able to add it to another 
@@ -77,23 +77,23 @@ Parameters:
 * `transactionId: SecureHash`
 
 ## Unlock re-issued states
-`UnlockReIssuedStates` is used to unlock re-issued states after the original states had been exited from the ledger.
+`UnlockReissuedStates` is used to unlock re-issued states after the original states had been exited from the ledger.
 
 Parameters:
-* `reIssuedStateAndRefs: List<StateAndRef<T>>`
-* `reIssuanceLock: StateAndRef<ReIssuanceLock<T>>`
+* `reissuedStateAndRefs: List<StateAndRef<T>>`
+* `reissuanceLock: StateAndRef<ReissuanceLock<T>>`
 * `deletedStateTransactionHashes: List<SecureHash>`
 * `assetUpdateCommand: CommandData` - command which should be used to unencumber asset states
 * `extraAssetUpdateSigners: List<AbstractParty>` - required update command signers other than requester 
 (empty list be default)
 
 ## Exit re-issued states from the ledger
-`DeleteReIssuedStatesAndLock` is used to exit re-issued states and corresponding re-issuance lock object if they are 
+`DeleteReissuedStatesAndLock` is used to exit re-issued states and corresponding re-issuance lock object if they are 
 no longer needed (when the original states had been consumed and the re-issued states will never able to be re-issued).
 
 Parameters:
-* `reIssuanceLockStateAndRef: StateAndRef<ReIssuanceLock<T>>`
-* `reIssuedStateAndRefs: List<StateAndRef<T>>`
+* `reissuanceLockStateAndRef: StateAndRef<ReissuanceLock<T>>`
+* `reissuedStateAndRefs: List<StateAndRef<T>>`
 * `assetExitCommand: CommandData` - command which should be used to exit encumbered asset states
 * `assetExitSigners: List<AbstractParty>` - `assetExitCommand` signers, by default a list of issuer and requester 
 
