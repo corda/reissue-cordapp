@@ -28,7 +28,7 @@ Firstly, artifactory repository containing re-issuance CorDapp (`corda-lib-dev`)
 of repositories for the project:
 ```
 repositories {
-    maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
+    maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
 }
 ```
 
