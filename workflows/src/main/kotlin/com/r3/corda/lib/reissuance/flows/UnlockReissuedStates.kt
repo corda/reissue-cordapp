@@ -2,8 +2,8 @@ package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
-import com.r3.corda.lib.reissuance.contracts.ReIssuanceLockContract
-import com.r3.corda.lib.reissuance.states.ReIssuanceLock
+import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -16,53 +16,53 @@ import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
-class UnlockReIssuedStates<T>(
-    private val reIssuedStateAndRefs: List<StateAndRef<T>>,
-    private val reIssuanceLock: StateAndRef<ReIssuanceLock<T>>,
+class UnlockReissuedStates<T>(
+    private val reissuedStateAndRefs: List<StateAndRef<T>>,
+    private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
     private val deletedStateTransactionHashes: List<SecureHash>,
     private val assetUpdateCommand: CommandData, // unencumber state command
     private val extraAssetUpdateSigners: List<AbstractParty> = listOf()
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
-        val requester = reIssuanceLock.state.data.requester
+        val requester = reissuanceLock.state.data.requester
         val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
         require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
 
         val notary = getPreferredNotary(serviceHub)
         val lockSigners = listOf(requester.owningKey)
 
-        val assetUpdateSigners = listOf(reIssuanceLock.state.data.requester) + extraAssetUpdateSigners
-        val reIssuedStatesSigners = assetUpdateSigners.map { it.owningKey }
+        val assetUpdateSigners = listOf(reissuanceLock.state.data.requester) + extraAssetUpdateSigners
+        val reissuedStatesSigners = assetUpdateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
 
-        reIssuedStateAndRefs.forEach { reIssuedStateAndRef ->
-            transactionBuilder.addInputState(reIssuedStateAndRef)
-            transactionBuilder.addOutputState(reIssuedStateAndRef.state.data)
+        reissuedStateAndRefs.forEach { reissuedStateAndRef ->
+            transactionBuilder.addInputState(reissuedStateAndRef)
+            transactionBuilder.addOutputState(reissuedStateAndRef.state.data)
         }
-        transactionBuilder.addCommand(assetUpdateCommand, reIssuedStatesSigners)
+        transactionBuilder.addCommand(assetUpdateCommand, reissuedStatesSigners)
 
-        var inactiveReIssuanceLock = (reIssuanceLock.state.data).copy(
-            status = ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
+        var inactiveReissuanceLock = (reissuanceLock.state.data).copy(
+            status = ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
-        transactionBuilder.addInputState(reIssuanceLock)
-        transactionBuilder.addOutputState(inactiveReIssuanceLock)
-        transactionBuilder.addCommand(ReIssuanceLockContract.Commands.Deactivate(), lockSigners)
+        transactionBuilder.addInputState(reissuanceLock)
+        transactionBuilder.addOutputState(inactiveReissuanceLock)
+        transactionBuilder.addCommand(ReissuanceLockContract.Commands.Deactivate(), lockSigners)
 
         deletedStateTransactionHashes.forEach { deletedStateTransactionHash ->
             transactionBuilder.addAttachment(deletedStateTransactionHash)
         }
 
-        val localSigners = (lockSigners + reIssuedStatesSigners)
+        val localSigners = (lockSigners + reissuedStatesSigners)
             .distinct()
             .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
 
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
-        val signers = (assetUpdateSigners + reIssuanceLock.state.data.issuer).distinct()
-        val otherParticipants = reIssuanceLock.state.data.participants.filter { !signers.contains(it) }
+        val signers = (assetUpdateSigners + reissuanceLock.state.data.issuer).distinct()
+        val otherParticipants = reissuanceLock.state.data.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
         val otherParticipantsSessions = subFlow(GenerateRequiredFlowSessions(otherParticipants))
@@ -82,8 +82,8 @@ class UnlockReIssuedStates<T>(
 
 }
 
-@InitiatedBy(UnlockReIssuedStates::class)
-class UnlockReIssuedStatesResponder(
+@InitiatedBy(UnlockReissuedStates::class)
+class UnlockReissuedStatesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

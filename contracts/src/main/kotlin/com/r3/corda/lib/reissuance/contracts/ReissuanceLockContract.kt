@@ -1,7 +1,7 @@
 package com.r3.corda.lib.reissuance.contracts
 
-import com.r3.corda.lib.reissuance.states.ReIssuanceLock
-import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
 import net.corda.core.crypto.MerkleTree
@@ -10,7 +10,7 @@ import net.corda.core.crypto.componentHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.*
 
-class ReIssuanceLockContract<T>: Contract where T: ContractState {
+class ReissuanceLockContract<T>: Contract where T: ContractState {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
@@ -30,69 +30,69 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val reIssuanceRequestInputs = tx.inputsOfType<ReIssuanceRequest>()
-        val reIssuanceRequestOutputs = tx.outputsOfType<ReIssuanceRequest>()
+        val reissuanceRequestInputs = tx.inputsOfType<ReissuanceRequest>()
+        val reissuanceRequestOutputs = tx.outputsOfType<ReissuanceRequest>()
 
-        val reIssuanceLockInputs = tx.inputsOfType<ReIssuanceLock<T>>()
-        val reIssuanceLockOutputs = tx.outputsOfType<ReIssuanceLock<T>>()
+        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock<T>>()
+        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock<T>>()
 
-        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> && it.state.data !is ReIssuanceRequest }
-        val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*>  && it.data !is ReIssuanceRequest }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> && it.state.data !is ReissuanceRequest }
+        val otherOutputs = tx.outputs.filter { it.data !is ReissuanceLock<*>  && it.data !is ReissuanceRequest }
 
         requireThat {
             //// command constraints
 
             // verify number of inputs and outputs of a given type
-            "Exactly one input of type ReIssuanceRequest is expected" using (reIssuanceRequestInputs.size == 1)
-            "No outputs of type ReIssuanceRequest are allowed" using reIssuanceRequestOutputs.isEmpty()
+            "Exactly one input of type ReissuanceRequest is expected" using (reissuanceRequestInputs.size == 1)
+            "No outputs of type ReissuanceRequest are allowed" using reissuanceRequestOutputs.isEmpty()
 
-            "No inputs of type ReIssuanceLock are allowed" using (reIssuanceLockInputs.isEmpty())
-            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
+            "No inputs of type ReissuanceLock are allowed" using (reissuanceLockInputs.isEmpty())
+            "Exactly one output of type ReissuanceLock is expected" using (reissuanceLockOutputs.size == 1)
 
-            "No inputs other than ReIssuanceRequest and ReIssuanceLock are expected" using otherInputs.isEmpty()
-            "At least one output other than ReIssuanceRequest and ReIssuanceLock is expected" using otherOutputs.isNotEmpty() // redundant
+            "No inputs other than ReissuanceRequest and ReissuanceLock are expected" using otherInputs.isEmpty()
+            "At least one output other than ReissuanceRequest and ReissuanceLock is expected" using otherOutputs.isNotEmpty() // redundant
 
-            val reIssuanceRequest = reIssuanceRequestInputs[0]
-            val reIssuanceLock = reIssuanceLockOutputs[0]
+            val reissuanceRequest = reissuanceRequestInputs[0]
+            val reissuanceLock = reissuanceLockOutputs[0]
 
             // verify requester & issuer
-            "Requester is the same in both ReIssuanceRequest and ReIssuanceLock" using (
-                reIssuanceRequest.requester == reIssuanceLock.requester)
-            "Issuer is the same in both ReIssuanceRequest and ReIssuanceLock" using (
-                reIssuanceRequest.issuer == reIssuanceLock.issuer)
+            "Requester is the same in both ReissuanceRequest and ReissuanceLock" using (
+                reissuanceRequest.requester == reissuanceLock.requester)
+            "Issuer is the same in both ReissuanceRequest and ReissuanceLock" using (
+                reissuanceRequest.issuer == reissuanceLock.issuer)
 
-            val firstReIssuedState = reIssuanceLock.originalStates[0]
-            (1 until reIssuanceRequest.stateRefsToReIssue.size).forEach {
-                val reIssuedState = reIssuanceLock.originalStates[it]
+            val firstReissuedState = reissuanceLock.originalStates[0]
+            (1 until reissuanceRequest.stateRefsToReissue.size).forEach {
+                val reissuedState = reissuanceLock.originalStates[it]
 
                 // participants for all re-issued states must be the same
-                "Participants in state to be re-issued ${reIssuedState.ref} must be the same as participants in the first state to be re-issued ${reIssuedState.ref}" using (
-                    reIssuedState.state.data.participants.equals(firstReIssuedState.state.data.participants))
+                "Participants in state to be re-issued ${reissuedState.ref} must be the same as participants in the first state to be re-issued ${reissuedState.ref}" using (
+                    reissuedState.state.data.participants.equals(firstReissuedState.state.data.participants))
 
                 // all re-issued states must be of the same type
-                "State to be re-issued ${reIssuedState.ref} must be of the same type as the first state to be re-issued ${reIssuedState.ref}" using (
-                    reIssuedState.state.data::class.java == firstReIssuedState.state.data::class.java)
+                "State to be re-issued ${reissuedState.ref} must be of the same type as the first state to be re-issued ${reissuedState.ref}" using (
+                    reissuedState.state.data::class.java == firstReissuedState.state.data::class.java)
             }
 
             // verify signers
-            "Issuer is required signer" using (command.signers.contains(reIssuanceRequest.issuer.owningKey))
+            "Issuer is required signer" using (command.signers.contains(reissuanceRequest.issuer.owningKey))
 
             //// state constraints
 
             // verify status
             "Re-issuance lock status is ACTIVE" using(
-                reIssuanceLock.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             // verify state data
-            "StatesAndRef objects in ReIssuanceLock must be the same as re-issued states" using (
-                reIssuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
 
             // verify encumbrance
-            reIssuanceLock.originalStates.forEach {
+            reissuanceLock.originalStates.forEach {
                 "Original states can't be encumbered" using (it.state.encumbrance  == null)
             }
             otherOutputs.forEach {
-                "Output other than ReIssuanceRequest and ReIssuanceLock must be encumbered" using (it.encumbrance  != null)
+                "Output other than ReissuanceRequest and ReissuanceLock must be encumbered" using (it.encumbrance  != null)
             }
 
         }
@@ -102,39 +102,39 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val reIssuanceLockInputs = tx.inputsOfType<ReIssuanceLock<T>>()
-        val reIssuanceLockOutputs = tx.outputsOfType<ReIssuanceLock<T>>()
+        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock<T>>()
+        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock<T>>()
 
-        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> }
-        val otherOutputs = tx.outputs.filter { it.data !is ReIssuanceLock<*> }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> }
+        val otherOutputs = tx.outputs.filter { it.data !is ReissuanceLock<*> }
 
         requireThat {
             // verify number of inputs and outputs of a given type
-            "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
-            "Exactly one output of type ReIssuanceLock is expected" using (reIssuanceLockOutputs.size == 1)
+            "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
+            "Exactly one output of type ReissuanceLock is expected" using (reissuanceLockOutputs.size == 1)
 
             "At least one input other than lock is expected" using otherInputs.isNotEmpty()
             "The same number of inputs and outputs other than lock is expected" using (
                 otherInputs.size == otherOutputs.size)
 
-            val reIssuanceLockInput = reIssuanceLockInputs[0]
-            val reIssuanceLockOutput = reIssuanceLockOutputs[0]
+            val reissuanceLockInput = reissuanceLockInputs[0]
+            val reissuanceLockOutput = reissuanceLockOutputs[0]
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
             "Output re-issuance lock status is INACTIVE" using(
-                reIssuanceLockOutput.status == ReIssuanceLock.ReIssuanceLockStatus.INACTIVE)
+                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
             "Re-issuance lock properties hasn't change except for status" using(
-                reIssuanceLockInput == reIssuanceLockOutput.copy(status = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE))
+                reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus.ACTIVE))
 
-            val issuerIsRequiredExitTransactionSigner = reIssuanceLockOutput.issuerIsRequiredExitTransactionSigner
-            val issuer = reIssuanceLockOutput.issuer
+            val issuerIsRequiredExitTransactionSigner = reissuanceLockOutput.issuerIsRequiredExitTransactionSigner
+            val issuer = reissuanceLockOutput.issuer
 
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
-            val lockedStatesRef = reIssuanceLockInput.originalStates.map { it.ref }
+            val lockedStatesRef = reissuanceLockInput.originalStates.map { it.ref }
 
             "All locked states are inputs of attached transactions" using (
                 attachedSignedTransactions.flatMap { it.inputs }.containsAll(lockedStatesRef))
@@ -164,16 +164,16 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
 
             // verify encumbrance
             otherInputs.forEach {
-                "Inputs other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
+                "Inputs other than ReissuanceLock must be encumbered" using (it.state.encumbrance != null)
             }
             otherOutputs.forEach {
-                "Outputs other than ReIssuanceLock can't be encumbered" using (it.encumbrance == null)
+                "Outputs other than ReissuanceLock can't be encumbered" using (it.encumbrance == null)
             }
-            "Input data other than ReIssuanceLock are the same as output data other than ReIssuanceLock" using (
+            "Input data other than ReissuanceLock are the same as output data other than ReissuanceLock" using (
                 otherInputs.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet())
 
             // verify signers
-            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
+            "Requester is required signer" using (command.signers.contains(reissuanceLockInput.requester.owningKey))
         }
 
     }
@@ -182,29 +182,29 @@ class ReIssuanceLockContract<T>: Contract where T: ContractState {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val reIssuanceLockInputs = tx.inputs.filter { it.state.data is ReIssuanceLock<*> }
-        val otherInputs = tx.inputs.filter { it.state.data !is ReIssuanceLock<*> }
+        val reissuanceLockInputs = tx.inputs.filter { it.state.data is ReissuanceLock<*> }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> }
 
         requireThat {
-            "Exactly one input of type ReIssuanceLock is expected" using (reIssuanceLockInputs.size == 1)
-            val reIssuanceLockInput = reIssuanceLockInputs[0].state.data as ReIssuanceLock<T>
+            "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
+            val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock<T>
             "Number of other inputs is equal to originalStates length" using (
-                otherInputs.size == reIssuanceLockInput.originalStates.size)
+                otherInputs.size == reissuanceLockInput.originalStates.size)
             "No outputs are allowed" using tx.outputs.isEmpty()
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reIssuanceLockInput.status == ReIssuanceLock.ReIssuanceLockStatus.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             // verify encumbrance
-            "Input of type ReIssuanceLock must be encumbered" using(reIssuanceLockInputs[0].state.encumbrance != null)
+            "Input of type ReissuanceLock must be encumbered" using(reissuanceLockInputs[0].state.encumbrance != null)
             otherInputs.forEach {
-                "Input ${it.ref} of type other than ReIssuanceLock must be encumbered" using (it.state.encumbrance != null)
+                "Input ${it.ref} of type other than ReissuanceLock must be encumbered" using (it.state.encumbrance != null)
             }
 
             // verify signers
-            "Requester is required signer" using (command.signers.contains(reIssuanceLockInput.requester.owningKey))
-            "Issuer is required signer" using (command.signers.contains(reIssuanceLockInput.issuer.owningKey))
+            "Requester is required signer" using (command.signers.contains(reissuanceLockInput.requester.owningKey))
+            "Issuer is required signer" using (command.signers.contains(reissuanceLockInput.issuer.owningKey))
         }
     }
 

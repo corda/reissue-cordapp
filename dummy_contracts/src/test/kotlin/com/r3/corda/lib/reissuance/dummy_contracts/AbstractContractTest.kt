@@ -1,7 +1,7 @@
 package com.r3.corda.lib.reissuance.dummy_contracts
 
-import com.r3.corda.lib.reissuance.states.ReIssuanceLock
-import com.r3.corda.lib.reissuance.states.ReIssuanceRequest
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
@@ -37,9 +37,9 @@ abstract class AbstractContractTest {
     lateinit var issuerParty: Party
     lateinit var aliceParty: Party
 
-    val reIssuanceLockLabel = "re-issuance lock"
-    val reIssuedStateLabel = "re-issued state encumbered by re-issuance lock"
-    fun reIssuedStateLabel(id: Int) = "re-issued state $id encumbered by re-issuance lock"
+    val reissuanceLockLabel = "re-issuance lock"
+    val reissuedStateLabel = "re-issued state encumbered by re-issuance lock"
+    fun reissuedStateLabel(id: Int) = "re-issued state $id encumbered by re-issuance lock"
 
     lateinit var issuedTokenType: IssuedTokenType
 
@@ -91,10 +91,10 @@ abstract class AbstractContractTest {
         return StateRef(SecureHash.randomSHA256(), 0)
     }
 
-    fun createDummySimpleStateReIssuanceRequest(
+    fun createDummySimpleStateReissuanceRequest(
         stateRefList: List<StateRef>
-    ): ReIssuanceRequest {
-        return ReIssuanceRequest(
+    ): ReissuanceRequest {
+        return ReissuanceRequest(
             issuerParty,
             aliceParty,
             stateRefList,
@@ -103,10 +103,10 @@ abstract class AbstractContractTest {
         )
     }
 
-    fun createTokensReIssuanceRequest(
+    fun createTokensReissuanceRequest(
         stateRefList: List<StateRef>
-    ): ReIssuanceRequest {
-        return ReIssuanceRequest(
+    ): ReissuanceRequest {
+        return ReissuanceRequest(
             issuerParty,
             aliceParty,
             stateRefList,
@@ -129,12 +129,12 @@ abstract class AbstractContractTest {
         return StateAndRef(dummyTransactionState, stateRef)
     }
 
-    fun <T> createDummyReIssuanceLock(
+    fun <T> createDummyReissuanceLock(
         stateAndRefList: List<StateAndRef<T>>,
-        status: ReIssuanceLock.ReIssuanceLockStatus = ReIssuanceLock.ReIssuanceLockStatus.ACTIVE,
+        status: ReissuanceLock.ReissuanceLockStatus = ReissuanceLock.ReissuanceLockStatus.ACTIVE,
         issuerIsRequiredSigner: Boolean = true
-    ): ReIssuanceLock<T> where T: ContractState {
-        return ReIssuanceLock(issuerParty, aliceParty, stateAndRefList, status, issuerIsRequiredSigner)
+    ): ReissuanceLock<T> where T: ContractState {
+        return ReissuanceLock(issuerParty, aliceParty, stateAndRefList, status, issuerIsRequiredSigner)
     }
 
     fun generateSignedTransactionByteArrayInputStream(
