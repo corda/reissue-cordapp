@@ -32,6 +32,8 @@ class RequestReissuance<T>(
         }
         val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
 
+        require(!extraAssetIssuanceSigners.contains(issuer)) {
+            "Issuer is always a signer and shouldn't be passed in as a part of extraAssetIssuanceSigners" }
         val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
 
         val signers = listOf(requesterAbstractParty.owningKey)

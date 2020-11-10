@@ -22,7 +22,7 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class ReissueStates<T>(
     private val reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>,
-    private val requiredAssetExitCommandSigners: List<AbstractParty> // if empty, only notary signature is checked
+    private val requiredAssetExitCommandSigners: List<AbstractParty> // notary signature is always checked
 ): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
@@ -33,7 +33,7 @@ class ReissueStates<T>(
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
-        // we don't use withExternalIds as transaction can be only shared with a host
+        // we don't use withExternalIds when querying a vault as a transaction can be only shared with a host
 
         @Suppress("UNCHECKED_CAST")
         val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
@@ -94,6 +94,8 @@ class ReissueStates<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
+        // as some of the participants might be signers and some might not, we are sending them a flag which informs
+        // them if they are expected to sign the transaction or not
         val signers = (reissuanceRequest.assetIssuanceSigners + issuer).distinct()
         val otherParticipants = reissuanceRequest.participants.filter { !signers.contains(it) }
 

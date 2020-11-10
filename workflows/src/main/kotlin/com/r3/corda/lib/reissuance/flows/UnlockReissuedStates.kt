@@ -21,7 +21,7 @@ class UnlockReissuedStates<T>(
     private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
     private val assetExitTransactionHashes: List<SecureHash>,
     private val assetUnencumberCommand: CommandData,
-    private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf()
+    private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf() // requester is always a signer
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
@@ -32,7 +32,9 @@ class UnlockReissuedStates<T>(
         val notary = getPreferredNotary(serviceHub)
         val lockSigners = listOf(requester.owningKey)
 
-        val assetUpdateSigners = listOf(reissuanceLock.state.data.requester) + extraAssetUnencumberCommandSigners
+        require(!extraAssetUnencumberCommandSigners.contains(requester)) {
+            "Requester is always a signer and shouldn't be passed in as a part of extraAssetUnencumberCommandSigners" }
+        val assetUpdateSigners = listOf(requester) + extraAssetUnencumberCommandSigners
         val reissuedStatesSigners = assetUpdateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
@@ -61,6 +63,8 @@ class UnlockReissuedStates<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSigners)
 
+        // as some of the participants might be signers and some might not, we are sending them a flag which informs
+        // them if they are expected to sign the transaction or not
         val signers = (assetUpdateSigners + reissuanceLock.state.data.issuer).distinct()
         val otherParticipants = reissuanceLock.state.data.participants.filter { !signers.contains(it) }
 

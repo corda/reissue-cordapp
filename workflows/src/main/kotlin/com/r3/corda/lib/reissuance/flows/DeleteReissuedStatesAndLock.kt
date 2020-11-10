@@ -44,7 +44,7 @@ class DeleteReissuedStatesAndLock<T>(
         transactionBuilder.addInputState(reissuanceLockStateAndRef)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Delete(), lockSignersKeys)
 
-        val signers =(lockSigners + assetExitSigners).distinct()
+        val signers = (lockSigners + assetExitSigners).distinct()
 
         val localSigners = signers.filter { serviceHub.identityService.partyFromKey(it.owningKey)!! == ourIdentity }
         val localSignersKeys = localSigners.map { it.owningKey }
@@ -52,6 +52,8 @@ class DeleteReissuedStatesAndLock<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSignersKeys)
 
+        // as some of the participants might be signers and some might not, we are sending them a flag which informs
+        // them if they are expected to sign the transaction or not
         val otherParticipants = reissuanceLock.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
