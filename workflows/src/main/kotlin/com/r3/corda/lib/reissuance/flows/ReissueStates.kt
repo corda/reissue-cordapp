@@ -22,13 +22,15 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class ReissueStates<T>(
     private val reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>,
-    private val requiredAssetExitCommandSigners: List<AbstractParty> // notary signature is always checked
+    private val extraAssetExitCommandSigners: List<AbstractParty> = listOf(reissuanceRequestStateAndRef.state.data.issuer) // requester and notary signatures are always required
 ): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
     override fun call(): SecureHash {
         val reissuanceRequest = reissuanceRequestStateAndRef.state.data
 
+        val notary = getPreferredNotary(serviceHub)
+        val requester = reissuanceRequest.requester
         val issuer = reissuanceRequest.issuer
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
@@ -52,14 +54,16 @@ class ReissueStates<T>(
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
             "Cannot validate states to re-issue" }
 
+        require(!extraAssetExitCommandSigners.contains(requester)) {
+            "Notary is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }
+        require(!extraAssetExitCommandSigners.contains(requester)) {
+            "Requester is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }
         val reissuanceLock = ReissuanceLock(
             reissuanceRequest.issuer,
             reissuanceRequest.requester,
             statesToReissue,
-            requiredExitCommandSigners = requiredAssetExitCommandSigners
+            extraAssetExitCommandSigners = extraAssetExitCommandSigners
         )
-
-        val notary = getPreferredNotary(serviceHub)
 
         val lockSigners = listOf(issuer.owningKey)
         val reissuedStatesSigners = reissuanceRequest.assetIssuanceSigners.map { it.owningKey }

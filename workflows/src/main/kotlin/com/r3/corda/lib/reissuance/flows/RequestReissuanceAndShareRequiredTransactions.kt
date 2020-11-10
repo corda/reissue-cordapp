@@ -25,10 +25,8 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
 
     @Suspendable
     override fun call(): SecureHash {
-        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
-
         val requestReissuanceTransactionId = subFlow(
-            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, issuanceSigners, requester)
+            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
         )
         val requesterIdentity = requester ?: ourIdentity
 
