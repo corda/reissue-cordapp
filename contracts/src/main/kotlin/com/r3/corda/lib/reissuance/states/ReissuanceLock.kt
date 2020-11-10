@@ -12,8 +12,8 @@ data class ReissuanceLock<T>(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val originalStates: List<StateAndRef<T>>,
-    val status: ReissuanceLockStatus = ReissuanceLockStatus.ACTIVE,
-    val issuerIsRequiredExitTransactionSigner: Boolean = true
+    val requiredExitCommandSigners: List<AbstractParty>,
+    val status: ReissuanceLockStatus = ReissuanceLockStatus.ACTIVE
     ): ContractState where T: ContractState {
 
     @CordaSerializable
@@ -34,8 +34,8 @@ data class ReissuanceLock<T>(
         if (issuer != other.issuer) return false
         if (requester != other.requester) return false
         if (originalStates != other.originalStates) return false
+        if (requiredExitCommandSigners != other.requiredExitCommandSigners) return false
         if (status != other.status) return false
-        if (issuerIsRequiredExitTransactionSigner != other.issuerIsRequiredExitTransactionSigner) return false
 
         return true
     }
@@ -44,8 +44,8 @@ data class ReissuanceLock<T>(
         var result = issuer.hashCode()
         result = 31 * result + requester.hashCode()
         result = 31 * result + originalStates.hashCode()
+        result = 31 * result + requiredExitCommandSigners.hashCode()
         result = 31 * result + status.hashCode()
-        result = 31 * result + issuerIsRequiredExitTransactionSigner.hashCode()
         return result
     }
 

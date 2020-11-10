@@ -124,7 +124,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -157,7 +157,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode,
-            reissuanceRequest, issuerIsRequiredExitCommandSigner = false)
+            reissuanceRequest, listOf())
 
         val exitTransactionId = deleteDummyStateRequiringAcceptance(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -190,7 +190,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(
-            issuerNode, reissuanceRequest, issuerIsRequiredExitCommandSigner = true)
+            issuerNode, reissuanceRequest, listOf(issuerParty))
 
         val exitTransactionId = deleteDummyStateRequiringAllParticipantsSignatures(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -224,7 +224,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -258,7 +258,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -292,7 +292,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -325,7 +325,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionIds = listOf(
             redeemTokens(aliceNode, listOf(statesToReissue[0])),
@@ -356,7 +356,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val exitTransactionId = deleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -383,7 +383,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionId = deleteDummyStateRequiringAcceptance(aliceNode)
         // issuer creates attachment and tries to unlock state
@@ -420,7 +420,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(employeeNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val exitTransactionId = deleteSimpleDummyStateForAccount(employeeNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(employeeNode, exitTransactionId)
@@ -456,7 +456,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(aliceNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val exitTransactionId = deleteSimpleDummyStateForAccount(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -488,7 +488,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val originalStateAndRef = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         val transactionBuilder = TransactionBuilder(notary = notaryParty)
@@ -524,7 +524,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val updateTransactionId = updateSimpleDummyState(aliceNode, bobParty)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, updateTransactionId)
@@ -555,7 +555,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val updateTransactionId = updateDummyStateRequiringAcceptance(aliceNode, bobParty)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, updateTransactionId)
@@ -584,7 +584,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateWithInvalidEqualsMethod>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
 
         createDummyStateWithInvalidEqualsMethod(aliceParty, 5)
@@ -616,7 +616,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -637,7 +637,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
         val reissuanceRequest2 = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
     }
 
@@ -657,7 +657,31 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
+
+        val transactionBuilder = TransactionBuilder(notary = aliceParty)
+        transactionBuilder.addInputState(simpleDummyState)
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
+        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Requester can't forge exit transaction`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
+            listOf(issuerParty))
 
         val transactionBuilder = TransactionBuilder(notary = aliceParty)
         transactionBuilder.addInputState(simpleDummyState)
@@ -685,7 +709,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val transactionBuilder = TransactionBuilder(notary = notaryParty)
         transactionBuilder.addInputState(simpleDummyState)

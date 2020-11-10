@@ -564,11 +564,11 @@ abstract class AbstractFlowTest {
     fun <T> reissueRequestedStates(
         node: TestStartedNode,
         reissuanceRequest: StateAndRef<ReissuanceRequest>,
-        issuerIsRequiredExitCommandSigner: Boolean
+        irequiredExitCommandSigners: List<AbstractParty>
         ) : SecureHash where T: ContractState {
         return runFlow(
             node,
-            ReissueStates<T>(reissuanceRequest, issuerIsRequiredExitCommandSigner)
+            ReissueStates<T>(reissuanceRequest, irequiredExitCommandSigners)
         )
     }
 

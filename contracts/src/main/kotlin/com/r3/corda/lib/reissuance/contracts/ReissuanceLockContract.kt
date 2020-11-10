@@ -129,8 +129,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             "Re-issuance lock properties hasn't change except for status" using(
                 reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus.ACTIVE))
 
-            val issuerIsRequiredExitTransactionSigner = reissuanceLockOutput.issuerIsRequiredExitTransactionSigner
-            val issuer = reissuanceLockOutput.issuer
+            val requiredExitCommandSigners = reissuanceLockOutput.requiredExitCommandSigners
 
             val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
 
@@ -154,9 +153,15 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                     generateWireTransactionMerkleTree(attachedWireTransaction) == attachedWireTransaction.merkleTree)
                 "Notary is provided for attached transaction ${attachedSignedTransaction.id}" using(
                     attachedSignedTransaction.notary != null)
-                if(issuerIsRequiredExitTransactionSigner) {
-                    "Issuer is signer of attached transaction ${attachedSignedTransaction.id}" using(
-                        attachedSignedTransaction.sigs.map { it.by }.contains(issuer.owningKey))
+
+                attachedSignedTransaction.sigs.forEach {
+                    "Signature $it of transaction ${attachedSignedTransaction.id} is valid" using (
+                        it.verify(attachedSignedTransaction.id))
+                }
+
+                requiredExitCommandSigners.forEach { requiredSigner ->
+                    "${requiredSigner.owningKey} is signer of attached transaction ${attachedSignedTransaction.id}" using(
+                        attachedSignedTransaction.sigs.map { it.by }.contains(requiredSigner.owningKey))
                 }
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))

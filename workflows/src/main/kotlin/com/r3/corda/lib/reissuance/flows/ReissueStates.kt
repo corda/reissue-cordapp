@@ -10,6 +10,7 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
@@ -21,7 +22,7 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class ReissueStates<T>(
     private val reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>,
-    private val issuerIsRequiredExitCommandSigner: Boolean = true
+    private val requiredAssetExitCommandSigners: List<AbstractParty> // if empty, only notary signature is checked
 ): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
@@ -40,20 +41,22 @@ class ReissueStates<T>(
         ).states as List<StateAndRef<T>>
 
         @Suppress("UNCHECKED_CAST")
-        val locks: List<StateAndRef<ReissuanceLock<T>>> = serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>()
-            .states as List<StateAndRef<ReissuanceLock<T>>>
+        val locks: List<StateAndRef<ReissuanceLock<T>>> =
+            serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>().states
+                as List<StateAndRef<ReissuanceLock<T>>>
         val reissuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
         reissuanceRequest.stateRefsToReissue.forEach {
             require(!reissuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
         }
 
-        require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) { "Cannot validate states to re-issue" }
+        require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
+            "Cannot validate states to re-issue" }
 
         val reissuanceLock = ReissuanceLock(
             reissuanceRequest.issuer,
             reissuanceRequest.requester,
             statesToReissue,
-            issuerIsRequiredExitTransactionSigner = issuerIsRequiredExitCommandSigner
+            requiredExitCommandSigners = requiredAssetExitCommandSigners
         )
 
         val notary = getPreferredNotary(serviceHub)

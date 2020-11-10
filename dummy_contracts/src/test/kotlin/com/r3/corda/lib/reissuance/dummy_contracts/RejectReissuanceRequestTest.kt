@@ -10,7 +10,7 @@ class RejectReissuanceRequestTest: AbstractContractTest() {
 
     @Test
     fun `Re-issuance request is rejected`() {
-        val dummyReissuanceRequest = createDummySimpleStateReissuanceRequest(listOf(createDummyRef()))
+        val dummyReissuanceRequest = createSimpleDummyStateReissuanceRequest(listOf(createDummyRef()))
         issuerNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
                 output(ReissuanceRequestContract.contractId, dummyReissuanceRequest)
@@ -41,7 +41,7 @@ class RejectReissuanceRequestTest: AbstractContractTest() {
 
     @Test
     fun `Re-issuance rejection can't produce re-issued state nor the re-issuance lock`() {
-        val dummyReissuanceRequest = createDummySimpleStateReissuanceRequest(listOf(createDummyRef()))
+        val dummyReissuanceRequest = createSimpleDummyStateReissuanceRequest(listOf(createDummyRef()))
         issuerNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
                 output(ReissuanceRequestContract.contractId, dummyReissuanceRequest)
@@ -50,7 +50,8 @@ class RejectReissuanceRequestTest: AbstractContractTest() {
             transaction {
                 input(ReissuanceRequestContract.contractId, dummyReissuanceRequest)
                 output(ReissuanceLockContract.contractId, reissuanceLockLabel,
-                    contractState=createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef())), encumbrance = 1)
+                    contractState=createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()),
+                        listOf(issuerParty)), encumbrance = 1)
                 output(SimpleDummyStateContract.contractId, reissuedStateLabel,
                     contractState=createSimpleDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReissuanceRequestContract.Commands.Reject())

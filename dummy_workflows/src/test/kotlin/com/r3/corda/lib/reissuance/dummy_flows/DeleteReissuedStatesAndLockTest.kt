@@ -50,7 +50,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+             listOf())
 
         val reissuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode)[0]
@@ -80,7 +80,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedDummyStatesRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<DummyStateRequiringAcceptance>>(aliceNode)[0]
@@ -111,7 +111,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedDummyStatesRequiringAcceptance = getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(
             aliceNode, encumbered = true)
@@ -143,7 +143,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedTokens = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode)[0]
@@ -177,7 +177,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedTokens = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode)[0]
@@ -209,7 +209,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedTokens = getStateAndRefs<FungibleToken>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode)[0]
@@ -240,7 +240,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(employeeNode)[0]
         reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(employeeIssuerParty))
 
         val reissuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = true,
             accountUUID = employeeAliceAccount.identifier.id)
@@ -274,7 +274,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(aliceNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val reissuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true,
             accountUUID = employeeAliceAccount.identifier.id)
@@ -305,7 +305,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
         val exitTransactionId = deleteSimpleDummyStateForAccount(aliceNode)
         val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
@@ -343,7 +343,7 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
 
         val reissuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
         val lockState = getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode)[0]

@@ -18,21 +18,23 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
-    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(issuer),
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
     override fun call(): SecureHash {
+        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
+
         val requestReissuanceTransactionId = subFlow(
-            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
+            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, issuanceSigners, requester)
         )
 
         val requesterIdentity = requester ?: ourIdentity
 
         @Suppress("UNCHECKED_CAST")
         val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
-            criteria= QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
+            criteria=QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
         ).states as List<StateAndRef<T>>
 
         // all states need to have the same participants

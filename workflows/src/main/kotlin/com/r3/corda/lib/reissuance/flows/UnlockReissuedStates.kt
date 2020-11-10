@@ -19,9 +19,9 @@ import net.corda.core.utilities.unwrap
 class UnlockReissuedStates<T>(
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
     private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
-    private val deletedStateTransactionHashes: List<SecureHash>,
-    private val assetUpdateCommand: CommandData, // unencumber state command
-    private val extraAssetUpdateSigners: List<AbstractParty> = listOf()
+    private val assetExitTransactionHashes: List<SecureHash>,
+    private val assetUnencumberCommand: CommandData,
+    private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf()
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
@@ -32,7 +32,7 @@ class UnlockReissuedStates<T>(
         val notary = getPreferredNotary(serviceHub)
         val lockSigners = listOf(requester.owningKey)
 
-        val assetUpdateSigners = listOf(reissuanceLock.state.data.requester) + extraAssetUpdateSigners
+        val assetUpdateSigners = listOf(reissuanceLock.state.data.requester) + extraAssetUnencumberCommandSigners
         val reissuedStatesSigners = assetUpdateSigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
@@ -41,7 +41,7 @@ class UnlockReissuedStates<T>(
             transactionBuilder.addInputState(reissuedStateAndRef)
             transactionBuilder.addOutputState(reissuedStateAndRef.state.data)
         }
-        transactionBuilder.addCommand(assetUpdateCommand, reissuedStatesSigners)
+        transactionBuilder.addCommand(assetUnencumberCommand, reissuedStatesSigners)
 
         var inactiveReissuanceLock = (reissuanceLock.state.data).copy(
             status = ReissuanceLock.ReissuanceLockStatus.INACTIVE)
@@ -50,7 +50,7 @@ class UnlockReissuedStates<T>(
         transactionBuilder.addOutputState(inactiveReissuanceLock)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Deactivate(), lockSigners)
 
-        deletedStateTransactionHashes.forEach { deletedStateTransactionHash ->
+        assetExitTransactionHashes.forEach { deletedStateTransactionHash ->
             transactionBuilder.addAttachment(deletedStateTransactionHash)
         }
 

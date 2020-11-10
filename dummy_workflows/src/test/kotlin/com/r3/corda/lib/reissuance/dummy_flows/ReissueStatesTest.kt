@@ -57,7 +57,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
         verifyStatesAfterReissuance<SimpleDummyState>()
     }
 
@@ -77,7 +77,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
         verifyStatesAfterReissuance<DummyStateRequiringAcceptance>()
     }
 
@@ -97,7 +97,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
         verifyStatesAfterReissuance<DummyStateRequiringAllParticipantsSignatures>()
     }
 
@@ -117,7 +117,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
         verifyStatesAfterReissuance<FungibleToken>()
     }
 
@@ -138,7 +138,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
         verifyStatesAfterReissuance<FungibleToken>(statesNum = 2)
     }
 
@@ -159,7 +159,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(employeeNode)[0]
         reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(employeeIssuerParty))
         verifyStatesAfterReissuance<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id,
             node = employeeNode, issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
     }
@@ -180,7 +180,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(aliceNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
         verifyStatesAfterReissuance<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id,
             issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
     }
@@ -200,7 +200,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
     }
 
     @Test // issuer doesn't have an information about state being consumed
@@ -221,7 +221,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -242,7 +242,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
     }
 
     @Test
@@ -260,7 +260,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<SimpleDummyState>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
         verifyStatesAfterReissuance<SimpleDummyState>(issuerParty = bobParty)
     }
 
@@ -280,7 +280,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -299,7 +299,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -318,7 +318,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<FungibleToken>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
     }
 
@@ -345,8 +345,8 @@ class ReissueStatesTest: AbstractFlowTest() {
         val reissuanceRequest2 = getStateAndRefs<ReissuanceRequest>(issuerNode)[1]
 
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest1,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf())
     }
 }
