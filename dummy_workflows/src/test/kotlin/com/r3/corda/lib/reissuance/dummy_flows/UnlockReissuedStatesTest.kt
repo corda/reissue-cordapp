@@ -752,6 +752,32 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `Requester shouldn't be passed in as one of extraAssetUnencumberCommandSigners`() {
+        initialiseParties()
+        val transactionIds = createStateAndGenerateBackChain(::createSimpleDummyState, ::updateSimpleDummyState)
+        verifyTransactionBackChain(transactionIds)
+
+        val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
+        createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
+            listOf())
+
+        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val attachmentSecureHash = uploadDeletedStateAttachment(aliceNode, exitTransactionId)
+        unlockReissuedState(
+            aliceNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0],
+            listOf(aliceParty)
+        )
+    }
+
     class TestWireTransaction(componentGroups: List<ComponentGroup>,
                               val privacySalt: PrivacySalt = PrivacySalt(),
                               override val id: SecureHash

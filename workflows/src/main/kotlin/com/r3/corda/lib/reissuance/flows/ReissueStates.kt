@@ -54,7 +54,7 @@ class ReissueStates<T>(
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
             "Cannot validate states to re-issue" }
 
-        require(!extraAssetExitCommandSigners.contains(requester)) {
+        require(!extraAssetExitCommandSigners.contains(notary)) {
             "Notary is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }
         require(!extraAssetExitCommandSigners.contains(requester)) {
             "Requester is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }

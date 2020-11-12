@@ -206,4 +206,20 @@ class RequestReissuanceTest: AbstractFlowTest() {
             issuerParty
         )
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Issuer shouldn't be passed in as one of extraAssetIssuanceSigners`() { // issuer is a required signer
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val issuanceCommandData = SimpleDummyStateContract.Commands.Create()
+        val statesToBeReissued = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1 state
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            statesToBeReissued,
+            issuanceCommandData,
+            issuerParty,
+            extraCommandSigners = listOf(issuerParty)
+        )
+    }
 }
