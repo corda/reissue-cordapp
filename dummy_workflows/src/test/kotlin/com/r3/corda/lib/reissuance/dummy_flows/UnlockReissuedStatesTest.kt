@@ -778,6 +778,47 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
     }
 
+    @Test(expected = TransactionVerificationException::class)
+    fun `Can't use other transaction's signatures to unlock reissued states`() {
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+        deleteSimpleDummyState(aliceNode)
+        val signedDeleteTransaction = getSignedTransactions(aliceNode).last()
+
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+
+        val transactionBuilder = TransactionBuilder(notary = notaryParty)
+        transactionBuilder.addInputState(simpleDummyState)
+        transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
+        val initiallySignedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+
+        val wireTransaction = initiallySignedTransaction.coreTransaction as WireTransaction
+        val forgedSignedTransaction = SignedTransaction(wireTransaction, signedDeleteTransaction.sigs)
+
+        val signedTransactionByteArray = convertSignedTransactionToByteArray(forgedSignedTransaction)
+        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(signedTransactionByteArray.inputStream(), aliceParty.toString(), null)
+
+        unlockReissuedState<SimpleDummyState>(
+            aliceNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+        )
+    }
+
     class TestWireTransaction(componentGroups: List<ComponentGroup>,
                               val privacySalt: PrivacySalt = PrivacySalt(),
                               override val id: SecureHash
