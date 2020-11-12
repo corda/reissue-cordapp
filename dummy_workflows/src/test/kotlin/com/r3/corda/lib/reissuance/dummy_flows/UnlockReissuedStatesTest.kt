@@ -723,6 +723,35 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
     }
 
+    @Test(expected = TransactionVerificationException::class)
+    fun `Bob can't unlock SimpleDummyState reissued for Alice without her knowledge`() {
+        initialiseParties()
+        val transactionIds = createStateAndGenerateBackChain(::createSimpleDummyState, ::updateSimpleDummyState)
+        verifyTransactionBackChain(transactionIds)
+
+        val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
+        createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        val reissuanceTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+
+        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+
+        shareTransaction(aliceNode, bobParty, reissuanceTransactionId)
+        shareTransaction(aliceNode, bobParty, exitTransactionId)
+
+        val attachmentSecureHash = uploadDeletedStateAttachment(bobNode, exitTransactionId)
+
+        unlockReissuedStateUsingModifiedFlow(
+            bobNode,
+            listOf(attachmentSecureHash),
+            SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+        )
+    }
+
     class TestWireTransaction(componentGroups: List<ComponentGroup>,
                               val privacySalt: PrivacySalt = PrivacySalt(),
                               override val id: SecureHash

@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.ModifiedDeleteReissuedStatesAndLock
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.ModifiedUnlockReissuedStates
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
@@ -542,7 +543,7 @@ abstract class AbstractFlowTest {
     ) {
         runFlow(
             node,
-            ShareTransactionWithIssuer(issuer, transactionId)
+            ShareTransactionWithAnotherParty(issuer, transactionId)
         )
     }
 
@@ -557,6 +558,21 @@ abstract class AbstractFlowTest {
         return runFlow(
             node,
             UnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command,
+                extraCommandSigners)
+        )
+    }
+
+    inline fun <reified T : ContractState> unlockReissuedStateUsingModifiedFlow(
+        node: TestStartedNode,
+        attachmentSecureHashes: List<SecureHash>,
+        command: CommandData,
+        reissuedStateAndRefs: List<StateAndRef<T>>,
+        lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
+        extraCommandSigners: List<AbstractParty> = listOf()
+    ): SecureHash {
+        return runFlow(
+            node,
+            ModifiedUnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command,
                 extraCommandSigners)
         )
     }
