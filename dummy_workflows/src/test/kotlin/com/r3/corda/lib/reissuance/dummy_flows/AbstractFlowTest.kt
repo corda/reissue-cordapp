@@ -120,7 +120,7 @@ abstract class AbstractFlowTest {
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(
-                minimumPlatformVersion = 4
+                minimumPlatformVersion = 8 // 4.6
             )
         )
 
@@ -595,16 +595,6 @@ abstract class AbstractFlowTest {
         return runFlow(
             node,
             RejectReissuanceRequest<T>(reissuanceRequest)
-        )
-    }
-
-    fun uploadDeletedStateAttachment(
-        node: TestStartedNode,
-        deleteStateTransactionId: SecureHash
-    ): SecureHash {
-        return runFlow(
-            node,
-            UploadTransactionAsAttachment(deleteStateTransactionId)
         )
     }
 

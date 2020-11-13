@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -19,12 +20,19 @@ import net.corda.core.utilities.unwrap
 class UnlockReissuedStates<T>(
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
     private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
-    private val assetExitTransactionHashes: List<SecureHash>,
+    private val assetExitTransactionIds: List<SecureHash>,
     private val assetUnencumberCommand: CommandData,
     private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf() // requester is always a signer
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
+        val assetExitAttachments = assetExitTransactionIds.map { transactionId ->
+            val signedTransaction = serviceHub.validatedTransactions.track().snapshot
+                .findLast { it.tx.id == transactionId }!!
+            val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
+            serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
+        }
+
         val requester = reissuanceLock.state.data.requester
         val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
         require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
@@ -52,7 +60,7 @@ class UnlockReissuedStates<T>(
         transactionBuilder.addOutputState(inactiveReissuanceLock)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Deactivate(), lockSigners)
 
-        assetExitTransactionHashes.forEach { deletedStateTransactionHash ->
+        assetExitAttachments.forEach { deletedStateTransactionHash ->
             transactionBuilder.addAttachment(deletedStateTransactionHash)
         }
 
