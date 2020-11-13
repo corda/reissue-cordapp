@@ -13,6 +13,7 @@ import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMetho
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
+import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -21,7 +22,6 @@ import net.corda.core.crypto.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.transactions.*
-import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.internal.TestStartedNode
 import org.junit.Test
 import java.util.*
@@ -481,12 +481,10 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         var signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
 
         val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
-        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(
-            transactionByteArray.inputStream(), aliceNode.info.singleIdentity().toString(), null)
 
-        unlockReissuedState<SimpleDummyState>(
+        unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode, 
-            listOf(attachmentSecureHash),
+            listOf(transactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
@@ -510,9 +508,12 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
 
         val updateTransactionId = updateSimpleDummyState(aliceNode, bobParty)
-        unlockReissuedState<SimpleDummyState>(
+        val transactionByteArray = convertSignedTransactionToByteArray(
+            findSignedTransactionTrandsactionById(aliceNode.services, updateTransactionId)!!)
+
+        unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode,
-            listOf(updateTransactionId),
+            listOf(transactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
@@ -693,11 +694,10 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val forgedSignedTransaction = SignedTransaction(testWireTransaction, signedDeleteTransaction.sigs)
 
         val signedTransactionByteArray = convertSignedTransactionToByteArray(forgedSignedTransaction)
-        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(signedTransactionByteArray.inputStream(), aliceParty.toString(), null)
 
-        unlockReissuedState<SimpleDummyState>(
+        unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode,
-            listOf(attachmentSecureHash),
+            listOf(signedTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
@@ -718,13 +718,15 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val reissuanceTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val exitTransactionByteArray = convertSignedTransactionToByteArray(
+            findSignedTransactionTrandsactionById(aliceNode.services, exitTransactionId)!!)
 
         shareTransaction(aliceNode, bobParty, reissuanceTransactionId)
         shareTransaction(aliceNode, bobParty, exitTransactionId)
 
         unlockReissuedStateUsingModifiedFlow(
             bobNode,
-            listOf(exitTransactionId),
+            listOf(exitTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
@@ -786,11 +788,10 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val forgedSignedTransaction = SignedTransaction(wireTransaction, signedDeleteTransaction.sigs)
 
         val signedTransactionByteArray = convertSignedTransactionToByteArray(forgedSignedTransaction)
-        val attachmentSecureHash = aliceNode.services.attachments.importAttachment(signedTransactionByteArray.inputStream(), aliceParty.toString(), null)
 
-        unlockReissuedState<SimpleDummyState>(
+        unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode,
-            listOf(attachmentSecureHash),
+            listOf(signedTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]

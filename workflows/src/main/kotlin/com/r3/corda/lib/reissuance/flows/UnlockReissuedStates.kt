@@ -5,6 +5,7 @@ import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
+import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -27,9 +28,9 @@ class UnlockReissuedStates<T>(
     @Suspendable
     override fun call(): SecureHash {
         val assetExitAttachments = assetExitTransactionIds.map { transactionId ->
-            val signedTransaction = serviceHub.validatedTransactions.track().snapshot
-                .findLast { it.tx.id == transactionId }!!
-            val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
+            val signedTransaction = findSignedTransactionTrandsactionById(serviceHub, transactionId)
+            require(signedTransaction != null) { "Transaction with id $transactionId not found" }
+            val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction!!)
             serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
         }
 

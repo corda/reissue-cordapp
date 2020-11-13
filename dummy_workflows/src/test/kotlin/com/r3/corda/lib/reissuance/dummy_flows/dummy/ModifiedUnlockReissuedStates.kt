@@ -5,6 +5,7 @@ import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
 import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -22,12 +23,17 @@ import net.corda.core.utilities.unwrap
 class ModifiedUnlockReissuedStates<T>(
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
     private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
-    private val assetExitTransactionHashes: List<SecureHash>,
+    private val transactionByteArrays: List<ByteArray>,
     private val assetUnencumberCommand: CommandData,
     private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf() // requester is always a signer
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
+
+        val assetExitAttachments = transactionByteArrays.map { transactionByteArray ->
+            serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
+        }
+
         // make it possible for other party to pretend to be the requester
         val requester = ourIdentity
 
@@ -54,7 +60,7 @@ class ModifiedUnlockReissuedStates<T>(
         transactionBuilder.addOutputState(inactiveReissuanceLock)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Deactivate(), lockSigners)
 
-        assetExitTransactionHashes.forEach { deletedStateTransactionHash ->
+        assetExitAttachments.forEach { deletedStateTransactionHash ->
             transactionBuilder.addAttachment(deletedStateTransactionHash)
         }
 

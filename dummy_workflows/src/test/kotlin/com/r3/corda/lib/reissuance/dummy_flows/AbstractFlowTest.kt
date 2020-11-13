@@ -564,7 +564,7 @@ abstract class AbstractFlowTest {
 
     inline fun <reified T : ContractState> unlockReissuedStateUsingModifiedFlow(
         node: TestStartedNode,
-        attachmentSecureHashes: List<SecureHash>,
+        signedTransactionByteArrays: List<ByteArray>,
         command: CommandData,
         reissuedStateAndRefs: List<StateAndRef<T>>,
         lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
@@ -572,7 +572,7 @@ abstract class AbstractFlowTest {
     ): SecureHash {
         return runFlow(
             node,
-            ModifiedUnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command,
+            ModifiedUnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, signedTransactionByteArrays, command,
                 extraCommandSigners)
         )
     }
