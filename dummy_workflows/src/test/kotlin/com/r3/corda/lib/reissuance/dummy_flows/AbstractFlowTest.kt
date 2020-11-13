@@ -12,6 +12,9 @@ import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptan
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyDeleteReissuedStatesAndLockResponder
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyReissueStatesResponder
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyUnlockReissuedStatesResponder
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.simpleDummyState.*
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.IssueTokens
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.ListTokensFlow
@@ -162,6 +165,8 @@ abstract class AbstractFlowTest {
         debbieParty = debbieNode.info.singleIdentity()
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+
+        registerFlows(listOf(issuerNode, acceptorNode, aliceNode, bobNode, charlieNode, debbieNode))
     }
 
     fun initialisePartiesForAccountsOnTheSameHost() {
@@ -180,6 +185,8 @@ abstract class AbstractFlowTest {
         employeeBobParty = getPartyForAccount(employeeNode, employeeBobAccount)
         employeeCharlieParty = getPartyForAccount(employeeNode, employeeCharlieAccount)
         employeeDebbieParty = getPartyForAccount(employeeNode, employeeDebbieAccount)
+
+        registerFlows(listOf(employeeNode))
     }
 
     fun initialisePartiesForAccountsOnDifferentHosts() {
@@ -209,6 +216,14 @@ abstract class AbstractFlowTest {
         inform(charlieNode, employeeCharlieAccount, employeeCharlieParty, listOf(issuerNode, aliceNode, bobNode, debbieNode))
         inform(debbieNode, employeeDebbieAccount, employeeDebbieParty, listOf(issuerNode, aliceNode, bobNode, charlieNode))
 
+    }
+
+    private fun registerFlows(nodes: List<TestStartedNode>) {
+        nodes.forEach {
+            it.registerInitiatedFlow(DummyDeleteReissuedStatesAndLockResponder::class.java)
+            it.registerInitiatedFlow(DummyReissueStatesResponder::class.java)
+            it.registerInitiatedFlow(DummyUnlockReissuedStatesResponder::class.java)
+        }
     }
 
     // accounts

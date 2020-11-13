@@ -95,17 +95,21 @@ class UnlockReissuedStates<T>(
 
 }
 
-@InitiatedBy(UnlockReissuedStates::class)
-class UnlockReissuedStatesResponder(
+abstract class UnlockReissuedStatesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
+
+    abstract fun checkSignedTransaction(stx: SignedTransaction)
+
     @Suspendable
     override fun call(): SignedTransaction {
         val needsToSignTransaction = otherSession.receive<Boolean>().unwrap { it }
         // only sign if instructed to do so
         if (needsToSignTransaction) {
             subFlow(object : SignTransactionFlow(otherSession) {
-                override fun checkTransaction(stx: SignedTransaction) { }
+                override fun checkTransaction(stx: SignedTransaction) {
+                    checkSignedTransaction(stx)
+                }
             })
         }
         // always save the transaction
