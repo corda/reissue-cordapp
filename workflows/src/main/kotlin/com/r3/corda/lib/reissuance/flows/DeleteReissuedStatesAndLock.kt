@@ -7,6 +7,7 @@ import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
@@ -44,7 +45,7 @@ class DeleteReissuedStatesAndLock<T>(
         transactionBuilder.addInputState(reissuanceLockStateAndRef)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Delete(), lockSignersKeys)
 
-        val signers =(lockSigners + assetExitSigners).distinct()
+        val signers = (lockSigners + assetExitSigners).distinct()
 
         val localSigners = signers.filter { serviceHub.identityService.partyFromKey(it.owningKey)!! == ourIdentity }
         val localSignersKeys = localSigners.map { it.owningKey }
@@ -52,6 +53,8 @@ class DeleteReissuedStatesAndLock<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSignersKeys)
 
+        // as some of the participants might be signers and some might not, we are sending them a flag which informs
+        // them if they are expected to sign the transaction or not
         val otherParticipants = reissuanceLock.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
@@ -72,17 +75,41 @@ class DeleteReissuedStatesAndLock<T>(
 
 }
 
-@InitiatedBy(DeleteReissuedStatesAndLock::class)
-class DeleteReissuedStatesAndLockResponder(
+abstract class DeleteReissuedStatesAndLockResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
+
+    lateinit var reissuanceLockInput: ReissuanceLock<*>
+    lateinit var otherInputs: List<StateAndRef<*>>
+
+    fun checkBasicReissuanceConstraints(stx: SignedTransaction) {
+        val ledgerTransaction = stx.tx.toLedgerTransaction(serviceHub)
+        requireThat {
+            "There are at least 2 inputs" using (ledgerTransaction.inputs.size > 1)
+            "There are no outputs" using (ledgerTransaction.outputs.isEmpty())
+
+            val reissuanceLockInputs = ledgerTransaction.inputsOfType<ReissuanceLock<*>>()
+            "There is exactly one input of type ReissuanceLock" using (reissuanceLockInputs.size == 1)
+            reissuanceLockInput = reissuanceLockInputs[0]
+
+            otherInputs = ledgerTransaction.inputs.filter { it.state.data !is ReissuanceLock<*> }
+            "Inputs other than ReissuanceLock are of the same type" using(
+                otherInputs.map { it.state.data::class.java }.toSet().size == 1)
+            "Inputs other than ReissuanceLock are encumbered" using otherInputs.none { it.state.encumbrance == null }
+        }
+    }
+
+    abstract fun checkConstraints(stx: SignedTransaction)
+
     @Suspendable
     override fun call(): SignedTransaction {
         val needsToSignTransaction = otherSession.receive<Boolean>().unwrap { it }
         // only sign if instructed to do so
         if (needsToSignTransaction) {
             subFlow(object : SignTransactionFlow(otherSession) {
-                override fun checkTransaction(stx: SignedTransaction) { }
+                override fun checkTransaction(stx: SignedTransaction) {
+                    checkBasicReissuanceConstraints(stx)
+                    checkConstraints(stx)                }
             })
         }
         // always save the transaction

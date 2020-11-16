@@ -41,10 +41,6 @@ class SimpleDummyStateContract: Contract {
         requireThat {
             "Exactly one input of type SimpleDummyState is expected" using (simpleDummyStateInputs.size == 1)
             "Exactly one output of type SimpleDummyState is expected" using (simpleDummyStateOutputs.size == 1)
-            val inputSimpleDummyState = simpleDummyStateInputs[0]
-            val outputSimpleDummyState = simpleDummyStateOutputs[0]
-            "Owner in input state is required signer" using command.signers.contains(inputSimpleDummyState.owner.owningKey)
-            "Owner in output state is required signer" using command.signers.contains(outputSimpleDummyState.owner.owningKey)
         }
     }
 

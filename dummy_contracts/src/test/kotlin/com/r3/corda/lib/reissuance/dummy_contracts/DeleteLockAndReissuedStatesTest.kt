@@ -12,7 +12,7 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     @Test
     fun `Re-issuance lock and re-issued state are deleted`() {
         val dummyState = createSimpleDummyState()
-        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()))
+        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()), listOf(issuerParty))
 
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -36,7 +36,8 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     fun `Re-issuance lock and many re-issued state are deleted`() {
         val tokens = listOf(createToken(), createToken())
         val tokenIndices = tokens.indices.toList()
-        val reissuanceLock = createDummyReissuanceLock(listOf(createTokenStateAndRef(), createTokenStateAndRef()))
+        val reissuanceLock = createDummyReissuanceLock(listOf(createTokenStateAndRef(), createTokenStateAndRef()),
+            listOf(issuerParty))
 
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -55,7 +56,8 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
                 input(reissuanceLockLabel)
 
                 command(listOf(aliceParty.owningKey, issuerParty.owningKey), ReissuanceLockContract.Commands.Delete())
-                command(listOf(aliceParty.owningKey, issuerParty.owningKey), RedeemTokenCommand(issuedTokenType, tokenIndices, listOf()))
+                command(listOf(aliceParty.owningKey, issuerParty.owningKey), RedeemTokenCommand(issuedTokenType,
+                    tokenIndices, listOf()))
                 verifies()
             }
         }
@@ -64,7 +66,7 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     @Test
     fun `Rre-issued state can't deleted without re-issuance lock`() {
         val dummyState = createSimpleDummyState()
-        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()))
+        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()), listOf(issuerParty))
 
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -85,7 +87,7 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     @Test
     fun `Re-issuance lock can't be deleted without re-issued state`() {
         val dummyState = createSimpleDummyState()
-        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()))
+        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()), listOf(issuerParty))
 
         aliceNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -106,7 +108,7 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     @Test
     fun `Re-issuance lock can't be deleted if it's state is INACTIVE`() {
         val dummyState = createSimpleDummyState()
-        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()),
+        val reissuanceLock = createDummyReissuanceLock(listOf(createSimpleDummyStateAndRef()), listOf(issuerParty),
             ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
         aliceNode.services.ledger(notary = notaryParty) {

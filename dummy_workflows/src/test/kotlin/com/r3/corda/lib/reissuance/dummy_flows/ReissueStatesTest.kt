@@ -56,8 +56,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
         verifyStatesAfterReissuance<SimpleDummyState>()
     }
 
@@ -72,12 +71,12 @@ class ReissueStatesTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
-            listOf(issuerParty, acceptorParty)
+            listOf(acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+            listOf(acceptorParty))
         verifyStatesAfterReissuance<DummyStateRequiringAcceptance>()
     }
 
@@ -92,12 +91,12 @@ class ReissueStatesTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
-            listOf(aliceParty, issuerParty, acceptorParty)
+            listOf(aliceParty, acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty, acceptorParty))
         verifyStatesAfterReissuance<DummyStateRequiringAllParticipantsSignatures>()
     }
 
@@ -116,8 +115,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+        reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest, listOf(issuerParty))
         verifyStatesAfterReissuance<FungibleToken>()
     }
 
@@ -137,8 +135,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+        reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest, listOf(issuerParty))
         verifyStatesAfterReissuance<FungibleToken>(statesNum = 2)
     }
 
@@ -158,8 +155,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(employeeNode)[0]
-        reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+        reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest, listOf())
         verifyStatesAfterReissuance<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id,
             node = employeeNode, issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
     }
@@ -179,8 +175,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(aliceNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
         verifyStatesAfterReissuance<SimpleDummyState>(accountUUID = employeeAliceAccount.identifier.id,
             issuerParty = employeeIssuerParty, aliceParty = employeeAliceParty)
     }
@@ -199,8 +194,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
     }
 
     @Test // issuer doesn't have an information about state being consumed
@@ -220,8 +214,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         shareTransaction(aliceNode, issuerParty, simpleDummyState.ref.txhash)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -235,14 +228,13 @@ class ReissueStatesTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
-            listOf(issuerParty, acceptorParty)
+            listOf(acceptorParty)
         )
 
         updateDummyStateRequiringAcceptance(aliceNode, bobParty)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest, listOf())
     }
 
     @Test
@@ -259,8 +251,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
-        reissueRequestedStates<SimpleDummyState>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(bobNode, reissuanceRequest, listOf())
         verifyStatesAfterReissuance<SimpleDummyState>(issuerParty = bobParty)
     }
 
@@ -275,12 +266,11 @@ class ReissueStatesTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             bobParty,
-            listOf(bobParty, acceptorParty)
+            listOf(acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
-        reissueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<DummyStateRequiringAcceptance>(bobNode, reissuanceRequest, listOf(acceptorParty))
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -294,12 +284,11 @@ class ReissueStatesTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             bobParty,
-            listOf(aliceParty, bobParty, acceptorParty)
+            listOf(aliceParty, acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
-        reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+        reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(bobNode, reissuanceRequest, listOf())
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -318,7 +307,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<FungibleToken>(bobNode, reissuanceRequest,
-            issuerIsRequiredExitCommandSigner = true)
+            listOf(issuerParty))
 
     }
 
@@ -344,9 +333,41 @@ class ReissueStatesTest: AbstractFlowTest() {
         val reissuanceRequest1 = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissuanceRequest2 = getStateAndRefs<ReissuanceRequest>(issuerNode)[1]
 
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest1,
-            issuerIsRequiredExitCommandSigner = false)
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2,
-            issuerIsRequiredExitCommandSigner = false)
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest1, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2, listOf())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Requester shouldn't be passed in as one of extraAssetExitCommandSigners`() { // requester is a required signer
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf(aliceParty))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `Notary shouldn't be passed in as one of extraAssetExitCommandSigners`() { // notary is a required signer
+        initialiseParties()
+        createSimpleDummyState(aliceParty)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf(notaryParty))
     }
 }

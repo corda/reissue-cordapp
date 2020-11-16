@@ -1,12 +1,15 @@
-package com.r3.corda.lib.reissuance.flows
+package com.r3.corda.lib.reissuance.dummy_flows.dummy
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
+import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
+import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
-import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
-import net.corda.core.contracts.*
+import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
+import net.corda.core.contracts.CommandData
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
@@ -14,27 +17,25 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
+
 @InitiatingFlow
 @StartableByRPC
-class UnlockReissuedStates<T>(
+class ModifiedUnlockReissuedStates<T>(
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
     private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
-    private val assetExitTransactionIds: List<SecureHash>,
+    private val transactionByteArrays: List<ByteArray>,
     private val assetUnencumberCommand: CommandData,
     private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf() // requester is always a signer
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
-        val assetExitAttachments = assetExitTransactionIds.map { transactionId ->
-            val signedTransaction = findSignedTransactionTrandsactionById(serviceHub, transactionId)
-            require(signedTransaction != null) { "Transaction with id $transactionId not found" }
-            val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction!!)
+
+        val assetExitAttachments = transactionByteArrays.map { transactionByteArray ->
             serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
         }
 
-        val requester = reissuanceLock.state.data.requester
-        val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
-        require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
+        // make it possible for other party to pretend to be the requester
+        val requester = ourIdentity
 
         val notary = getPreferredNotary(serviceHub)
         val lockSigners = listOf(requester.owningKey)
@@ -93,60 +94,17 @@ class UnlockReissuedStates<T>(
 
 }
 
-abstract class UnlockReissuedStatesResponder(
+@InitiatedBy(ModifiedUnlockReissuedStates::class)
+class ModifiedUnlockReissuedStatesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
-
-    lateinit var reissuanceLockInput: ReissuanceLock<*>
-    lateinit var reissuanceLockOutput: ReissuanceLock<*>
-    lateinit var otherInputs: List<StateAndRef<*>>
-    lateinit var otherOutputs: List<TransactionState<*>>
-    lateinit var nonContractAttachments: List<Attachment>
-
-    fun checkBasicReissuanceConstraints(stx: SignedTransaction) {
-        val ledgerTransaction = stx.tx.toLedgerTransaction(serviceHub)
-        requireThat {
-            "There are at least 2 inputs" using (ledgerTransaction.inputs.size > 1)
-            "There are at least 2 outputs" using (ledgerTransaction.outputs.size > 1)
-
-            nonContractAttachments = ledgerTransaction.attachments.filter { it !is ContractAttachment }
-            "There is at least 1 non contract attachment" using (nonContractAttachments.isNotEmpty())
-
-            val reissuanceLockInputs = ledgerTransaction.inputsOfType<ReissuanceLock<*>>()
-            val reissuanceLockOutputs = ledgerTransaction.outputsOfType<ReissuanceLock<*>>()
-            "There is exactly one input of type ReissuanceLock" using (reissuanceLockInputs.size == 1)
-            "There is exactly one output of type ReissuanceLock" using (reissuanceLockOutputs.size == 1)
-            reissuanceLockInput = reissuanceLockInputs[0]
-            reissuanceLockOutput = reissuanceLockOutputs[0]
-            "Status of input ReissuanceLock is ACTIVE" using(
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
-            "Status of output ReissuanceLock is INACTIVE" using(
-                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus.INACTIVE)
-
-            otherInputs = ledgerTransaction.inputs.filter { it.state.data !is ReissuanceLock<*> }
-            "Inputs other than ReissuanceLock are of the same type" using(
-                otherInputs.map { it.state.data::class.java }.toSet().size == 1)
-            "Inputs other than ReissuanceLock are encumbered" using otherInputs.none { it.state.encumbrance == null }
-
-            otherOutputs = ledgerTransaction.outputs.filter { it.data !is ReissuanceLock<*> }
-            "Outputs other than ReissuanceLock are of the same type" using(
-                otherOutputs.map { it.data::class.java }.toSet().size == 1)
-            "Outputs other than ReissuanceLock are unencumbered" using otherOutputs.none { it.encumbrance != null }
-        }
-    }
-
-    abstract fun checkConstraints(stx: SignedTransaction)
-
     @Suspendable
     override fun call(): SignedTransaction {
         val needsToSignTransaction = otherSession.receive<Boolean>().unwrap { it }
         // only sign if instructed to do so
         if (needsToSignTransaction) {
             subFlow(object : SignTransactionFlow(otherSession) {
-                override fun checkTransaction(stx: SignedTransaction) {
-                    checkBasicReissuanceConstraints(stx)
-                    checkConstraints(stx)
-                }
+                override fun checkTransaction(stx: SignedTransaction) { }
             })
         }
         // always save the transaction

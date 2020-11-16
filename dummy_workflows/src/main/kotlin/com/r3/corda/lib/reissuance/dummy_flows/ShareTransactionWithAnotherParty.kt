@@ -8,20 +8,20 @@ import net.corda.core.node.StatesToRecord
 
 @InitiatingFlow
 @StartableByRPC
-class ShareTransactionWithIssuer(
-    private val issuer: Party,
+class ShareTransactionWithAnotherParty(
+    private val party: Party,
     private val transactionId: SecureHash
 ): FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
         val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)!!
-        val sendToSession = initiateFlow(issuer)
+        val sendToSession = initiateFlow(party)
         subFlow(SendTransactionFlow(sendToSession, signedTransaction))
     }
 }
 
-@InitiatedBy(ShareTransactionWithIssuer::class)
+@InitiatedBy(ShareTransactionWithAnotherParty::class)
 class SendSignedTransactionResponder(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {

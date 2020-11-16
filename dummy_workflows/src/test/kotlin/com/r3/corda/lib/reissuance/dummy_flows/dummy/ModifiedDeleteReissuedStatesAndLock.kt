@@ -10,6 +10,7 @@ import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
 import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
+import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
@@ -19,9 +20,10 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
 
+// modified version of DeleteReissuedStatesAndLock flow used for testing
 @InitiatingFlow
 @StartableByRPC
-class UpdatedDeleteReissuedStatesAndLock(
+class ModifiedDeleteReissuedStatesAndLock(
     private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock<SimpleDummyState>>,
     private val reissuedStateAndRefs: List<StateAndRef<SimpleDummyState>>,
     private val assetExitCommand: CommandData,
@@ -55,7 +57,7 @@ class UpdatedDeleteReissuedStatesAndLock(
             reissuedStatesSignersKeys)
         // end of extra functionality
 
-        val signers =(lockSigners + assetExitSigners).distinct()
+        val signers = (lockSigners + assetExitSigners).distinct()
 
         val localSigners = signers.filter { serviceHub.identityService.partyFromKey(it.owningKey)!! == ourIdentity }
         val localSignersKeys = localSigners.map { it.owningKey }
@@ -63,6 +65,8 @@ class UpdatedDeleteReissuedStatesAndLock(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, localSignersKeys)
 
+        // as some of the participants might be signers and some might not, we are sending them a flag which informs
+        // them if they are expected to sign the transaction or not
         val otherParticipants = reissuanceLock.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
@@ -83,8 +87,8 @@ class UpdatedDeleteReissuedStatesAndLock(
 
 }
 
-@InitiatedBy(UpdatedDeleteReissuedStatesAndLock::class)
-class UpdatedDeleteReissuedStatesAndLockResponder(
+@InitiatedBy(ModifiedDeleteReissuedStatesAndLock::class)
+class ModifiedDeleteReissuedStatesAndLockResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
     @Suspendable

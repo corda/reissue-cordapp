@@ -20,7 +20,7 @@ class RequestReissuance<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
-    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(),
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
@@ -32,11 +32,14 @@ class RequestReissuance<T>(
         }
         val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
 
+        require(!extraAssetIssuanceSigners.contains(issuer)) {
+            "Issuer is always a signer and shouldn't be passed in as a part of extraAssetIssuanceSigners" }
         val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
 
-        val signers = listOf(requesterAbstractParty.owningKey).distinct()
+        val signers = listOf(requesterAbstractParty.owningKey)
 
-        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue, assetIssuanceCommand, issuanceSigners)
+        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue,
+            assetIssuanceCommand, issuanceSigners)
 
         val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         transactionBuilder.addOutputState(reissuanceRequest)
@@ -45,9 +48,9 @@ class RequestReissuance<T>(
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
-        // don't create a session if issuer and requester are accounts on the same node
         val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         val sessions = listOfNotNull(
+            // don't create a session if issuer and requester are accounts on the same node
             if(ourIdentity != issuerHost) initiateFlow(issuerHost) else null
         )
 

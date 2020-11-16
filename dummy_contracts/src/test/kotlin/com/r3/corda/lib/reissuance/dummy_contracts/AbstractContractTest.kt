@@ -10,6 +10,7 @@ import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
@@ -91,7 +92,7 @@ abstract class AbstractContractTest {
         return StateRef(SecureHash.randomSHA256(), 0)
     }
 
-    fun createDummySimpleStateReissuanceRequest(
+    fun createSimpleDummyStateReissuanceRequest(
         stateRefList: List<StateRef>
     ): ReissuanceRequest {
         return ReissuanceRequest(
@@ -131,10 +132,10 @@ abstract class AbstractContractTest {
 
     fun <T> createDummyReissuanceLock(
         stateAndRefList: List<StateAndRef<T>>,
-        status: ReissuanceLock.ReissuanceLockStatus = ReissuanceLock.ReissuanceLockStatus.ACTIVE,
-        issuerIsRequiredSigner: Boolean = true
+        requiredSigners: List<AbstractParty>,
+        status: ReissuanceLock.ReissuanceLockStatus = ReissuanceLock.ReissuanceLockStatus.ACTIVE
     ): ReissuanceLock<T> where T: ContractState {
-        return ReissuanceLock(issuerParty, aliceParty, stateAndRefList, status, issuerIsRequiredSigner)
+        return ReissuanceLock(issuerParty, aliceParty, stateAndRefList, requiredSigners, status)
     }
 
     fun generateSignedTransactionByteArrayInputStream(

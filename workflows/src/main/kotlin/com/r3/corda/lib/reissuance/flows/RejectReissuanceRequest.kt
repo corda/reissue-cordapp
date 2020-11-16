@@ -38,6 +38,7 @@ class RejectReissuanceRequest<T>(
         transactionBuilder.verify(serviceHub)
         var signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
+        // don't create a session if issuer and requester are accounts on the same node
         val sessions = if(requesterHost == ourIdentity) listOf() else listOf(initiateFlow(requesterHost))
 
         return subFlow(

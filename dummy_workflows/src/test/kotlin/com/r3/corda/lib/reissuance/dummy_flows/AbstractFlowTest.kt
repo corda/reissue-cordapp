@@ -4,28 +4,32 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
-import com.r3.corda.lib.reissuance.dummy_flows.dummy.UpdatedDeleteReissuedStatesAndLock
-import com.r3.corda.lib.reissuance.flows.*
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.ModifiedDeleteReissuedStatesAndLock
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.ModifiedUnlockReissuedStates
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.CreateDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.DeleteDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance.UpdateDummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.CreateDummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.DeleteDummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAllParticipantsSignatures.UpdateDummyStateRequiringAllParticipantsSignatures
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.CreateDummyStateWithInvalidEqualsMethod
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.DeleteDummyStateWithInvalidEqualsMethod
-import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.UpdateDummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyDeleteReissuedStatesAndLockResponder
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyReissueStatesResponder
+import com.r3.corda.lib.reissuance.dummy_flows.dummy.responders.DummyUnlockReissuedStatesResponder
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.simpleDummyState.*
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.IssueTokens
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.ListTokensFlow
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.RedeemTokens
 import com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens.TransferTokens
-import com.r3.corda.lib.reissuance.states.ReissuanceLock
-import com.r3.corda.lib.reissuance.states.ReissuanceRequest
+import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.CreateDummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.DeleteDummyStateWithInvalidEqualsMethod
+import com.r3.corda.lib.reissuance.dummy_flows.dummyStateWithInvalidEqualsMethod.UpdateDummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
+import com.r3.corda.lib.reissuance.flows.*
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenType
@@ -119,7 +123,7 @@ abstract class AbstractFlowTest {
             ),
             notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
             initialNetworkParameters = testNetworkParameters(
-                minimumPlatformVersion = 4
+                minimumPlatformVersion = 8 // 4.6
             )
         )
 
@@ -161,6 +165,8 @@ abstract class AbstractFlowTest {
         debbieParty = debbieNode.info.singleIdentity()
 
         issuedTokenType = IssuedTokenType(issuerParty, TokenType("token", 0))
+
+        registerFlows(listOf(issuerNode, acceptorNode, aliceNode, bobNode, charlieNode, debbieNode))
     }
 
     fun initialisePartiesForAccountsOnTheSameHost() {
@@ -179,6 +185,8 @@ abstract class AbstractFlowTest {
         employeeBobParty = getPartyForAccount(employeeNode, employeeBobAccount)
         employeeCharlieParty = getPartyForAccount(employeeNode, employeeCharlieAccount)
         employeeDebbieParty = getPartyForAccount(employeeNode, employeeDebbieAccount)
+
+        registerFlows(listOf(employeeNode))
     }
 
     fun initialisePartiesForAccountsOnDifferentHosts() {
@@ -208,6 +216,14 @@ abstract class AbstractFlowTest {
         inform(charlieNode, employeeCharlieAccount, employeeCharlieParty, listOf(issuerNode, aliceNode, bobNode, debbieNode))
         inform(debbieNode, employeeDebbieAccount, employeeDebbieParty, listOf(issuerNode, aliceNode, bobNode, charlieNode))
 
+    }
+
+    private fun registerFlows(nodes: List<TestStartedNode>) {
+        nodes.forEach {
+            it.registerInitiatedFlow(DummyDeleteReissuedStatesAndLockResponder::class.java)
+            it.registerInitiatedFlow(DummyReissueStatesResponder::class.java)
+            it.registerInitiatedFlow(DummyUnlockReissuedStatesResponder::class.java)
+        }
     }
 
     // accounts
@@ -511,7 +527,7 @@ abstract class AbstractFlowTest {
         stateRefsToReissue: List<StateRef>,
         command: CommandData,
         issuer: AbstractParty,
-        commandSigners: List<AbstractParty> = listOf(issuer),
+        commandSigners: List<AbstractParty> = listOf(),
         requester: AbstractParty? = null
     ): SecureHash where T: ContractState {
         return runFlow(
@@ -525,13 +541,13 @@ abstract class AbstractFlowTest {
         statesToReissue: List<StateAndRef<T>>,
         command: CommandData,
         issuer: AbstractParty,
-        commandSigners: List<AbstractParty> = listOf(),
+        extraCommandSigners: List<AbstractParty> = listOf(),
         requester: AbstractParty? = null
     ): SecureHash where T: ContractState {
         return runFlow(
             node,
             RequestReissuanceAndShareRequiredTransactions<T>(issuer, statesToReissue.map { it.ref }, command,
-                commandSigners, requester)
+                extraCommandSigners, requester)
         )
     }
 
@@ -542,7 +558,7 @@ abstract class AbstractFlowTest {
     ) {
         runFlow(
             node,
-            ShareTransactionWithIssuer(issuer, transactionId)
+            ShareTransactionWithAnotherParty(issuer, transactionId)
         )
     }
 
@@ -552,23 +568,38 @@ abstract class AbstractFlowTest {
         command: CommandData,
         reissuedStateAndRefs: List<StateAndRef<T>>,
         lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
-        commandSigners: List<AbstractParty>? = null
+        extraCommandSigners: List<AbstractParty> = listOf()
     ): SecureHash {
-        val signers: List<AbstractParty> = commandSigners ?: listOf(lockStateAndRef.state.data.requester)
         return runFlow(
             node,
-            UnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command, signers)
+            UnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, attachmentSecureHashes, command,
+                extraCommandSigners)
+        )
+    }
+
+    inline fun <reified T : ContractState> unlockReissuedStateUsingModifiedFlow(
+        node: TestStartedNode,
+        signedTransactionByteArrays: List<ByteArray>,
+        command: CommandData,
+        reissuedStateAndRefs: List<StateAndRef<T>>,
+        lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
+        extraCommandSigners: List<AbstractParty> = listOf()
+    ): SecureHash {
+        return runFlow(
+            node,
+            ModifiedUnlockReissuedStates(reissuedStateAndRefs, lockStateAndRef, signedTransactionByteArrays, command,
+                extraCommandSigners)
         )
     }
 
     fun <T> reissueRequestedStates(
         node: TestStartedNode,
         reissuanceRequest: StateAndRef<ReissuanceRequest>,
-        issuerIsRequiredExitCommandSigner: Boolean
-        ) : SecureHash where T: ContractState {
+        extraExitCommandSigners: List<AbstractParty>
+    ) : SecureHash where T: ContractState {
         return runFlow(
             node,
-            ReissueStates<T>(reissuanceRequest, issuerIsRequiredExitCommandSigner)
+            ReissueStates<T>(reissuanceRequest, extraExitCommandSigners)
         )
     }
 
@@ -582,23 +613,13 @@ abstract class AbstractFlowTest {
         )
     }
 
-    fun uploadDeletedStateAttachment(
-        node: TestStartedNode,
-        deleteStateTransactionId: SecureHash
-    ): SecureHash {
-        return runFlow(
-            node,
-            UploadTransactionAsAttachment(deleteStateTransactionId)
-        )
-    }
-
     fun <T> deleteReissuedStatesAndLock(
         node: TestStartedNode,
         reissuanceLock: StateAndRef<ReissuanceLock<T>>,
         reissuedStates: List<StateAndRef<T>>,
         command: CommandData,
         commandSigners: List<AbstractParty>? = null
-        ): SecureHash where T: ContractState {
+    ): SecureHash where T: ContractState {
         val signers: List<AbstractParty> = commandSigners ?: listOf(reissuanceLock.state.data.requester,
             reissuanceLock.state.data.issuer)
         return runFlow(
@@ -607,7 +628,7 @@ abstract class AbstractFlowTest {
         )
     }
 
-    fun updatedDeleteReissuedStatesAndLock(
+    fun deleteReissuedStatesAndLockUsingModifiedFlow(
         node: TestStartedNode,
         reissuanceLock: StateAndRef<ReissuanceLock<SimpleDummyState>>,
         reissuedStates: List<StateAndRef<SimpleDummyState>>,
@@ -618,7 +639,7 @@ abstract class AbstractFlowTest {
             reissuanceLock.state.data.issuer)
         return runFlow(
             node,
-            UpdatedDeleteReissuedStatesAndLock(reissuanceLock, reissuedStates, command, signers)
+            ModifiedDeleteReissuedStatesAndLock(reissuanceLock, reissuedStates, command, signers)
         )
     }
 

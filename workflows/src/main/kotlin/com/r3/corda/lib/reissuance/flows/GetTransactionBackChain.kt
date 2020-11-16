@@ -2,7 +2,6 @@ package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.crypto.SecureHash
-import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 
@@ -36,9 +35,5 @@ class GetTransactionBackChain(
         return getTransactionBackChain(transactionsToVisit.elementAt(0), visitedTransactions,
             transactionsToVisit)
     }
-
-    class BackChainException(
-        message: String, cause: Throwable? = null
-    ) : FlowException(message, cause)
 
 }

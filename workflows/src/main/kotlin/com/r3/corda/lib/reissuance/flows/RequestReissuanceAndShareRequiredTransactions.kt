@@ -1,6 +1,7 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -18,7 +19,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
-    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(issuer),
+    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
@@ -27,13 +28,18 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
         val requestReissuanceTransactionId = subFlow(
             RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
         )
-
         val requesterIdentity = requester ?: ourIdentity
 
+        val refCriteria = QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
+        val criteria = if(requester == null) refCriteria else {
+            val accountUuid = serviceHub.accountService.accountIdForKey(requester.owningKey)
+            require(accountUuid != null) { "UUID for $requester is not found" }
+            val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUuid!!))
+            refCriteria.and(accountCriteria)
+        }
         @Suppress("UNCHECKED_CAST")
-        val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
-            criteria= QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
-        ).states as List<StateAndRef<T>>
+        val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(criteria).states
+            as List<StateAndRef<T>>
 
         // all states need to have the same participants
         val participants = statesToReissue[0].state.data.participants

@@ -63,7 +63,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
             issuerParty,
-            listOf(issuerParty, acceptorParty)
+            listOf(acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
@@ -82,7 +82,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
             listOf(dummyStateRequiringAllParticipantsSignatures),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
             issuerParty,
-            listOf(aliceParty, issuerParty, acceptorParty)
+            listOf(aliceParty, acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
