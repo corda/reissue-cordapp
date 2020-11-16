@@ -8,6 +8,8 @@ import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.TransactionState
+import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
@@ -125,7 +127,35 @@ abstract class ReissueStatesResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
 
-    abstract fun checkSignedTransaction(stx: SignedTransaction)
+    lateinit var reissuanceRequest: ReissuanceRequest
+    lateinit var reissuanceLock: ReissuanceLock<*>
+    lateinit var otherOutputs: List<TransactionState<*>>
+
+    fun checkBasicReissuanceConstraints(stx: SignedTransaction) {
+        val ledgerTransaction = stx.tx.toLedgerTransaction(serviceHub)
+        requireThat {
+            "There is exactly 1 input" using (ledgerTransaction.inputs.size == 1)
+            "There are at least 2 outputs" using (ledgerTransaction.outputs.size > 1)
+
+            val nullableReissuanceRequest = ledgerTransaction.inputs[0].state.data as? ReissuanceRequest
+            "ReissuanceRequest is an input" using (nullableReissuanceRequest != null)
+            reissuanceRequest = nullableReissuanceRequest!!
+
+            val reissuanceLocks = ledgerTransaction.outputsOfType(ReissuanceLock::class.java)
+            "ReissuanceLock is an output" using (reissuanceLocks.size == 1)
+            otherOutputs = ledgerTransaction.outputs.filter { it.data !is ReissuanceLock<*> }
+            "Outputs other than ReissuanceLock are of the same type" using(
+                otherOutputs.map { it.data::class.java }.toSet().size == 1)
+            "Outputs other than ReissuanceLock are encumbered" using otherOutputs.none { it.encumbrance == null }
+            reissuanceLock = reissuanceLocks[0]
+            "Status or ReissuanceLock is ACTIVE" using (
+                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
+            "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+        }
+    }
+
+    abstract fun checkConstraints(stx: SignedTransaction)
 
     @Suspendable
     override fun call(): SignedTransaction {
@@ -134,7 +164,8 @@ abstract class ReissueStatesResponder(
         if (needsToSignTransaction) {
             subFlow(object : SignTransactionFlow(otherSession) {
                 override fun checkTransaction(stx: SignedTransaction) {
-                    checkSignedTransaction(stx)
+                    checkBasicReissuanceConstraints(stx)
+                    checkConstraints(stx)
                 }
             })
         }

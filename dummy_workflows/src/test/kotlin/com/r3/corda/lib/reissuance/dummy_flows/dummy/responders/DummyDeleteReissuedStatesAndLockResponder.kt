@@ -10,5 +10,5 @@ import net.corda.core.transactions.SignedTransaction
 class DummyDeleteReissuedStatesAndLockResponder(
     otherSession: FlowSession
 ) : DeleteReissuedStatesAndLockResponder(otherSession) {
-    override fun checkSignedTransaction(stx: SignedTransaction) {}
+    override fun checkConstraints(stx: SignedTransaction) {}
 }
