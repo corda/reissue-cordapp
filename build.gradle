@@ -1,10 +1,12 @@
 buildscript { //properties that you need to build the project
 
+    ext.artifactory_contextUrl = 'https://software.r3.com/artifactory'
+
     repositories {
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
+        maven { url "${artifactory_contextUrl}/corda-releases" }
     }
 
     dependencies {
@@ -44,9 +46,9 @@ allprojects { //Properties that you need to compile your project (The applicatio
         mavenLocal()
         jcenter()
         mavenCentral()
-        maven { url 'https://software.r3.com/artifactory/corda' }
-        maven { url 'https://jitpack.io' }
-        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        maven { url "${artifactory_contextUrl}/corda" }
+        maven { url "https://jitpack.io" }
+        maven { url "${artifactory_contextUrl}/corda-lib" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
@@ -230,7 +232,7 @@ configure(publishProjects) { subproject ->
 
 artifactory {
     publish {
-        contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
+        contextUrl = "${artifactory_contextUrl}"
         repository {
             repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
             username = cordaArtifactoryUsername
