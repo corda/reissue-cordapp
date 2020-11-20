@@ -1,4 +1,4 @@
-package net.corda.samples.reissuance.candies.flows.wrappedReissuanceFlows
+package com.r3.corda.lib.reissuance.dummy_flows.shell.simpleDummyState
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
@@ -9,11 +9,6 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.AbstractParty
-
-// Note: There is no need to generate a separate flow calling RequestReissuanceAndShareRequiredTransactions.
-// RequestReissuanceAndShareRequiredTransactions can be used directly to request state re-issuance and share required
-// transactions (proving that states to be re-issued are valid) with the issuer.
-// RequestCandyCouponReissuanceAndShareRequiredTransactions has been created to make it easier to use node shell.
 
 @StartableByRPC
 class RequestSimpleDummyStateReissuanceAndShareRequiredTransactions(

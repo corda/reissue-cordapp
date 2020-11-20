@@ -163,7 +163,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(exitTransactionId), DummyStateRequiringAcceptanceContract.Commands.Update(),
             getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock<DummyStateRequiringAcceptance>>(aliceNode, encumbered = true)[0],
-            listOf(issuerParty, acceptorParty))
+            listOf(acceptorParty))
 
         verifyUnlockedStates(statesToReissue)
         verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
