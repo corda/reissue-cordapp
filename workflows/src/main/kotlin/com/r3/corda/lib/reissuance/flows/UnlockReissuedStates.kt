@@ -41,8 +41,8 @@ class UnlockReissuedStates<T>(
 
         require(!extraAssetUnencumberCommandSigners.contains(requester)) {
             "Requester is always a signer and shouldn't be passed in as a part of extraAssetUnencumberCommandSigners" }
-        val assetUpdateSigners = listOf(requester) + extraAssetUnencumberCommandSigners
-        val reissuedStatesSigners = assetUpdateSigners.map { it.owningKey }
+        val signers = listOf(requester) + extraAssetUnencumberCommandSigners
+        val reissuedStatesSigners = signers.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary)
 
@@ -72,7 +72,6 @@ class UnlockReissuedStates<T>(
 
         // as some of the participants might be signers and some might not, we are sending them a flag which informs
         // them if they are expected to sign the transaction or not
-        val signers = (assetUpdateSigners + reissuanceLock.state.data.issuer).distinct()
         val otherParticipants = reissuanceLock.state.data.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
