@@ -24,22 +24,25 @@ unlock re-issued state immediately after the original state is deleted.
 
 Re-issuance CorDapp can be installed as any other CorDapp. 
 
-Firstly, artifactory repository containing re-issuance CorDapp (`corda-lib-dev`) needs to be added to the list 
+Firstly, artifactory repository containing re-issuance CorDapp (`corda-lib`) needs to be added to the list 
 of repositories for the project:
 ```
 repositories {
-    maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
+    maven { url 'https://software.r3.com/artifactory/corda-lib' }
 }
 ```
 
 Secondly, dependencies must be added to the `dependencies` block in each module using the re-issuance CorDapp:
 ```
-cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
-cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
+cordapp "$reissuance_release_group:reissuance-cordapp-contracts:$reissuance_release_version"
+cordapp "$reissuance_release_group:reissuance-cordapp-workflows:$reissuance_release_version"
 ```
 
-`tokens_release_group` and `tokens_release_version` are variables which should be included in `gradle.properties` file.
-
+`reissuance_release_group` and `reissuance_release_version` are variables which should be included in `gradle.properties` file:
+```
+reissuance_release_group = com.r3.corda.lib.reissuance
+reissuance_release_version = 1.0-GA
+```
 # Re-issuance flows
 ## Requesting re-issuance
 `RequestReissuanceAndShareRequiredTransactions` flow is used to request re-issuance and share required transaction with 
