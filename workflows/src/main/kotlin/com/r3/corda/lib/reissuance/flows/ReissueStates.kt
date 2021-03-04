@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
+import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.ContractState
@@ -78,8 +79,13 @@ class ReissueStates<T>(
         statesToReissue
             .map { it.state.data }
             .forEach {
+                val outputState = if (it is ReissuableState<*>) {
+                    it.createReissuance()
+                } else {
+                    it
+                }
                 transactionBuilder.addOutputState(
-                    state = it,
+                    state = outputState,
                     contract = it.requiredContractClassName!!,
                     notary = notary,
                     encumbrance = encumbrance)
@@ -150,8 +156,18 @@ abstract class ReissueStatesResponder(
             reissuanceLock = reissuanceLocks[0]
             "Status or ReissuanceLock is ACTIVE" using (
                 reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
-            "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+
+            if (reissuanceLock.originalStates.first().state.data is ReissuableState<*>) {
+                reissuanceLock.originalStates.forEachIndexed { index, stateAndRef ->
+                    val state = stateAndRef.state.data as ReissuableState<ContractState>
+                    val reissuedState = otherOutputs[index].data
+                    "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                            state.isEqualForReissuance(reissuedState))
+                }
+            } else {
+                "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                        reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            }
         }
     }
 
