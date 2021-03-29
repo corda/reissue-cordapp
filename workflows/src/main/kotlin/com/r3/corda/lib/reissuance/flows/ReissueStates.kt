@@ -16,6 +16,9 @@ import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
+import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
+import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -45,14 +48,22 @@ class ReissueStates<T>(
             criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reissuanceRequest.stateRefsToReissue)
         ).states as List<StateAndRef<T>>
 
-        @Suppress("UNCHECKED_CAST")
-        val locks: List<StateAndRef<ReissuanceLock<T>>> =
-            serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>().states
-                as List<StateAndRef<ReissuanceLock<T>>>
-        val reissuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
-        reissuanceRequest.stateRefsToReissue.forEach {
-            require(!reissuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
-        }
+        var pageNumber = DEFAULT_PAGE_NUM
+        do {
+            val pageSize = DEFAULT_PAGE_SIZE
+            val results = serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>(
+                    PageSpecification(pageNumber, pageSize))
+
+            @Suppress("UNCHECKED_CAST")
+            val locks = results.states as List<StateAndRef<ReissuanceLock<T>>>
+
+            val reissuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
+            reissuanceRequest.stateRefsToReissue.forEach {
+                require(!reissuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
+            }
+            pageNumber++
+            val totalResults = results.totalStatesAvailable
+        } while ((pageSize * (pageNumber - 1) <= totalResults))
 
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
             "Cannot validate states to re-issue" }
