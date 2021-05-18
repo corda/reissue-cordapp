@@ -59,6 +59,27 @@ class RequestReissuanceTest: AbstractFlowTest() {
     }
 
     @Test
+    fun `SimpleDummyState re-issuance request is created on notary 2`() {
+        initialiseParties()
+        createSimpleDummyStateOnNotary(aliceParty, notary2Party)
+
+        val issuanceCommandData = SimpleDummyStateContract.Commands.Create()
+        val statesToBeReissued = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1 state
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            statesToBeReissued,
+            issuanceCommandData,
+            issuerParty
+        )
+
+        val reissuanceRequests = getStateAndRefs<ReissuanceRequest>(issuerNode)
+        verifyReissuanceRequests(reissuanceRequests, issuanceCommandData, statesToBeReissued)
+
+        val simpleDummyStatesAvailableToIssuer = getStateAndRefs<SimpleDummyState>(issuerNode)
+        assertThat(simpleDummyStatesAvailableToIssuer, `is`(statesToBeReissued))
+    }
+
+    @Test
     fun `DummyStateRequiringAcceptance re-issuance request is created`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
@@ -196,7 +217,7 @@ class RequestReissuanceTest: AbstractFlowTest() {
         assertThat(simpleDummyStatesAvailableToIssuer, `is`(statesToBeReissued))
     }
 
-    @Test(expected = TransactionVerificationException::class)
+    @Test(expected = IllegalArgumentException::class)
     fun `Request re-issuance of 0 states can't be created`() {
         initialiseParties()
         createReissuanceRequestAndShareRequiredTransactions<SimpleDummyState>(

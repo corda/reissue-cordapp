@@ -43,6 +43,22 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         return transactionIds
     }
 
+    private fun createStateAndGenerateBackChainOnNotary(
+        createState: (Party, Party) -> SecureHash,
+        updateState: (TestStartedNode, Party) -> SecureHash,
+        notary : Party
+    ): List<SecureHash> {
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createState(aliceParty, notary))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        return transactionIds
+    }
+
     private fun createStateAndGenerateBackChainForAccount(
         createState: (TestStartedNode, AbstractParty) -> SecureHash,
         updateState: (TestStartedNode, AbstractParty) -> SecureHash,
@@ -116,6 +132,36 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
     fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted`() {
         initialiseParties()
         val transactionIds = createStateAndGenerateBackChain(::createSimpleDummyState, ::updateSimpleDummyState)
+        verifyTransactionBackChain(transactionIds)
+
+        val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
+            listOf())
+
+        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val unlockReissuedStatesTransactionId = unlockReissuedState(
+            aliceNode, listOf(exitTransactionId), SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+        )
+
+        verifyUnlockedStates(statesToReissue)
+        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+            reissueStatesTransactionId, unlockReissuedStatesTransactionId))
+    }
+
+    @Test
+    fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted on notary2`() {
+        initialiseParties()
+        val transactionIds = createStateAndGenerateBackChainOnNotary(
+            ::createSimpleDummyStateOnNotary,
+            ::updateSimpleDummyState,
+            notary2Party
+        )
         verifyTransactionBackChain(transactionIds)
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)

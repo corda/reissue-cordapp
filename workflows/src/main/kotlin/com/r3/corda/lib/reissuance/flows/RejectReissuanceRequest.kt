@@ -3,7 +3,6 @@ package com.r3.corda.lib.reissuance.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
@@ -28,7 +27,7 @@ class RejectReissuanceRequest<T>(
         val requester = reissuanceRequest.requester
         val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
 
-        val notary = getPreferredNotary(serviceHub)
+        val notary = reissuanceRequestStateAndRef.state.notary
         val signers = listOf(issuer.owningKey)
 
         val transactionBuilder = TransactionBuilder(notary = notary)

@@ -21,7 +21,8 @@ class RequestReissuance<T>(
     private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
-    private val requester: AbstractParty? = null // requester needs to be provided when using accounts
+    private val requester: AbstractParty? = null, // requester needs to be provided when using accounts
+    private val notary : Party? = null
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
@@ -41,7 +42,8 @@ class RequestReissuance<T>(
         val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue,
             assetIssuanceCommand, issuanceSigners)
 
-        val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
+        val notaryToUse = notary ?: getPreferredNotary(serviceHub)
+        val transactionBuilder = TransactionBuilder(notaryToUse)
         transactionBuilder.addOutputState(reissuanceRequest)
         transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
 

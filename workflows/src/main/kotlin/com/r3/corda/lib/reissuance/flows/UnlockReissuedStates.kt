@@ -1,7 +1,6 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
@@ -36,7 +35,7 @@ class UnlockReissuedStates<T>(
         val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
         require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
 
-        val notary = getPreferredNotary(serviceHub)
+        val notary = reissuanceLock.state.notary
         val lockSigners = listOf(requester.owningKey)
 
         require(!extraAssetUnencumberCommandSigners.contains(requester)) {

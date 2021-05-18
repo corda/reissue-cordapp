@@ -25,21 +25,26 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
 
     @Suspendable
     override fun call(): SecureHash {
-        val requestReissuanceTransactionId = subFlow(
-            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
-        )
-        val requesterIdentity = requester ?: ourIdentity
 
+        require(stateRefsToReissue.isNotEmpty()) {
+            "stateRefsToReissue can not be empty"
+        }
         val refCriteria = QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
-        val criteria = if(requester == null) refCriteria else {
+        val criteria = if (requester == null) refCriteria else {
             val accountUuid = serviceHub.accountService.accountIdForKey(requester.owningKey)
             require(accountUuid != null) { "UUID for $requester is not found" }
             val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUuid!!))
             refCriteria.and(accountCriteria)
         }
+
         @Suppress("UNCHECKED_CAST")
         val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(criteria).states
-            as List<StateAndRef<T>>
+                as List<StateAndRef<T>>
+
+        // there can only be a single notary in a reissuance request
+        val notary = statesToReissue.map { it.state.notary }.toSet().single()
+
+        val requesterIdentity = requester ?: ourIdentity
 
         // all states need to have the same participants
         val participants = statesToReissue[0].state.data.participants
@@ -48,7 +53,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
 
         // if issuer is a participant, they already have access to those transactions
-        if(!participants.contains(issuer) && requesterHost != issuerHost) {
+        if (!participants.contains(issuer) && requesterHost != issuerHost) {
             val transactionHashes = stateRefsToReissue.map { it.txhash }
             val transactionsToSend = transactionHashes.map {
                 serviceHub.validatedTransactions.getTransaction(it)
@@ -60,7 +65,17 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
                 subFlow(SendTransactionFlow(sendToSession, signedTransaction))
             }
         }
-        return requestReissuanceTransactionId
+
+        return subFlow(
+            RequestReissuance<T>(
+                issuer,
+                stateRefsToReissue,
+                assetIssuanceCommand,
+                extraAssetIssuanceSigners,
+                requester,
+                notary
+            )
+        )
     }
 
 }

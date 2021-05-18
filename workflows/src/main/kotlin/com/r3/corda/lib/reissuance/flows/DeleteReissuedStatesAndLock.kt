@@ -1,7 +1,6 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
@@ -26,7 +25,7 @@ class DeleteReissuedStatesAndLock<T>(
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
-        val notary = getPreferredNotary(serviceHub)
+        val notary = reissuedStateAndRefs.first().state.notary
 
         val reissuanceLock = reissuanceLockStateAndRef.state.data
         val requester = reissuanceLock.requester

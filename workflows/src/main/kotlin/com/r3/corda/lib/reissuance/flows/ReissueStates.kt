@@ -1,7 +1,6 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.states.ReissuableState
@@ -35,7 +34,7 @@ class ReissueStates<T>(
     override fun call(): SecureHash {
         val reissuanceRequest = reissuanceRequestStateAndRef.state.data
 
-        val notary = getPreferredNotary(serviceHub)
+        val notary = reissuanceRequestStateAndRef.state.notary
         val requester = reissuanceRequest.requester
         val issuer = reissuanceRequest.issuer
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!

@@ -66,6 +66,34 @@ class DeleteReissuedStatesAndLockTest: AbstractFlowTest() {
     }
 
     @Test
+    fun `Re-issued SimpleDummyState and corresponding ReissuanceLock are deleted on notary 2`() {
+        initialiseParties()
+        createSimpleDummyStateOnNotary(aliceParty, notary2Party)
+
+        val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode) // there is just 1
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            statesToReissue,
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+
+        val reissuedSimpleDummyStates = getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true)
+        val lockState = getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode)[0]
+        deleteReissuedStatesAndLock(
+            aliceNode,
+            lockState,
+            reissuedSimpleDummyStates,
+            SimpleDummyStateContract.Commands.Delete()
+        )
+
+        verifyDeletedReissuedStatesAndLock(statesToReissue)
+    }
+
+    @Test
     fun `Re-issued DummyStateRequiringAcceptance is unencumbered after the original state are deleted`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)
