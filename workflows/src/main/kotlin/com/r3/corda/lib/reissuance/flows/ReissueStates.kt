@@ -3,6 +3,8 @@ package com.r3.corda.lib.reissuance.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
+import com.r3.corda.lib.reissuance.schemas.ReissuanceDirection
+import com.r3.corda.lib.reissuance.services.ReissuedStatesService
 import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
@@ -32,6 +34,8 @@ class ReissueStates<T>(
 
     @Suspendable
     override fun call(): SecureHash {
+        val reissuedStatesService = serviceHub.cordaService(ReissuedStatesService::class.java)
+
         val reissuanceRequest = reissuanceRequestStateAndRef.state.data
 
         val notary = reissuanceRequestStateAndRef.state.notary
@@ -47,22 +51,11 @@ class ReissueStates<T>(
             criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reissuanceRequest.stateRefsToReissue)
         ).states as List<StateAndRef<T>>
 
-        var pageNumber = DEFAULT_PAGE_NUM
-        do {
-            val pageSize = DEFAULT_PAGE_SIZE
-            val results = serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>(
-                    PageSpecification(pageNumber, pageSize))
-
-            @Suppress("UNCHECKED_CAST")
-            val locks = results.states as List<StateAndRef<ReissuanceLock<T>>>
-
-            val reissuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
-            reissuanceRequest.stateRefsToReissue.forEach {
-                require(!reissuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
-            }
-            pageNumber++
-            val totalResults = results.totalStatesAvailable
-        } while ((pageSize * (pageNumber - 1) <= totalResults))
+        reissuanceRequest.stateRefsToReissue.forEach {
+            val dir = ReissuanceDirection.RECEIVED
+            require( !reissuedStatesService.hasStateRef(it, dir)) { "State ${it} has been already re-issued" }
+            reissuedStatesService.storeStateRef(it, dir)
+        }
 
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
             "Cannot validate states to re-issue" }
