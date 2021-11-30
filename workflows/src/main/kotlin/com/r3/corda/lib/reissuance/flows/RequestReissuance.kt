@@ -27,28 +27,6 @@ class RequestReissuance<T>(
 
     @Suspendable
     override fun call(): SecureHash {
-        if(requester != null) {
-            val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
-            require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
-        }
-        val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
-
-        require(!extraAssetIssuanceSigners.contains(issuer)) {
-            "Issuer is always a signer and shouldn't be passed in as a part of extraAssetIssuanceSigners" }
-        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
-
-        val signers = listOf(requesterAbstractParty.owningKey)
-
-        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue,
-            assetIssuanceCommand, issuanceSigners)
-
-        val notaryToUse = notary ?: getPreferredNotary(serviceHub)
-        val transactionBuilder = TransactionBuilder(notaryToUse)
-        transactionBuilder.addOutputState(reissuanceRequest)
-        transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
-
-        transactionBuilder.verify(serviceHub)
-        val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
         val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         val sessions = listOfNotNull(
@@ -57,11 +35,16 @@ class RequestReissuance<T>(
         )
 
         return subFlow(
-            FinalityFlow(
-                transaction = signedTransaction,
-                sessions = sessions
+            RequestReissuanceNonInitiating<T>(
+                sessions,
+                issuer,
+                stateRefsToReissue,
+                assetIssuanceCommand,
+                extraAssetIssuanceSigners,
+                requester,
+                notary
             )
-        ).id
+        )
     }
 }
 
@@ -72,10 +55,7 @@ class RequestReissuanceResponder(
     @Suspendable
     override fun call() {
         subFlow(
-            ReceiveFinalityFlow(
-                otherSession,
-                statesToRecord = StatesToRecord.ALL_VISIBLE
-            )
+            RequestReissuanceNonInitiatingResponder(otherSession)
         )
     }
 }
