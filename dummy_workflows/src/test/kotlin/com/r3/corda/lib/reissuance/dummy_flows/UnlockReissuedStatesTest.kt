@@ -13,7 +13,6 @@ import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMetho
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
-import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -555,7 +554,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val updateTransactionId = updateSimpleDummyState(aliceNode, bobParty)
         val transactionByteArray = convertSignedTransactionToByteArray(
-            findSignedTransactionTrandsactionById(aliceNode.services, updateTransactionId)!!)
+            aliceNode.services.validatedTransactions.getTransaction(updateTransactionId)!!
+        )
 
         unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode,
@@ -765,7 +765,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val exitTransactionByteArray = convertSignedTransactionToByteArray(
-            findSignedTransactionTrandsactionById(aliceNode.services, exitTransactionId)!!)
+            aliceNode.services.validatedTransactions.getTransaction(exitTransactionId)!!
+        )
 
         shareTransaction(aliceNode, bobParty, reissuanceTransactionId)
         shareTransaction(aliceNode, bobParty, exitTransactionId)

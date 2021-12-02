@@ -4,7 +4,6 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
-import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
 import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
@@ -25,7 +24,7 @@ class UnlockReissuedStates<T>(
     @Suspendable
     override fun call(): SecureHash {
         val assetExitAttachments = assetExitTransactionIds.map { transactionId ->
-            val signedTransaction = findSignedTransactionTrandsactionById(serviceHub, transactionId)
+            val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
             require(signedTransaction != null) { "Transaction with id $transactionId not found" }
             val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction!!)
             serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
