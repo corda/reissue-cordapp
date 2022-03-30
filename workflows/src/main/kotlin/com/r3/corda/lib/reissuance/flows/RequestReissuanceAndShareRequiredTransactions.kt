@@ -70,7 +70,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
             it.send(transactionsToSend.size)
 
             transactionsToSend.forEach { signedTransaction ->
-                subFlow(SendTransactionFlow(it, signedTransaction))
+                subFlow(SendTransactionFlow(it, signedTransaction, encrypted = true))
             }
         }
 
@@ -100,7 +100,8 @@ class ReceiveSignedTransaction(val otherSession: FlowSession) : FlowLogic<Unit>(
             (1..numTxToReceive).forEach { _ ->
                 subFlow(ReceiveTransactionFlow(
                     otherSideSession = otherSession,
-                    statesToRecord = StatesToRecord.ALL_VISIBLE
+                    statesToRecord = StatesToRecord.ALL_VISIBLE,
+                    encrypted = true
                 ))
             }
         }
