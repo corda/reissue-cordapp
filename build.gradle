@@ -6,7 +6,18 @@ buildscript { //properties that you need to build the project
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven { url "${artifactory_contextUrl}/corda-releases" }
+        maven {
+            url "https://software.r3.com/artifactory/dc-lib-dev"
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            }
+            content {
+                excludeModule("net.corda", "corda-node-driver")
+            }
+        }
+        maven { url "${artifactory_contextUrl}/corda" }
+        maven { url "${artifactory_contextUrl}/corda-lib" }
     }
 
     dependencies {
@@ -51,6 +62,16 @@ allprojects { //Properties that you need to compile your project (The applicatio
         maven { url "${artifactory_contextUrl}/corda" }
         maven { url "https://jitpack.io" }
         maven { url "${artifactory_contextUrl}/corda-lib" }
+        maven {
+            url "https://software.r3.com/artifactory/dc-lib-dev"
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            }
+            content {
+                excludeModule("net.corda", "corda-node-driver")
+            }
+        }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
