@@ -70,7 +70,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
             it.send(transactionsToSend.size)
 
             transactionsToSend.forEach { signedTransaction ->
-                subFlow(SendTransactionFlow(it, signedTransaction))
+                subFlow(SendTransactionFlow(it, signedTransaction, true))
             }
         }
 
