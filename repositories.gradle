@@ -11,8 +11,5 @@ repositories {
             username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
             password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
-        content {
-            excludeModule("net.corda", "corda-node-driver")
-        }
     }
 }
