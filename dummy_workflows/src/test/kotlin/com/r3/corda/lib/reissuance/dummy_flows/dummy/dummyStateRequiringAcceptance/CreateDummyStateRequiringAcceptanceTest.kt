@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.dummy_flows.dummy.dummyStateRequiringAcceptance
 
+import com.r3.corda.lib.reissuance.dummy_flows.AbstractFlowTest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasSize
-import com.r3.corda.lib.reissuance.dummy_flows.AbstractFlowTest
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import org.hamcrest.Matchers.`is`
 import org.junit.Test

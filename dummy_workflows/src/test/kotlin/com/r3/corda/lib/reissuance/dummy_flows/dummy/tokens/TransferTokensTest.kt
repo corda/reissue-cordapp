@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.dummy_flows.dummy.tokens
 
+import com.r3.corda.lib.reissuance.dummy_flows.AbstractFlowTest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
-import com.r3.corda.lib.reissuance.dummy_flows.AbstractFlowTest
 import org.junit.Test
 
 class TransferTokensTest: AbstractFlowTest() {

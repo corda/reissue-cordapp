@@ -1,6 +1,7 @@
 package com.r3.corda.lib.reissuance.dummy_flows.shell.simpleDummyState
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.flows.ReissueStates
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
@@ -23,7 +24,9 @@ class ReissueSimpleDummyState(
             criteria= QueryCriteria.VaultQueryCriteria(stateRefs = listOf(rejectReissuanceRequestRef))
         ).states[0]
         return subFlow(ReissueStates<SimpleDummyState>(
-            rejectReissuanceRequestStateAndRef, listOf()
+            // replace random
+            rejectReissuanceRequestStateAndRef, SecureHash.randomSHA256(), SimpleDummyStateContract.Commands.Create()
+            , listOf()
         ))
     }
 

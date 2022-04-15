@@ -5,12 +5,12 @@ import org.hamcrest.Matchers.*
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAllParticipantsSignaturesContract
 import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
-import com.r3.corda.lib.reissuance.states.ReissuanceLock
-import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
-import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
+import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
+import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.ContractState
 import net.corda.testing.node.internal.TestStartedNode
@@ -25,7 +25,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
     ) where T: ContractState {
         val encumberedStates = getStateAndRefs<T>(node, encumbered = true, accountUUID = accountUUID)
         val unencumberedStates = getStateAndRefs<T>(node, encumbered = false, accountUUID = accountUUID)
-        val lockStates = getStateAndRefs<ReissuanceLock<T>>(node, accountUUID = accountUUID)
+        val lockStates = getStateAndRefs<ReissuanceLock>(node, accountUUID = accountUUID)
         val reissuanceRequests = getStateAndRefs<ReissuanceRequest>(node, accountUUID = accountUUID)
 
         assertThat(encumberedStates, empty())
@@ -43,7 +43,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
 
@@ -61,7 +61,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
 
@@ -79,7 +79,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(dummyStateRequiringAcceptance),
-            DummyStateRequiringAcceptanceContract.Commands.Create(),
+            DummyStateRequiringAcceptanceContract.Commands.Delete(),
             issuerParty,
             listOf(acceptorParty)
         )
@@ -98,7 +98,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(dummyStateRequiringAllParticipantsSignatures),
-            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
+            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Delete(),
             issuerParty,
             listOf(aliceParty, acceptorParty)
         )
@@ -118,7 +118,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             tokens,
-            IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
+            RedeemTokenCommand(issuedTokenType, tokens.indices.toList()),
             issuerParty
         )
 
@@ -137,7 +137,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             employeeNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
@@ -157,7 +157,7 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
         createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             employeeIssuerParty,
             requester = employeeAliceParty
         )
