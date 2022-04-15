@@ -9,7 +9,6 @@ import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.schemas.ReissuanceDirection
 import com.r3.corda.lib.reissuance.services.ReissuedStatesService
 import com.r3.corda.lib.reissuance.states.*
-import com.r3.corda.lib.reissuance.utils.getSignedTransactionFromAttachment
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
 import net.corda.core.crypto.Crypto
@@ -21,6 +20,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -38,7 +38,18 @@ class ReissueStates<T>(
 
     @Suspendable
     override fun call(): SecureHash {
-        val tx = getSignedTransactionFromAttachment(serviceHub, txAttachmentId)
+        val tx = serviceHub.attachments.openAttachment(txAttachmentId)?.let { attachment ->
+            attachment.openAsJAR().use {
+                var nextEntry = it.nextEntry
+                while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
+                    // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                    nextEntry = it.nextEntry
+                }
+                if(nextEntry != null) {
+                    it.readBytes().deserialize<SignedTransaction>()
+                } else throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
+            }
+        } ?: throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
 
         val reissuedStatesService = serviceHub.cordaService(ReissuedStatesService::class.java)
 
@@ -206,7 +217,18 @@ abstract class ReissueStatesResponder(
 
         val attachedSignedTransactions = mutableListOf<SignedTransaction>()
         nonContractAttachments.forEach { attachment ->
-            getSignedTransactionFromAttachment(serviceHub, attachment.id)
+            val attachmentJar = attachment.openAsJAR()
+            var nextEntry = attachmentJar.nextEntry
+            while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
+                // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                nextEntry = attachmentJar.nextEntry
+            }
+
+            if(nextEntry != null) {
+                val transactionBytes = attachmentJar.readBytes()
+                attachedSignedTransactions.add(transactionBytes.deserialize<SignedTransaction>())
+            }
+
         }
 
         return attachedSignedTransactions
