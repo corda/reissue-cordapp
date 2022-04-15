@@ -41,8 +41,8 @@ class ReissuanceRequestContract<T>: Contract where T: ContractState {
             // state constraints
             "There must be positive number of states to re-issue" using (
                 reissuanceRequest.stateRefsToReissue.isNotEmpty())
-            "Asset issuance signers must contain issuer" using(
-                reissuanceRequest.assetIssuanceSigners.contains(reissuanceRequest.issuer))
+            "Asset destroy signers must contain issuer" using(
+                reissuanceRequest.assetDestroySigners.contains(reissuanceRequest.issuer))
         }
     }
 
@@ -53,8 +53,8 @@ class ReissuanceRequestContract<T>: Contract where T: ContractState {
         val reissuanceRequestInputs = tx.inputsOfType<ReissuanceRequest>()
         val reissuanceRequestOutputs = tx.outputsOfType<ReissuanceRequest>()
 
-        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock<T>>()
-        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock<T>>()
+        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock>()
+        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock>()
 
         requireThat {
             // command constraints

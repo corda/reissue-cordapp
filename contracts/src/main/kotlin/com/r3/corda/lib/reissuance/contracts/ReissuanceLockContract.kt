@@ -1,15 +1,17 @@
 package com.r3.corda.lib.reissuance.contracts
 
-import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.CompositeKey
 import net.corda.core.crypto.MerkleTree
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.componentHash
 import net.corda.core.serialization.deserialize
-import net.corda.core.transactions.*
+import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.WireTransaction
 
 class ReissuanceLockContract<T>: Contract where T: ContractState {
 
@@ -34,14 +36,14 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
         val reissuanceRequestInputs = tx.inputsOfType<ReissuanceRequest>()
         val reissuanceRequestOutputs = tx.outputsOfType<ReissuanceRequest>()
 
-        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock<T>>()
-        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock<T>>()
+        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock>()
+        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock>()
 
-        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> && it.state.data !is ReissuanceRequest }
-        val otherOutputs = tx.outputs.filter { it.data !is ReissuanceLock<*>  && it.data !is ReissuanceRequest }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock && it.state.data !is ReissuanceRequest }
+        val otherOutputs = tx.outputs.filter { it.data !is ReissuanceLock && it.data !is ReissuanceRequest }
 
         requireThat {
-            //// command constraints
+            // command constraints
 
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReissuanceRequest is expected" using (reissuanceRequestInputs.size == 1)
@@ -62,43 +64,57 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             "Issuer is the same in both ReissuanceRequest and ReissuanceLock" using (
                 reissuanceRequest.issuer == reissuanceLock.issuer)
 
-            val firstReissuedState = reissuanceLock.originalStates[0]
-            (1 until reissuanceRequest.stateRefsToReissue.size).forEach {
-                val reissuedState = reissuanceLock.originalStates[it]
+            val signedTransactions = getAttachedSignedTransaction(tx)
 
-                // participants for all re-issued states must be the same
-                "Participants in state to be re-issued ${reissuedState.ref} must be the same as participants in the first state to be re-issued ${reissuedState.ref}" using (
-                    reissuedState.state.data.participants.equals(firstReissuedState.state.data.participants))
+            "Proposed transaction input state's size must be equal to stateRefsToReissue size" using (
+                signedTransactions.sumBy { it.inputs.size } == reissuanceRequest.stateRefsToReissue.size)
 
-                // all re-issued states must be of the same type
-                "State to be re-issued ${reissuedState.ref} must be of the same type as the first state to be re-issued ${reissuedState.ref}" using (
-                    reissuedState.state.data::class.java == firstReissuedState.state.data::class.java)
-            }
+            "Proposed transaction input state's must contain all of the state refs to reissue" using (
+                signedTransactions.flatMap { it.inputs }.containsAll(reissuanceRequest.stateRefsToReissue.map { it.ref }))
+
+
+            "State's requested for re-issuance must be equivalent to output states" using (
+                reissuanceRequest.stateRefsToReissue.filterIndexed { index, stateAndRef ->
+                    stateAndRef.state.data != tx.outputs.filter { it.data !is ReissuanceLock }[index].data
+                }.isEmpty())
+
+            "Proposed transaction shouldn't have any output states" using (
+                signedTransactions.flatMap { it.coreTransaction.outputs }.isEmpty())
+
+            "Proposed transaction shouldn have the same tx id as the reissuanceLock" using (
+                signedTransactions.single().id == reissuanceLock.txHash.txId)
 
             // verify signers
             "Issuer is required signer" using (command.signers.contains(reissuanceRequest.issuer.owningKey))
 
-            //// state constraints
-
             // verify status
             "Re-issuance lock status is ACTIVE" using(
-                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
+                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
 
-            // verify state data
-            if (firstReissuedState.state.data is ReissuableState<*>) {
-                reissuanceLock.originalStates.forEachIndexed { index, stateAndRef ->
-                    val state = stateAndRef.state.data as ReissuableState<ContractState>
-                    val reissuedState = otherOutputs[index].data
-                    "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                            state.isEqualForReissuance(reissuedState))
-                }
-            } else {
-                "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                        reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            val signer = CompositeKey.Builder()
+                .addKeys(command.signers)
+                .build(1)
+
+            require(signer == reissuanceLock.getCompositeKey() ){
+                "The lockstate must be signed by a composite key derived from an equal weighting of the two participants"
+            }
+
+            require(reissuanceLock.timeWindow.untilTime != null ) {
+                "The time window on the lockstate must have an untilTime specified"
+            }
+
+            val timeWindowUntil = tx.timeWindow?.untilTime
+            require(timeWindowUntil != null &&
+                timeWindowUntil >= reissuanceLock.timeWindow.untilTime ) {
+                "The time window on the tx must have a greater untilTime than the lockState"
+            }
+
+            require(tx.outputs.filter { it.contract == contractId }.single().encumbrance != null) {
+                "The lock state must be encumbered"
             }
 
             // verify encumbrance
-            reissuanceLock.originalStates.forEach {
+            reissuanceRequest.stateRefsToReissue.forEach {
                 "Original states can't be encumbered" using (it.state.encumbrance  == null)
             }
             otherOutputs.forEach {
@@ -111,42 +127,33 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock<T>>()
-        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock<T>>()
-
-        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> }
-        val otherOutputs = tx.outputs.filter { it.data !is ReissuanceLock<*> }
+        val reissuanceLockInputs = tx.inputsOfType<ReissuanceLock>()
+        val reissuanceLockOutputs = tx.outputsOfType<ReissuanceLock>()
 
         requireThat {
             // verify number of inputs and outputs of a given type
             "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
             "Exactly one output of type ReissuanceLock is expected" using (reissuanceLockOutputs.size == 1)
 
-            "At least one input other than lock is expected" using otherInputs.isNotEmpty()
-            "The same number of inputs and outputs other than lock is expected" using (
-                otherInputs.size == otherOutputs.size)
-
             val reissuanceLockInput = reissuanceLockInputs[0]
             val reissuanceLockOutput = reissuanceLockOutputs[0]
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
             "Output re-issuance lock status is INACTIVE" using(
-                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus.INACTIVE)
+                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus2.INACTIVE)
 
             "Re-issuance lock properties hasn't change except for status" using(
-                reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus.ACTIVE))
+                reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus2.ACTIVE))
 
-            val requiredExitCommandSigners = reissuanceLockOutput.extraAssetExitCommandSigners
             val requester = reissuanceLockOutput.requester
+            val issuer = reissuanceLockOutput.issuer
 
-            val attachedSignedTransactions = getAttachedLedgerTransaction(tx)
+            val attachedSignedTransactions = getAttachedSignedTransaction(tx)
 
-            val lockedStatesRef = reissuanceLockInput.originalStates.map { it.ref }
-
-            "All locked states are inputs of attached transactions" using (
-                attachedSignedTransactions.flatMap { it.inputs }.containsAll(lockedStatesRef))
+            "Lock state hash is equal to attached signed transaction hash" using (
+                attachedSignedTransactions.single().id == reissuanceLockInput.txHash.txId)
             "Attached transactions don't have any outputs" using (
                 attachedSignedTransactions.flatMap{ it.coreTransaction.outputs }.isEmpty())
 
@@ -170,25 +177,13 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                         it.verify(attachedSignedTransaction.id))
                 }
                 "Requester is a signer of attached transaction ${attachedSignedTransaction.id}" using(
-                    attachedSignedTransaction.sigs.map { it.by }.contains(requester!!.owningKey))
+                    attachedSignedTransaction.sigs.map { it.by }.contains(requester.owningKey))
+                "Issuer is a signer of attached transaction ${attachedSignedTransaction.id}" using(
+                    attachedSignedTransaction.sigs.map { it.by }.contains(issuer.owningKey))
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
-                requiredExitCommandSigners.forEach { requiredSigner ->
-                    "Attached transaction ${attachedSignedTransaction.id} is signed with ${requiredSigner.owningKey}" using(
-                        attachedSignedTransaction.sigs.map { it.by }.contains(requiredSigner.owningKey))
-                }
 
             }
-
-            // verify encumbrance
-            otherInputs.forEach {
-                "Inputs other than ReissuanceLock must be encumbered" using (it.state.encumbrance != null)
-            }
-            otherOutputs.forEach {
-                "Outputs other than ReissuanceLock can't be encumbered" using (it.encumbrance == null)
-            }
-            "Input data other than ReissuanceLock are the same as output data other than ReissuanceLock" using (
-                otherInputs.map { it.state.data }.toSet() == otherOutputs.map { it.data }.toSet())
 
             // verify signers
             "Requester is required signer" using (command.signers.contains(reissuanceLockInput.requester.owningKey))
@@ -200,19 +195,23 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
     ) {
-        val reissuanceLockInputs = tx.inputs.filter { it.state.data is ReissuanceLock<*> }
-        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock<*> }
+        val reissuanceLockInputs = tx.inputs.filter { it.state.data is ReissuanceLock }
+        val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock }
+        val signedTransactions = getAttachedSignedTransaction(tx)
 
         requireThat {
             "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
-            val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock<T>
+            val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock
             "Number of other inputs is equal to originalStates length" using (
-                otherInputs.size == reissuanceLockInput.originalStates.size)
+                otherInputs.size == signedTransactions.sumBy { it.inputs.size })
             "No outputs are allowed" using tx.outputs.isEmpty()
+
+            "Lock state tx hash and attached transaction's hash must match" using (
+                reissuanceLockInput.txHash.txId == signedTransactions.single().id)
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
 
             // verify encumbrance
             "Input of type ReissuanceLock must be encumbered" using(reissuanceLockInputs[0].state.encumbrance != null)
@@ -224,14 +223,15 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             "Requester is required signer" using (command.signers.contains(reissuanceLockInput.requester.owningKey))
             "Issuer is required signer" using (command.signers.contains(reissuanceLockInput.issuer.owningKey))
         }
+
     }
 
-    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): List<SignedTransaction> {
+    private fun getAttachedSignedTransaction(tx: LedgerTransaction): List<SignedTransaction> {
         // Constraints on the included attachments.
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
         "The transaction should have at least one non-contract attachment" using (nonContractAttachments.isNotEmpty())
 
-        var attachedSignedTransactions = mutableListOf<SignedTransaction>()
+        val attachedSignedTransactions = mutableListOf<SignedTransaction>()
         nonContractAttachments.forEach { attachment ->
             val attachmentJar = attachment.openAsJAR()
             var nextEntry = attachmentJar.nextEntry
@@ -255,14 +255,14 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
     ): MerkleTree {
         val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
             wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed {
-                internalIndex, internalIt ->
+                    internalIndex, internalIt ->
                 componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
             }.toMap()
         }
 
         val availableComponentHashes = wireTransaction.componentGroups.map {
             Pair(it.groupIndex, it.components.mapIndexed {
-                internalIndex, internalIt ->
+                    internalIndex, internalIt ->
                 componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
         }.toMap()
 
@@ -282,7 +282,6 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             listOfLeaves
         }
         return MerkleTree.getMerkleTree(groupHashes)
-
     }
 
     interface Commands : CommandData {
