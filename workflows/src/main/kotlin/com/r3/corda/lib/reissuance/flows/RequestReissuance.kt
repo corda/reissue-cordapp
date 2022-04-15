@@ -1,9 +1,6 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
-import com.r3.corda.lib.reissuance.states.ReissuanceRequest
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateRef
@@ -11,8 +8,6 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
-import net.corda.core.node.StatesToRecord
-import net.corda.core.transactions.TransactionBuilder
 
 @InitiatingFlow
 @StartableByRPC
@@ -35,7 +30,7 @@ class RequestReissuance<T>(
         )
 
         return subFlow(
-            RequestReissuanceNonInitiating<T>(
+             RequestReissuanceNonInitiating<T>(
                 sessions,
                 issuer,
                 stateRefsToReissue,

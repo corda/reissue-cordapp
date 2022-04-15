@@ -3,6 +3,7 @@ package com.r3.corda.lib.reissuance.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
+import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -18,8 +19,8 @@ class RequestReissuanceNonInitiating<T>(
     private val sessions: List<FlowSession>,
     private val issuer: AbstractParty,
     private val stateRefsToReissue: List<StateRef>,
-    private val assetIssuanceCommand: CommandData,
-    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
+    private val assetDestroyCommand: CommandData,
+    private val extraAssetDestroySigners: List<AbstractParty> = listOf(), // issuer is always a signer
     private val requester: AbstractParty? = null, // requester needs to be provided when using accounts
     private val notary : Party? = null
 ) : FlowLogic<SecureHash>() where T: ContractState {
@@ -32,29 +33,43 @@ class RequestReissuanceNonInitiating<T>(
         }
         val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
 
-        require(!extraAssetIssuanceSigners.contains(issuer)) {
+        require(!extraAssetDestroySigners.contains(issuer)) {
             "Issuer is always a signer and shouldn't be passed in as a part of extraAssetIssuanceSigners" }
-        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
+        val issuanceSigners = listOf(issuer) + extraAssetDestroySigners
 
         val signers = listOf(requesterAbstractParty.owningKey)
 
-        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue,
-            assetIssuanceCommand, issuanceSigners)
+        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue.map {
+            serviceHub.toStateAndRef<ContractState>(it) }, assetDestroyCommand, issuanceSigners)
 
         val notaryToUse = notary ?: getPreferredNotary(serviceHub)
+
+        val destroyTransactionBuilder = TransactionBuilder(notaryToUse)
+        stateRefsToReissue.forEach {
+            destroyTransactionBuilder.addInputState(serviceHub.toStateAndRef<ContractState>(it))
+        }
+        destroyTransactionBuilder.addCommand(assetDestroyCommand, extraAssetDestroySigners.map { it.owningKey }.plus
+            (signers).plus(issuer.owningKey).distinct())
+        destroyTransactionBuilder.verify(serviceHub)
+        val destroyTx = serviceHub.signInitialTransaction(destroyTransactionBuilder, signers)
+
         val transactionBuilder = TransactionBuilder(notaryToUse)
         transactionBuilder.addOutputState(reissuanceRequest)
         transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
+        val transactionByteArray = convertSignedTransactionToByteArray(destroyTx)
+        val attachmentId = serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
+        transactionBuilder.addAttachment(attachmentId)
 
         transactionBuilder.verify(serviceHub)
         val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
-        return subFlow(
+        subFlow(
             FinalityFlow(
                 transaction = signedTransaction,
                 sessions = sessions
             )
-        ).id
+        )
+        return attachmentId
     }
 }
 
