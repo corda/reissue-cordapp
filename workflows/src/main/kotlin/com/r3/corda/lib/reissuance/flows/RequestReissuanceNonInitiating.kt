@@ -51,7 +51,7 @@ class RequestReissuanceNonInitiating<T>(
         destroyTransactionBuilder.addCommand(assetDestroyCommand, extraAssetDestroySigners.map { it.owningKey }.plus
             (signers).plus(issuer.owningKey).distinct())
         destroyTransactionBuilder.verify(serviceHub)
-        val destroyTx = serviceHub.signInitialTransaction(destroyTransactionBuilder, signers)
+        val destroyTx = serviceHub.signInitialTransaction(destroyTransactionBuilder, signers.filter { it != issuer })
 
         val transactionBuilder = TransactionBuilder(notaryToUse)
         transactionBuilder.addOutputState(reissuanceRequest)
