@@ -646,9 +646,16 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val stateAndRefToDelete = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode)
         val exitTransactionId = deleteDummyStateWithInvalidEqualsMethod(aliceNode, stateAndRefToDelete.last())
 
+        val transactionByteArray = convertSignedTransactionToByteArray(
+            aliceNode.services.validatedTransactions.getTransaction(exitTransactionId)!!
+        )
+
+        val exitTransactionAttachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceNode.services
+            .ourIdentity.toString(), null)
+
         unlockReissuedState<DummyStateWithInvalidEqualsMethod>(
             aliceNode,
-            listOf(exitTransactionId),
+            listOf(exitTransactionAttachmentId),
             DummyStateWithInvalidEqualsMethodContract.Commands.Update(),
             getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode, encumbered = true),
             getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]

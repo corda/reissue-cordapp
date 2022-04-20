@@ -178,7 +178,8 @@ abstract class AbstractContractTest {
         inputContractId: String,
         inputs: List<StateAndRef<ContractState>>,
         reissuanceLockStatus: ReissuanceLock.ReissuanceLockStatus2 = ReissuanceLock.ReissuanceLockStatus2.ACTIVE,
-        nodesToSign: List<TestStartedNode> = listOf(aliceNode)
+        nodesToSign: List<TestStartedNode> = listOf(aliceNode),
+        isSigned: Boolean = false
     ): Pair<ReissuanceLock,
         SecureHash> {
 
@@ -194,7 +195,11 @@ abstract class AbstractContractTest {
         val dummyReissuanceRequest = if (inputContractId == SimpleDummyStateContract.contractId)
             createSimpleDummyStateReissuanceRequest(tx!!.inputs) else createTokensReissuanceRequest(tx!!.inputs)
         val uploadedSignedTransactionSecureHash = issuerNode.services.attachments.importAttachment(
-            generateSignedTransactionByteArrayInputStream(tx!!, nodesToSign), aliceParty.toString(), null)
+            if (isSigned) {
+                generateSignedTransactionByteArrayInputStream(tx!!, nodesToSign)
+            } else {
+                generateWireTransactionByteArrayInputStream(tx!!)
+            }, aliceParty.toString(), null)
 
         val reissuanceLock = createDummyReissuanceLock2(
             signableData = createSignableData(tx!!.id, issuerParty.owningKey),

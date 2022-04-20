@@ -64,13 +64,13 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             "Issuer is the same in both ReissuanceRequest and ReissuanceLock" using (
                 reissuanceRequest.issuer == reissuanceLock.issuer)
 
-            val signedTransactions = getAttachedSignedTransaction(tx)
+            val wireTransactions = getAttachedWireTransactions(tx)
 
             "Proposed transaction input state's size must be equal to stateRefsToReissue size" using (
-                signedTransactions.sumBy { it.inputs.size } == reissuanceRequest.stateRefsToReissue.size)
+                wireTransactions.sumBy { it.inputs.size } == reissuanceRequest.stateRefsToReissue.size)
 
             "Proposed transaction input state's must contain all of the state refs to reissue" using (
-                signedTransactions.flatMap { it.inputs }.containsAll(reissuanceRequest.stateRefsToReissue.map { it.ref }))
+                wireTransactions.flatMap { it.inputs }.containsAll(reissuanceRequest.stateRefsToReissue.map { it.ref }))
 
 
             "State's requested for re-issuance must be equivalent to output states" using (
@@ -79,10 +79,10 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                 }.isEmpty())
 
             "Proposed transaction shouldn't have any output states" using (
-                signedTransactions.flatMap { it.coreTransaction.outputs }.isEmpty())
+                wireTransactions.flatMap { it.outputs }.isEmpty())
 
             "Proposed transaction shouldn have the same tx id as the reissuanceLock" using (
-                signedTransactions.single().id == reissuanceLock.txHash.txId)
+                wireTransactions.single().id == reissuanceLock.txHash.txId)
 
             // verify signers
             "Issuer is required signer" using (command.signers.contains(reissuanceRequest.issuer.owningKey))
@@ -164,7 +164,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                 attachedWireTransaction!!
                 "Id of attached SignedTransaction ${attachedSignedTransaction.id} is equal to id of WireTransaction" using(
                     attachedSignedTransaction.id == attachedWireTransaction.id)
-                "Id of attached WireTransaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
+                "Id of attached SignedTransaction ${attachedSignedTransaction.id} is equal to merkle tree hash" using(
                     attachedWireTransaction.id == attachedWireTransaction.merkleTree.hash)
                 "Merkle tree of attached transaction ${attachedSignedTransaction.id} is valid" using (
                     generateWireTransactionMerkleTree(attachedWireTransaction) == attachedWireTransaction.merkleTree)
@@ -197,17 +197,17 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
     ) {
         val reissuanceLockInputs = tx.inputs.filter { it.state.data is ReissuanceLock }
         val otherInputs = tx.inputs.filter { it.state.data !is ReissuanceLock }
-        val signedTransactions = getAttachedSignedTransaction(tx)
+        val wireTransactions = getAttachedWireTransactions(tx)
 
         requireThat {
             "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
             val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock
             "Number of other inputs is equal to originalStates length" using (
-                otherInputs.size == signedTransactions.sumBy { it.inputs.size })
+                otherInputs.size == wireTransactions.sumBy { it.inputs.size })
             "No outputs are allowed" using tx.outputs.isEmpty()
 
             "Lock state tx hash and attached transaction's hash must match" using (
-                reissuanceLockInput.txHash.txId == signedTransactions.single().id)
+                reissuanceLockInput.txHash.txId == wireTransactions.single().id)
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
@@ -226,6 +226,29 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
     }
 
+    private fun getAttachedWireTransactions(tx: LedgerTransaction): List<WireTransaction> {
+        // Constraints on the included attachments.
+        val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
+        "The transaction should have at least one non-contract attachment" using (nonContractAttachments.isNotEmpty())
+
+        val attachedWireTransactions = mutableListOf<WireTransaction>()
+        nonContractAttachments.forEach { attachment ->
+            val attachmentJar = attachment.openAsJAR()
+            var nextEntry = attachmentJar.nextEntry
+            while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
+                nextEntry = attachmentJar.nextEntry
+            }
+
+            if(nextEntry != null) {
+                val transactionBytes = attachmentJar.readBytes()
+                attachedWireTransactions.add(transactionBytes.deserialize<WireTransaction>())
+            }
+
+        }
+
+        return attachedWireTransactions
+    }
+
     private fun getAttachedSignedTransaction(tx: LedgerTransaction): List<SignedTransaction> {
         // Constraints on the included attachments.
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
@@ -236,7 +259,6 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             val attachmentJar = attachment.openAsJAR()
             var nextEntry = attachmentJar.nextEntry
             while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
                 nextEntry = attachmentJar.nextEntry
             }
 

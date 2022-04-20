@@ -26,8 +26,8 @@ class AcceptReissuanceRequestAndCreateReissuanceLockContractTest: AbstractContra
         }
 
         val dummyReissuanceRequest = createSimpleDummyStateReissuanceRequest(tx!!.inputs)
-        val uploadedSignedTransactionSecureHash = issuerNode.services.attachments.importAttachment(
-            generateSignedTransactionByteArrayInputStream(tx!!, listOf(aliceNode)), aliceParty.toString(), null)
+        val uploadedWireTransactionSecureHash = issuerNode.services.attachments.importAttachment(
+            generateWireTransactionByteArrayInputStream(tx!!), aliceParty.toString(), null)
 
         issuerNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -44,7 +44,7 @@ class AcceptReissuanceRequestAndCreateReissuanceLockContractTest: AbstractContra
                         timeWindow = TimeWindow.untilOnly(Instant.now().plusSeconds(5))
                     ),
                     encumbrance = 1)
-                attachment(uploadedSignedTransactionSecureHash)
+                attachment(uploadedWireTransactionSecureHash)
                 output(SimpleDummyStateContract.contractId, reissuedStateLabel, contractState = createSimpleDummyState(), encumbrance = 0)
                 command(listOf(issuerParty.owningKey), ReissuanceRequestContract.Commands.Accept())
                 command(listOf(issuerParty.owningKey, aliceParty.owningKey), ReissuanceLockContract.Commands.Create())
@@ -72,8 +72,8 @@ class AcceptReissuanceRequestAndCreateReissuanceLockContractTest: AbstractContra
         }
 
         val dummyReissuanceRequest = createTokensReissuanceRequest(tx!!.inputs)
-        val uploadedSignedTransactionSecureHash = issuerNode.services.attachments.importAttachment(
-            generateSignedTransactionByteArrayInputStream(tx!!, listOf(aliceNode)), aliceParty.toString(), null)
+        val uploadedWireTransactionSecureHash = issuerNode.services.attachments.importAttachment(
+            generateWireTransactionByteArrayInputStream(tx!!), aliceParty.toString(), null)
 
         issuerNode.services.ledger(notary = notaryParty) {
             unverifiedTransaction {
@@ -82,7 +82,7 @@ class AcceptReissuanceRequestAndCreateReissuanceLockContractTest: AbstractContra
 
             transaction {
                 input(ReissuanceRequestContract.contractId, dummyReissuanceRequest)
-                attachment(uploadedSignedTransactionSecureHash)
+                attachment(uploadedWireTransactionSecureHash)
                 output(FungibleTokenContract.contractId, reissuedStateLabel(0), contractState = createToken(), encumbrance = 1)
                 output(FungibleTokenContract.contractId, reissuedStateLabel(1), contractState = createToken(), encumbrance = 2)
                 output(FungibleTokenContract.contractId, reissuedStateLabel(2), contractState = createToken(), encumbrance = 3)

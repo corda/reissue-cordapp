@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
+import com.r3.corda.lib.reissuance.utils.convertWireTransactionToByteArray
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -50,13 +51,13 @@ class RequestReissuanceNonInitiating<T>(
         }
         destroyTransactionBuilder.addCommand(assetDestroyCommand, extraAssetDestroySigners.map { it.owningKey }.plus
             (signers).plus(issuer.owningKey).distinct())
-        destroyTransactionBuilder.verify(serviceHub)
-        val destroyTx = serviceHub.signInitialTransaction(destroyTransactionBuilder, signers.filter { it != issuer })
+
+        val destroyTx = destroyTransactionBuilder.toWireTransaction(serviceHub)
 
         val transactionBuilder = TransactionBuilder(notaryToUse)
         transactionBuilder.addOutputState(reissuanceRequest)
         transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
-        val transactionByteArray = convertSignedTransactionToByteArray(destroyTx)
+        val transactionByteArray = convertWireTransactionToByteArray(destroyTx)
         val attachmentId = serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
         transactionBuilder.addAttachment(attachmentId)
 

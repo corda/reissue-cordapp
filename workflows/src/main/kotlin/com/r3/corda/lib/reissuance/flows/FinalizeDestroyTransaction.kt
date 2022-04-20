@@ -6,6 +6,8 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.transactions.WireTransaction
 
 @InitiatingFlow
 @StartableByRPC
@@ -18,29 +20,26 @@ class FinalizeDestroyTransaction(
         val tx = serviceHub.attachments.openAttachment(txAttachmentId)?.let { attachment ->
             attachment.openAsJAR().use {
                 var nextEntry = it.nextEntry
-                while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                    // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
                     nextEntry = it.nextEntry
                 }
                 if(nextEntry != null) {
-                    it.readBytes().deserialize<SignedTransaction>()
+                    it.readBytes().deserialize<WireTransaction>()
                 } else throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
             }
         } ?: throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
 
-        val signers = tx.requiredSigningKeys.filter { it != serviceHub.ourIdentity.owningKey }.mapNotNull {
+        val signers = tx.requiredSigningKeys.mapNotNull {
             serviceHub.identityService.partyFromKey(it)
         }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
 
         val sameHostSigners = tx.requiredSigningKeys.filter { pk ->
-            !tx.sigs.map { it.by }.contains(pk)
-        }.filter { pk ->
             serviceHub.identityService.partyFromKey(pk) == serviceHub.ourIdentity
         }
 
-        var signedTx = tx
+        var signedTx = serviceHub.signInitialTransaction(tx.toTransactionBuilder(serviceHub))
         sameHostSigners.forEach {
             signedTx = serviceHub.addSignature(signedTx, it)
         }

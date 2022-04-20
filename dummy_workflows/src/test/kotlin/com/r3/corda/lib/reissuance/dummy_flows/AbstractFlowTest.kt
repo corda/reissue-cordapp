@@ -50,6 +50,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.singleIdentity
@@ -697,16 +698,15 @@ abstract class AbstractFlowTest {
         return flowFuture.getOrThrow()
     }
 
-    fun getAttachedTransaction(node: TestStartedNode, attachmentId: SecureHash): SignedTransaction {
+    fun getAttachedWireTransaction(node: TestStartedNode, attachmentId: SecureHash): WireTransaction {
         return node.services.attachments.openAttachment(attachmentId)?.let { attachment ->
             attachment.openAsJAR().use {
                 var nextEntry = it.nextEntry
-                while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                    // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
                     nextEntry = it.nextEntry
                 }
                 if(nextEntry != null) {
-                    it.readBytes().deserialize<SignedTransaction>()
+                    it.readBytes().deserialize<WireTransaction>()
                 } else throw IllegalArgumentException("Transaction with id $attachmentId not found")
             }
         } ?: throw IllegalArgumentException("Transaction with id $attachmentId not found")

@@ -2,6 +2,7 @@ package com.r3.corda.lib.reissuance.dummy_flows.dummy.responders
 
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
+import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.flows.UnlockReissuedStates
 import com.r3.corda.lib.reissuance.flows.UnlockReissuedStatesResponder
@@ -22,7 +23,8 @@ class DummyUnlockReissuedStatesResponder(
                 otherOutputs[0].data::class.java == DummyStateRequiringAcceptance::class.java ||
                     otherOutputs[0].data::class.java == DummyStateRequiringAllParticipantsSignatures::class.java ||
                     otherOutputs[0].data::class.java == SimpleDummyState::class.java ||
-                    otherOutputs[0].data::class.java == FungibleToken::class.java
+                    otherOutputs[0].data::class.java == FungibleToken::class.java ||
+                    otherOutputs[0].data::class.java == DummyStateWithInvalidEqualsMethod::class.java
                 )
         }
     }}

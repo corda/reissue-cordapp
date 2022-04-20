@@ -12,7 +12,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
         val dummyState = createSimpleDummyStateAndRef()
 
         val reissuanceLockAndHashPair = prepareReissuanceLockState(SimpleDummyStateContract.contractId, listOf(dummyState),
-            nodesToSign = listOf(aliceNode, notaryNode, issuerNode))
+            nodesToSign = listOf(aliceNode, notaryNode, issuerNode), isSigned = true)
         val reissuanceLock = reissuanceLockAndHashPair.first
 
         issuerNode.services.ledger(notary = notaryParty) {
@@ -36,7 +36,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
         val dummyState2 = createSimpleDummyStateAndRef()
 
         val reissuanceLockAndHashPair = prepareReissuanceLockState(SimpleDummyStateContract.contractId, listOf(dummyState1, dummyState2),
-            nodesToSign = listOf(aliceNode, notaryNode, issuerNode))
+            nodesToSign = listOf(aliceNode, notaryNode, issuerNode), isSigned = true)
         val reissuanceLock = reissuanceLockAndHashPair.first
 
         issuerNode.services.ledger(notary = notaryParty) {

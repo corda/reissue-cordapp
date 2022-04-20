@@ -24,6 +24,7 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.unwrap
 import java.time.Instant
 
@@ -41,12 +42,11 @@ class ReissueStates<T>(
         val tx = serviceHub.attachments.openAttachment(txAttachmentId)?.let { attachment ->
             attachment.openAsJAR().use {
                 var nextEntry = it.nextEntry
-                while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                    // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+                while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
                     nextEntry = it.nextEntry
                 }
                 if(nextEntry != null) {
-                    it.readBytes().deserialize<SignedTransaction>()
+                    it.readBytes().deserialize<WireTransaction>()
                 } else throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
             }
         } ?: throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
@@ -182,7 +182,7 @@ abstract class ReissueStatesResponder(
             "Status or ReissuanceLock is ACTIVE" using (
                 reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
 
-            val attachedTransactions = getAttachedLedgerTransaction(ledgerTransaction)
+            val attachedTransactions = getAttachedWireTransaction(ledgerTransaction)
 
             if (attachedTransactions.singleOrNull { it.id == reissuanceLock.txHash.txId } == null) {
                 throw IllegalArgumentException("Attached transaction doesn't match transaction from lock state")
@@ -210,28 +210,26 @@ abstract class ReissueStatesResponder(
 
     abstract fun checkConstraints(stx: SignedTransaction)
 
-    private fun getAttachedLedgerTransaction(tx: LedgerTransaction): List<SignedTransaction> {
-        // Constraints on the included attachments.
+    private fun getAttachedWireTransaction(tx: LedgerTransaction): List<WireTransaction> {
         val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
         "The transaction should have at least one non-contract attachment" using (nonContractAttachments.isNotEmpty())
 
-        val attachedSignedTransactions = mutableListOf<SignedTransaction>()
+        val attachedWireTransaction = mutableListOf<WireTransaction>()
         nonContractAttachments.forEach { attachment ->
             val attachmentJar = attachment.openAsJAR()
             var nextEntry = attachmentJar.nextEntry
-            while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
+            while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
                 nextEntry = attachmentJar.nextEntry
             }
 
             if(nextEntry != null) {
                 val transactionBytes = attachmentJar.readBytes()
-                attachedSignedTransactions.add(transactionBytes.deserialize<SignedTransaction>())
+                attachedWireTransaction.add(transactionBytes.deserialize<WireTransaction>())
             }
 
         }
 
-        return attachedSignedTransactions
+        return attachedWireTransaction
     }
 
     @Suspendable

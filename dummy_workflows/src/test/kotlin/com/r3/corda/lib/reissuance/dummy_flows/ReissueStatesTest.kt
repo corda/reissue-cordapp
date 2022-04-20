@@ -36,7 +36,7 @@ class ReissueStatesTest: AbstractFlowTest() {
         val unencumberedStates = getStateAndRefs<T>(node, encumbered = false, accountUUID = accountUUID)
         val lockStates = getStateAndRefs<ReissuanceLock>(node, encumbered = true,
             accountUUID = accountUUID)
-        val deleteTx = getAttachedTransaction(node, deleteTxAttachmentId)
+        val deleteTx = getAttachedWireTransaction(node, deleteTxAttachmentId)
 
         assertThat(encumberedStates, hasSize(`is`(statesNum)))
         assertThat(unencumberedStates, hasSize(`is`(statesNum)))
@@ -347,7 +347,7 @@ class ReissueStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(bobNode)[0]
         reissueRequestedStates<FungibleToken>(bobNode, reissuanceRequest, IssueTokenCommand(issuedTokenType, tokens.indices.toList()),
-            listOf(issuerParty), requestReissuanceTransactionId)
+            listOf(), requestReissuanceTransactionId)
 
     }
 
