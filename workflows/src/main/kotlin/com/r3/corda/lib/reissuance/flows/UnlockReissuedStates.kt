@@ -60,7 +60,7 @@ class UnlockReissuedStates<T>(
         transactionBuilder.addCommand(assetUnencumberCommand, reissuedStatesSigners)
 
         val inactiveReissuanceLock = (reissuanceLock.state.data).copy(
-            status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE
+            status = ReissuanceLock.ReissuanceLockStatus.INACTIVE
         )
 
         transactionBuilder.addInputState(reissuanceLock)
@@ -126,9 +126,9 @@ abstract class UnlockReissuedStatesResponder(
             reissuanceLockInput = reissuanceLockInputs[0]
             reissuanceLockOutput = reissuanceLockOutputs[0]
             "Status of input ReissuanceLock is ACTIVE" using (
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
             "Status of output ReissuanceLock is INACTIVE" using (
-                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus2.INACTIVE)
+                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
             otherInputs = ledgerTransaction.inputs.filter { it.state.data !is ReissuanceLock }
             "Inputs other than ReissuanceLock are of the same type" using (

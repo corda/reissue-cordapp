@@ -133,7 +133,7 @@ class AcceptReissuanceRequestAndCreateReissuanceLockContractTest: AbstractContra
                         signableData = createSignableData(tx!!.id, issuerParty.owningKey),
                         requiredSigners = listOf(issuerParty, aliceParty),
                         timeWindow = TimeWindow.untilOnly(Instant.now().plusSeconds(5)),
-                        status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE
+                        status = ReissuanceLock.ReissuanceLockStatus.INACTIVE
                     ),
                     encumbrance = 1)
                 attachment(uploadedWireTransactionSecureHash)

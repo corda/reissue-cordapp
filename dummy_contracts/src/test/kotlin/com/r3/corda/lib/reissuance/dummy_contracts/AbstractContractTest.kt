@@ -140,7 +140,7 @@ abstract class AbstractContractTest {
     fun createDummyReissuanceLock2(
         signableData: SignableData,
         requiredSigners: List<AbstractParty>,
-        status: ReissuanceLock.ReissuanceLockStatus2 = ReissuanceLock.ReissuanceLockStatus2.ACTIVE,
+        status: ReissuanceLock.ReissuanceLockStatus = ReissuanceLock.ReissuanceLockStatus.ACTIVE,
         timeWindow: TimeWindow
     ): ReissuanceLock {
         return ReissuanceLock(issuerParty, aliceParty, signableData, status, timeWindow, requiredSigners)
@@ -177,7 +177,7 @@ abstract class AbstractContractTest {
     fun prepareReissuanceLockState(
         inputContractId: String,
         inputs: List<StateAndRef<ContractState>>,
-        reissuanceLockStatus: ReissuanceLock.ReissuanceLockStatus2 = ReissuanceLock.ReissuanceLockStatus2.ACTIVE,
+        reissuanceLockStatus: ReissuanceLock.ReissuanceLockStatus = ReissuanceLock.ReissuanceLockStatus.ACTIVE,
         nodesToSign: List<TestStartedNode> = listOf(aliceNode),
         isSigned: Boolean = false
     ): Pair<ReissuanceLock,

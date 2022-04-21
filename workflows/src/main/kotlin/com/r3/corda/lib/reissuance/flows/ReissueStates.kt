@@ -113,6 +113,11 @@ class ReissueStates<T>(
                 encumbrance += 1
             }
 
+        val references = statesToReissue.map { it.ref.txhash }.distinct()
+            .mapNotNull { serviceHub.validatedTransactions.getTransaction(it) }
+            .map { it.references }.flatten()
+            .map { ref -> serviceHub.toStateAndRef<ContractState>(ref) }.distinct()
+
         transactionBuilder.addCommand(assetCreateCommand, extraAssetCreateSigners.map { it
             .owningKey }.plus(requester.owningKey))
 
@@ -122,6 +127,9 @@ class ReissueStates<T>(
             notary = notary,
             encumbrance = 0
         )
+        references.forEach {
+            transactionBuilder.addReferenceState(it.referenced())
+        }
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Create(), lockSigners)
         transactionBuilder.setTimeWindow(TimeWindow.untilOnly(Instant.now().plusSeconds(REISSUANCE_LOCK_TX_UNTIL_ONLY_SECONDS)))
 
@@ -180,7 +188,7 @@ abstract class ReissueStatesResponder(
             "Outputs other than ReissuanceLock are encumbered" using otherOutputs.none { it.encumbrance == null }
             reissuanceLock = reissuanceLocks[0]
             "Status or ReissuanceLock is ACTIVE" using (
-                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
+                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             val attachedTransactions = getAttachedWireTransaction(ledgerTransaction)
 

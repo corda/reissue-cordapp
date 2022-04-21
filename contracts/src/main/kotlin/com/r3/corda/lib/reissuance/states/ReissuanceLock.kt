@@ -15,13 +15,13 @@ data class ReissuanceLock(
     val issuer: AbstractParty,
     val requester: AbstractParty,
     val txHash: SignableData,
-    val status: ReissuanceLockStatus2 = ReissuanceLockStatus2.ACTIVE,
+    val status: ReissuanceLockStatus = ReissuanceLockStatus.ACTIVE,
     val timeWindow: TimeWindow,
     override val participants: List<AbstractParty> = listOf(issuer, requester)
 ): ContractState {
 
     @CordaSerializable
-    enum class ReissuanceLockStatus2 {
+    enum class ReissuanceLockStatus {
         ACTIVE,
         INACTIVE
     }

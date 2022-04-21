@@ -53,7 +53,7 @@ class ModifiedUnlockReissuedStates<T>(
         transactionBuilder.addCommand(assetUnencumberCommand, reissuedStatesSigners)
 
         val inactiveReissuanceLock = (reissuanceLock.state.data).copy(
-            status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE)
+            status = ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
         transactionBuilder.addInputState(reissuanceLock)
         transactionBuilder.addOutputState(inactiveReissuanceLock)

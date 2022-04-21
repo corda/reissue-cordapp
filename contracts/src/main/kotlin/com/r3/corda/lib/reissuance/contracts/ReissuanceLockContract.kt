@@ -89,7 +89,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
             // verify status
             "Re-issuance lock status is ACTIVE" using(
-                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
+                reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             val signer = CompositeKey.Builder()
                 .addKeys(command.signers)
@@ -140,12 +140,12 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
             "Output re-issuance lock status is INACTIVE" using(
-                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus2.INACTIVE)
+                reissuanceLockOutput.status == ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
             "Re-issuance lock properties hasn't change except for status" using(
-                reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus2.ACTIVE))
+                reissuanceLockInput == reissuanceLockOutput.copy(status = ReissuanceLock.ReissuanceLockStatus.ACTIVE))
 
             val requester = reissuanceLockOutput.requester
             val issuer = reissuanceLockOutput.issuer
@@ -211,7 +211,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
             // verify status
             "Input re-issuance lock status is ACTIVE" using(
-                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus2.ACTIVE)
+                reissuanceLockInput.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             // verify encumbrance
             "Input of type ReissuanceLock must be encumbered" using(reissuanceLockInputs[0].state.encumbrance != null)

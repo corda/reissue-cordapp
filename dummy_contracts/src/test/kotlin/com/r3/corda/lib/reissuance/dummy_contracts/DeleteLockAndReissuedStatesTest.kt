@@ -94,7 +94,7 @@ class DeleteLockAndReissuedStatesTest: AbstractContractTest() {
     fun `Re-issuance lock can't be deleted without re-issued state`() {
         val dummyState = createSimpleDummyStateAndRef()
         val reissuanceLockAndHashPair = prepareReissuanceLockState(SimpleDummyStateContract.contractId, listOf
-            (dummyState), ReissuanceLock.ReissuanceLockStatus2.INACTIVE)
+            (dummyState), ReissuanceLock.ReissuanceLockStatus.INACTIVE)
         val reissuanceLock = reissuanceLockAndHashPair.first
 
         issuerNode.services.ledger(notary = notaryParty) {

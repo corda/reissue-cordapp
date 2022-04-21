@@ -22,7 +22,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 verifies()
@@ -46,7 +46,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 verifies()
@@ -70,7 +70,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
@@ -94,7 +94,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.ACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.ACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
@@ -116,7 +116,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
@@ -139,7 +139,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 input(ReissuanceLockContract.contractId, reissuanceLock)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
@@ -161,7 +161,7 @@ class UnlockReissuedStateTest: AbstractContractTest() {
                 attachment(reissuanceLockAndHashPair.second)
                 output(
                     ReissuanceLockContract.contractId,
-                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus2.INACTIVE))
+                    reissuanceLock.copy(status = ReissuanceLock.ReissuanceLockStatus.INACTIVE))
                 command(listOf(aliceParty.owningKey), ReissuanceLockContract.Commands.Deactivate())
                 command(listOf(aliceParty.owningKey), SimpleDummyStateContract.Commands.Update())
                 fails()
