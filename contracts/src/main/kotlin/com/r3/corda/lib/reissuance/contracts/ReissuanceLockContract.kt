@@ -1,5 +1,6 @@
 package com.r3.corda.lib.reissuance.contracts
 
+import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
@@ -75,7 +76,9 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
             "State's requested for re-issuance must be equivalent to output states" using (
                 reissuanceRequest.stateRefsToReissue.filterIndexed { index, stateAndRef ->
-                    stateAndRef.state.data != tx.outputs.filter { it.data !is ReissuanceLock }[index].data
+                    val reissuableState = stateAndRef.state.data as? ReissuableState<ContractState>
+                    reissuableState?.let { state -> !state.isEqualForReissuance(tx.outputs.filter { it.data !is ReissuanceLock }[index].data) }
+                        ?: (stateAndRef.state.data != tx.outputs.filter { it.data !is ReissuanceLock }[index].data)
                 }.isEmpty())
 
             "Proposed transaction shouldn't have any output states" using (
