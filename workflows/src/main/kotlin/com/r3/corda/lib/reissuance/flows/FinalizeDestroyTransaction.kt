@@ -33,7 +33,7 @@ class FinalizeDestroyTransaction(
             serviceHub.identityService.partyFromKey(it)
         }
 
-        val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
+        val signersSessions = subFlow(GenerateRequiredFlowSessions(signers.filter { it != tx.notary }))
 
         val sameHostSigners = tx.requiredSigningKeys.filter { pk ->
             serviceHub.identityService.partyFromKey(pk) == serviceHub.ourIdentity
@@ -44,7 +44,7 @@ class FinalizeDestroyTransaction(
             signedTx = serviceHub.addSignature(signedTx, it)
         }
 
-        val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTx, signersSessions.filter { it.counterparty != tx.notary }))
+        val fullySignedTransaction = subFlow(CollectSignaturesFlow(signedTx, signersSessions))
 
         return subFlow(FinalityFlow(
             fullySignedTransaction, signersSessions
