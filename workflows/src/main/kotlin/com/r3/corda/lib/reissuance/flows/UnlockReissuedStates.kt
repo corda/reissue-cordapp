@@ -23,12 +23,11 @@ class UnlockReissuedStates<T>(
 ) : FlowLogic<SecureHash>() where T : ContractState {
     @Suspendable
     override fun call(): SecureHash {
-        assetExitTransactionIds.map { hash ->
+        val txs = assetExitTransactionIds.map { hash ->
             serviceHub.attachments.openAttachment(hash)?.let { attachment ->
                 attachment.openAsJAR().use {
                     var nextEntry = it.nextEntry
                     while (nextEntry != null && !nextEntry.name.startsWith("SignedTransaction")) {
-                        // Calling `attachmentJar.nextEntry` causes us to scroll through the JAR.
                         nextEntry = it.nextEntry
                     }
                     if (nextEntry != null) {
@@ -58,6 +57,12 @@ class UnlockReissuedStates<T>(
             transactionBuilder.addOutputState(reissuedStateAndRef.state.data)
         }
         transactionBuilder.addCommand(assetUnencumberCommand, reissuedStatesSigners)
+
+        txs.forEach { tx ->
+            tx?.let { it.references.forEach { stateRef ->
+                transactionBuilder.addReferenceState(serviceHub.toStateAndRef<ContractState>(stateRef).referenced())
+            } }
+        }
 
         val inactiveReissuanceLock = (reissuanceLock.state.data).copy(
             status = ReissuanceLock.ReissuanceLockStatus.INACTIVE
