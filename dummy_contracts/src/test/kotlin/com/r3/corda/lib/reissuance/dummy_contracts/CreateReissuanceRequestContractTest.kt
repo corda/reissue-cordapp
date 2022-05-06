@@ -10,7 +10,8 @@ class CreateReissuanceRequestContractTest: AbstractContractTest() {
     fun `Re-issuance request is created`() {
         aliceNode.services.ledger(notary = notaryParty) {
             transaction {
-                output(ReissuanceRequestContract.contractId, createSimpleDummyStateReissuanceRequest(
+                output(
+                    ReissuanceRequestContract.contractId, createSimpleDummyStateReissuanceRequest(
                     listOf(createDummyRef())))
                 command(listOf(aliceParty.owningKey), ReissuanceRequestContract.Commands.Create())
                 verifies()

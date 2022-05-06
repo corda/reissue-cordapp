@@ -22,7 +22,7 @@ class UnlockSimpleDummyState(
     @Suspendable
     override fun call(): SecureHash {
         val reissuanceLockRef = parseStateReference(reissuanceLockRefString)
-        val reissuanceLockStateAndRef = serviceHub.vaultService.queryBy<ReissuanceLock<SimpleDummyState>>(
+        val reissuanceLockStateAndRef = serviceHub.vaultService.queryBy<ReissuanceLock>(
             criteria= QueryCriteria.VaultQueryCriteria(stateRefs = listOf(reissuanceLockRef))
         ).states[0]
 

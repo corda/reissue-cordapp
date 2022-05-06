@@ -5,7 +5,6 @@ import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
 import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
-import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
@@ -22,7 +21,7 @@ import net.corda.core.utilities.unwrap
 @StartableByRPC
 class ModifiedUnlockReissuedStates<T>(
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
-    private val reissuanceLock: StateAndRef<ReissuanceLock<T>>,
+    private val reissuanceLock: StateAndRef<ReissuanceLock>,
     private val transactionByteArrays: List<ByteArray>,
     private val assetUnencumberCommand: CommandData,
     private val extraAssetUnencumberCommandSigners: List<AbstractParty> = listOf() // requester is always a signer
@@ -53,7 +52,7 @@ class ModifiedUnlockReissuedStates<T>(
         }
         transactionBuilder.addCommand(assetUnencumberCommand, reissuedStatesSigners)
 
-        var inactiveReissuanceLock = (reissuanceLock.state.data).copy(
+        val inactiveReissuanceLock = (reissuanceLock.state.data).copy(
             status = ReissuanceLock.ReissuanceLockStatus.INACTIVE)
 
         transactionBuilder.addInputState(reissuanceLock)

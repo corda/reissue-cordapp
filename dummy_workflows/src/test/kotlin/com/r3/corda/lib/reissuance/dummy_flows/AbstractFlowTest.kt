@@ -44,13 +44,15 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
+import net.corda.core.node.services.AttachmentId
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
-import net.corda.testing.core.DUMMY_NOTARY_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.MockNetworkNotarySpec
 import net.corda.testing.node.internal.*
@@ -121,6 +123,7 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.reissuance.contracts"),
                 findCordapp("com.r3.corda.lib.reissuance.dummy_contracts"),
                 findCordapp("com.r3.corda.lib.reissuance.flows"),
+                findCordapp("com.r3.corda.lib.reissuance.constants"),
                 findCordapp("com.r3.corda.lib.reissuance.dummy_flows")
             ),
             notarySpecs = listOf(notary1Name, notary2Name).map { MockNetworkNotarySpec(it) },
@@ -269,7 +272,7 @@ abstract class AbstractFlowTest {
         accountParty: AbstractParty,
         others: List<TestStartedNode>
     ) {
-        if (!host.info.legalIdentities[0].equals(accountInfo!!.host)) {
+        if (!host.info.legalIdentities[0].equals(accountInfo.host)) {
             throw IllegalArgumentException("hosts do not match")
         }
         for (other in others) {
@@ -583,7 +586,7 @@ abstract class AbstractFlowTest {
         attachmentSecureHashes: List<SecureHash>,
         command: CommandData,
         reissuedStateAndRefs: List<StateAndRef<T>>,
-        lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
+        lockStateAndRef: StateAndRef<ReissuanceLock>,
         extraCommandSigners: List<AbstractParty> = listOf()
     ): SecureHash {
         return runFlow(
@@ -598,7 +601,7 @@ abstract class AbstractFlowTest {
         signedTransactionByteArrays: List<ByteArray>,
         command: CommandData,
         reissuedStateAndRefs: List<StateAndRef<T>>,
-        lockStateAndRef: StateAndRef<ReissuanceLock<T>>,
+        lockStateAndRef: StateAndRef<ReissuanceLock>,
         extraCommandSigners: List<AbstractParty> = listOf()
     ): SecureHash {
         return runFlow(
@@ -611,11 +614,13 @@ abstract class AbstractFlowTest {
     fun <T> reissueRequestedStates(
         node: TestStartedNode,
         reissuanceRequest: StateAndRef<ReissuanceRequest>,
-        extraExitCommandSigners: List<AbstractParty>
+        assetCreateCommand: CommandData,
+        extraCreateCommandSigners: List<AbstractParty>,
+        attachmentId: SecureHash
     ) : SecureHash where T: ContractState {
         return runFlow(
             node,
-            ReissueStates<T>(reissuanceRequest, extraExitCommandSigners)
+            ReissueStates<T>(reissuanceRequest, attachmentId, assetCreateCommand, extraCreateCommandSigners)
         )
     }
 
@@ -631,22 +636,23 @@ abstract class AbstractFlowTest {
 
     fun <T> deleteReissuedStatesAndLock(
         node: TestStartedNode,
-        reissuanceLock: StateAndRef<ReissuanceLock<T>>,
+        reissuanceLock: StateAndRef<ReissuanceLock>,
         reissuedStates: List<StateAndRef<T>>,
         command: CommandData,
-        commandSigners: List<AbstractParty>? = null
+        commandSigners: List<AbstractParty>? = null,
+        txAttachmentId: AttachmentId
     ): SecureHash where T: ContractState {
         val signers: List<AbstractParty> = commandSigners ?: listOf(reissuanceLock.state.data.requester,
             reissuanceLock.state.data.issuer)
         return runFlow(
             node,
-            DeleteReissuedStatesAndLock<T>(reissuanceLock, reissuedStates, command, signers)
+            DeleteReissuedStatesAndLock<T>(reissuanceLock, reissuedStates, command, signers, txAttachmentId)
         )
     }
 
     fun deleteReissuedStatesAndLockUsingModifiedFlow(
         node: TestStartedNode,
-        reissuanceLock: StateAndRef<ReissuanceLock<SimpleDummyState>>,
+        reissuanceLock: StateAndRef<ReissuanceLock>,
         reissuedStates: List<StateAndRef<SimpleDummyState>>,
         command: CommandData,
         commandSigners: List<AbstractParty>? = null
@@ -690,6 +696,20 @@ abstract class AbstractFlowTest {
         val flowFuture = node.services.startFlow(flowLogic).resultFuture
         mockNet.runNetwork()
         return flowFuture.getOrThrow()
+    }
+
+    fun getAttachedWireTransaction(node: TestStartedNode, attachmentId: SecureHash): WireTransaction {
+        return node.services.attachments.openAttachment(attachmentId)?.let { attachment ->
+            attachment.openAsJAR().use {
+                var nextEntry = it.nextEntry
+                while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
+                    nextEntry = it.nextEntry
+                }
+                if(nextEntry != null) {
+                    it.readBytes().deserialize<WireTransaction>()
+                } else throw IllegalArgumentException("Transaction with id $attachmentId not found")
+            }
+        } ?: throw IllegalArgumentException("Transaction with id $attachmentId not found")
     }
 
 }

@@ -1,8 +1,8 @@
 package com.r3.corda.lib.reissuance.dummy_flows.dummy
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
+import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateWithInvalidEqualsMethodContract
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
@@ -10,7 +10,6 @@ import com.r3.corda.lib.reissuance.flows.GenerateRequiredFlowSessions
 import com.r3.corda.lib.reissuance.flows.SendSignerFlags
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import net.corda.core.contracts.CommandData
-import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
@@ -24,7 +23,7 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class ModifiedDeleteReissuedStatesAndLock(
-    private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock<SimpleDummyState>>,
+    private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock>,
     private val reissuedStateAndRefs: List<StateAndRef<SimpleDummyState>>,
     private val assetExitCommand: CommandData,
     private val assetExitSigners: List<AbstractParty> = listOf(reissuanceLockStateAndRef.state.data.requester,

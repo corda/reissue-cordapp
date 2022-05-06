@@ -10,9 +10,9 @@ import net.corda.core.serialization.CordaSerializable
 data class ReissuanceRequest(
     val issuer: AbstractParty,
     val requester: AbstractParty,
-    val stateRefsToReissue: List<StateRef>,
-    val assetIssuanceCommand: CommandData,
-    val assetIssuanceSigners: List<AbstractParty>
+    val stateRefsToReissue: List<StateAndRef<ContractState>>,
+    val assetDestroyCommand: CommandData,
+    val assetDestroySigners: List<AbstractParty>
 ): ContractState {
 
     override val participants: List<AbstractParty>
@@ -27,8 +27,8 @@ data class ReissuanceRequest(
         if (issuer != other.issuer) return false
         if (requester != other.requester) return false
         if (stateRefsToReissue != other.stateRefsToReissue) return false
-        if (assetIssuanceCommand != other.assetIssuanceCommand) return false
-        if (assetIssuanceSigners != other.assetIssuanceSigners) return false
+        if (assetDestroyCommand != other.assetDestroyCommand) return false
+        if (assetDestroySigners != other.assetDestroySigners) return false
 
         return true
     }
@@ -37,8 +37,8 @@ data class ReissuanceRequest(
         var result = issuer.hashCode()
         result = 31 * result + requester.hashCode()
         result = 31 * result + stateRefsToReissue.hashCode()
-        result = 31 * result + assetIssuanceCommand.hashCode()
-        result = 31 * result + assetIssuanceSigners.hashCode()
+        result = 31 * result + assetDestroyCommand.hashCode()
+        result = 31 * result + assetDestroySigners.hashCode()
         return result
     }
 

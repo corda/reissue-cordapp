@@ -1,6 +1,7 @@
 package com.r3.corda.lib.reissuance.dummy_flows.shell.dummyStateRequiringAcceptance
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.flows.ReissueStates
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
@@ -26,7 +27,9 @@ class ReissueDummyStateRequiringAcceptance(
         ).states[0]
         return subFlow(ReissueStates<DummyStateRequiringAcceptance>(
             rejectReissuanceRequestStateAndRef,
-            listOf(acceptor)
+            SecureHash.randomSHA256(),
+            DummyStateRequiringAcceptanceContract.Commands.Create(),
+                listOf(acceptor)
         ))
     }
 

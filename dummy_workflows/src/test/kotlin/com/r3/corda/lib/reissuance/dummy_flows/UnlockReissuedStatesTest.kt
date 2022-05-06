@@ -1,20 +1,23 @@
 package com.r3.corda.lib.reissuance.dummy_flows
 
+import com.r3.corda.lib.accounts.workflows.ourIdentity
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAcceptanceContract
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateRequiringAllParticipantsSignaturesContract
 import com.r3.corda.lib.reissuance.dummy_contracts.DummyStateWithInvalidEqualsMethodContract
 import com.r3.corda.lib.reissuance.dummy_contracts.SimpleDummyStateContract
-import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAcceptance
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateRequiringAllParticipantsSignatures
 import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMethod
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
+import com.r3.corda.lib.reissuance.flows.FinalizeDestroyTransaction
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
+import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
+import com.r3.corda.lib.tokens.contracts.commands.RedeemTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import net.corda.core.contracts.*
 import net.corda.core.crypto.*
@@ -135,21 +138,25 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
-            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+            statesToReissue, SimpleDummyStateContract.Commands.Delete(), issuerParty)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            listOf())
+            SimpleDummyStateContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState(
-            aliceNode, listOf(exitTransactionId), SimpleDummyStateContract.Commands.Update(),
+            aliceNode, listOf(attachmentId), SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedStates(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -165,21 +172,25 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
-            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+            statesToReissue, SimpleDummyStateContract.Commands.Delete(), issuerParty)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            listOf())
+            SimpleDummyStateContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState(
-            aliceNode, listOf(exitTransactionId), SimpleDummyStateContract.Commands.Update(),
+            aliceNode, listOf(attachmentId), SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedStates(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -194,24 +205,29 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            DummyStateRequiringAcceptanceContract.Commands.Create(),
+            DummyStateRequiringAcceptanceContract.Commands.Delete(),
             issuerParty,
             listOf(acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode,
-            reissuanceRequest, listOf(acceptorParty))
+            reissuanceRequest, DummyStateRequiringAcceptanceContract.Commands.Create(), listOf(acceptorParty, issuerParty),
+            requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteDummyStateRequiringAcceptance(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState<DummyStateRequiringAcceptance>(aliceNode,
-            listOf(exitTransactionId), DummyStateRequiringAcceptanceContract.Commands.Update(),
+            listOf(attachmentId), DummyStateRequiringAcceptanceContract.Commands.Update(),
             getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<DummyStateRequiringAcceptance>>(aliceNode, encumbered = true)[0],
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0],
             listOf(acceptorParty))
 
         verifyUnlockedStates(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -226,26 +242,32 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
+            DummyStateRequiringAllParticipantsSignaturesContract.Commands.Delete(),
             issuerParty,
             listOf(aliceParty, acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<DummyStateRequiringAllParticipantsSignatures>(
-            issuerNode, reissuanceRequest, listOf(issuerParty, acceptorParty))
+            issuerNode, reissuanceRequest, DummyStateRequiringAllParticipantsSignaturesContract.Commands.Create(),
+            listOf(issuerParty, acceptorParty), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteDummyStateRequiringAllParticipantsSignatures(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState<DummyStateRequiringAllParticipantsSignatures>(
-            aliceNode, listOf(exitTransactionId),
+            aliceNode, listOf(attachmentId),
             DummyStateRequiringAllParticipantsSignaturesContract.Commands.Update(),
             getStateAndRefs<DummyStateRequiringAllParticipantsSignatures>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<DummyStateRequiringAllParticipantsSignatures>>(aliceNode, encumbered = true)[0],
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered =
+            true)[0],
             listOf(issuerParty, acceptorParty)
         )
 
         verifyUnlockedStates(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -260,23 +282,27 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            IssueTokenCommand(issuedTokenType, tokenIndices),
+            RedeemTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            listOf(issuerParty))
+            IssueTokenCommand(issuedTokenType, tokenIndices), listOf(issuerParty), requestReissuanceTransactionId)
 
-        val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState<FungibleToken>(aliceNode,
-            listOf(exitTransactionId), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices),
+            listOf(attachmentId), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices),
             getStateAndRefs<FungibleToken>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedTokens(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -293,26 +319,28 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId =  createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            IssueTokenCommand(issuedTokenType, indicesList),
+            RedeemTokenCommand(issuedTokenType, indicesList),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            listOf(issuerParty))
+            IssueTokenCommand(issuedTokenType, indicesList), listOf(issuerParty), requestReissuanceTransactionId)
 
-        val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
         val unlockReissuedStatesTransactionId = unlockReissuedState<FungibleToken>(aliceNode,
-            listOf(exitTransactionId), MoveTokenCommand(issuedTokenType, indicesList, indicesList),
+            listOf(attachmentId), MoveTokenCommand(issuedTokenType, indicesList, indicesList),
             getStateAndRefs<FungibleToken>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedTokens(statesToReissue, extraTokens=1)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
-
 
     @Test
     fun `Re-issued tokens are unencumbered after the original state is deleted`() {
@@ -326,23 +354,26 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            IssueTokenCommand(issuedTokenType, tokenIndices),
+            RedeemTokenCommand(issuedTokenType, tokenIndices),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            listOf(issuerParty))
+            IssueTokenCommand(issuedTokenType, tokenIndices), listOf(issuerParty), requestReissuanceTransactionId)
 
-        val exitTransactionId = redeemTokens(aliceNode, statesToReissue)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
         val unlockReissuedStatesTransactionId = unlockReissuedState<FungibleToken>(aliceNode,
-            listOf(exitTransactionId), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices),
+            listOf(attachmentId), MoveTokenCommand(issuedTokenType, tokenIndices, tokenIndices),
             getStateAndRefs<FungibleToken>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedTokens(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -358,47 +389,28 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            IssueTokenCommand(issuedTokenType, indicesList),
+            RedeemTokenCommand(issuedTokenType, indicesList),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<FungibleToken>(issuerNode, reissuanceRequest,
-            listOf(issuerParty))
+            IssueTokenCommand(issuedTokenType, indicesList), listOf(issuerParty),requestReissuanceTransactionId)
 
-        val exitTransactionIds = listOf(
-            redeemTokens(aliceNode, listOf(statesToReissue[0])),
-            redeemTokens(aliceNode, listOf(statesToReissue[1]))
-        )
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
+
         val unlockReissuedStatesTransactionId = unlockReissuedState<FungibleToken>(aliceNode,
-            exitTransactionIds, MoveTokenCommand(issuedTokenType, indicesList, indicesList),
+            listOf(attachmentId), MoveTokenCommand(issuedTokenType, indicesList, indicesList),
             getStateAndRefs<FungibleToken>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<FungibleToken>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedTokens(statesToReissue)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
-    }
-
-    @Test(expected = TransactionVerificationException::class)
-    fun `DeleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod can't be used to unlock re-issued SimpleDummyState `() {
-        initialiseParties()
-        createSimpleDummyState(aliceParty)
-
-        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(aliceNode,
-            listOf(simpleDummyState), SimpleDummyStateContract.Commands.Create(), issuerParty)
-
-        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
-
-        val exitTransactionId = deleteSimpleDummyStateAndCreateDummyStateWithInvalidEqualsMethod(aliceNode)
-        unlockReissuedState(
-            aliceNode, listOf(exitTransactionId), SimpleDummyStateContract.Commands.Update(),
-            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
-        )
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -407,25 +419,30 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createDummyStateRequiringAcceptance(aliceParty)
 
         val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(dummyStateRequiringAcceptance),
-            DummyStateRequiringAcceptanceContract.Commands.Create(),
+            DummyStateRequiringAcceptanceContract.Commands.Delete(),
             issuerParty,
             listOf(acceptorParty)
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
+            DummyStateRequiringAcceptanceContract.Commands.Create(), listOf(acceptorParty, issuerParty),
+            requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteDummyStateRequiringAcceptance(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
         // issuer creates attachment and tries to unlock state
         unlockReissuedState<DummyStateRequiringAcceptance>(
             issuerNode,
-            listOf(exitTransactionId),
+            listOf(attachmentId),
             DummyStateRequiringAcceptanceContract.Commands.Update(),
             getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<DummyStateRequiringAcceptance>>(aliceNode, encumbered = true)[0],
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0],
             listOf(aliceParty, issuerParty, acceptorParty)
             )
     }
@@ -445,26 +462,30 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             employeeNode,
             statesToReissue,
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             employeeIssuerParty,
+            listOf(employeeNode.services.ourIdentity),
             requester = employeeAliceParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(employeeNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(employeeNode, reissuanceRequest,
-            listOf())
+            SimpleDummyStateContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyStateForAccount(employeeNode)
+        val fullySignedTransaction = runFlow(employeeNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = employeeNode.services.attachments.importAttachment(transactionByteArray.inputStream(), employeeAliceParty.toString(),
+            null)
         val unlockReissuedStatesTransactionId = unlockReissuedState<SimpleDummyState>(
             employeeNode,
-            listOf(exitTransactionId),
+            listOf(attachmentId),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(employeeNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(employeeNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(employeeNode, encumbered = true)[0]
         )
 
         verifyUnlockedStates(statesToReissue, node=employeeNode, accountUUID = employeeAliceAccount.identifier.id)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId), node = employeeNode)
     }
 
@@ -480,26 +501,30 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             statesToReissue,
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             employeeIssuerParty,
+            listOf(aliceNode.services.ourIdentity),
             requester = employeeAliceParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(aliceNode)[0]
         val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            listOf())
+            SimpleDummyStateContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyStateForAccount(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), employeeAliceParty.toString(),
+            null)
         val unlockReissuedStatesTransactionId = unlockReissuedState<SimpleDummyState>(
             aliceNode,
-            listOf(exitTransactionId),
+            listOf(attachmentId),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
         verifyUnlockedStates(statesToReissue, accountUUID = employeeAliceAccount.identifier.id)
-        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+        verifyTransactionBackChain(listOf(reissuanceRequest.ref.txhash,
             reissueStatesTransactionId, unlockReissuedStatesTransactionId))
     }
 
@@ -509,7 +534,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
@@ -517,13 +542,14 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
         val originalStateAndRef = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
         val transactionBuilder = TransactionBuilder(notary = notaryParty)
         transactionBuilder.addInputState(originalStateAndRef)
         transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Delete(), listOf(aliceParty.owningKey))
-        var signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
 
         val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
 
@@ -532,7 +558,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(transactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 
@@ -542,7 +568,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
@@ -550,7 +576,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
         val updateTransactionId = updateSimpleDummyState(aliceNode, bobParty)
         val transactionByteArray = convertSignedTransactionToByteArray(
@@ -562,7 +589,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(transactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 
@@ -573,7 +600,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createDummyStateRequiringAcceptance(aliceParty)
 
         val dummyStateRequiringAcceptance = getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(dummyStateRequiringAcceptance),
             DummyStateRequiringAcceptanceContract.Commands.Create(),
@@ -583,7 +610,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<DummyStateRequiringAcceptance>(issuerNode, reissuanceRequest,
-            listOf(acceptorParty))
+            DummyStateRequiringAcceptanceContract.Commands.Create(), listOf(acceptorParty),
+            requestReissuanceTransactionId)
 
         val updateTransactionId = updateDummyStateRequiringAcceptance(aliceNode, bobParty)
         unlockReissuedState<DummyStateRequiringAcceptance>(
@@ -591,7 +619,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(updateTransactionId),
             DummyStateRequiringAcceptanceContract.Commands.Update(),
             getStateAndRefs<DummyStateRequiringAcceptance>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<DummyStateRequiringAcceptance>>(aliceNode, encumbered = true)[0],
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0],
             listOf(issuerParty, acceptorParty)
         )
     }
@@ -602,7 +630,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createDummyStateWithInvalidEqualsMethod(aliceParty, 10)
 
         val dummyStateWithInvalidEqualsMethod = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(dummyStateWithInvalidEqualsMethod),
             DummyStateWithInvalidEqualsMethodContract.Commands.Create(),
@@ -610,19 +638,27 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<DummyStateWithInvalidEqualsMethod>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<DummyStateWithInvalidEqualsMethod>(issuerNode, reissuanceRequest,
+            DummyStateWithInvalidEqualsMethodContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
 
         createDummyStateWithInvalidEqualsMethod(aliceParty, 5)
         val stateAndRefToDelete = getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode)
         val exitTransactionId = deleteDummyStateWithInvalidEqualsMethod(aliceNode, stateAndRefToDelete.last())
 
+        val transactionByteArray = convertSignedTransactionToByteArray(
+            aliceNode.services.validatedTransactions.getTransaction(exitTransactionId)!!
+        )
+
+        val exitTransactionAttachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceNode.services
+            .ourIdentity.toString(), null)
+
         unlockReissuedState<DummyStateWithInvalidEqualsMethod>(
             aliceNode,
-            listOf(exitTransactionId),
+            listOf(exitTransactionAttachmentId),
             DummyStateWithInvalidEqualsMethodContract.Commands.Update(),
             getStateAndRefs<DummyStateWithInvalidEqualsMethod>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<DummyStateWithInvalidEqualsMethod>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 
@@ -632,33 +668,38 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
         unlockReissuedState<SimpleDummyState>(
             aliceNode,
-            listOf(exitTransactionId),
+            listOf(attachmentId),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
 
-        createReissuanceRequest<SimpleDummyState>(
+        val requestReissuanceTransactionId2 = createReissuanceRequest<SimpleDummyState>(
             aliceNode,
             listOf(simpleDummyState.ref),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
         val reissuanceRequest2 = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest2, SimpleDummyStateContract.Commands.Create(), listOf(),
+            requestReissuanceTransactionId2)
 
     }
 
@@ -668,21 +709,22 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
         val transactionBuilder = TransactionBuilder(notary = aliceParty)
         transactionBuilder.addInputState(simpleDummyState)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
-        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+        aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -691,21 +733,22 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
-            SimpleDummyStateContract.Commands.Create(),
+            SimpleDummyStateContract.Commands.Delete(),
             issuerParty
         )
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
         val transactionBuilder = TransactionBuilder(notary = aliceParty)
         transactionBuilder.addInputState(simpleDummyState)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
-        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+        aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 
     @Test(expected = TransactionVerificationException::class)
@@ -718,7 +761,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
@@ -727,7 +770,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands
+            .Create(), listOf(), requestReissuanceTransactionId)
 
         val transactionBuilder = TransactionBuilder(notary = notaryParty)
         transactionBuilder.addInputState(simpleDummyState)
@@ -746,7 +790,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(signedTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 
@@ -757,11 +801,13 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         verifyTransactionBackChain(transactionIds)
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
-        createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
             statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
-        val reissuanceTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        val reissuanceTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
+            SimpleDummyStateContract.Commands.Create(), listOf(),
+            requestReissuanceTransactionId)
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val exitTransactionByteArray = convertSignedTransactionToByteArray(
@@ -776,7 +822,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(exitTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 
@@ -787,20 +833,23 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         verifyTransactionBackChain(transactionIds)
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
-        createReissuanceRequestAndShareRequiredTransactions(aliceNode,
-            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+            statesToReissue, SimpleDummyStateContract.Commands.Delete(), issuerParty)
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
         reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
-            listOf())
+            SimpleDummyStateContract.Commands.Create(), listOf(), requestReissuanceTransactionId)
 
-        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val fullySignedTransaction = runFlow(aliceNode, FinalizeDestroyTransaction(requestReissuanceTransactionId))
+        val transactionByteArray = convertSignedTransactionToByteArray(fullySignedTransaction)
+        val attachmentId = aliceNode.services.attachments.importAttachment(transactionByteArray.inputStream(), aliceParty.toString(),
+            null)
         unlockReissuedState(
             aliceNode,
-            listOf(exitTransactionId),
+            listOf(attachmentId),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0],
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0],
             listOf(aliceParty)
         )
     }
@@ -815,7 +864,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         createSimpleDummyState(aliceParty)
 
         val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
-        createReissuanceRequestAndShareRequiredTransactions(
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(
             aliceNode,
             listOf(simpleDummyState),
             SimpleDummyStateContract.Commands.Create(),
@@ -824,7 +873,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
 
-        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, SimpleDummyStateContract.Commands.Create(),
+            listOf(), requestReissuanceTransactionId)
 
         val transactionBuilder = TransactionBuilder(notary = notaryParty)
         transactionBuilder.addInputState(simpleDummyState)
@@ -841,7 +891,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
             listOf(signedTransactionByteArray),
             SimpleDummyStateContract.Commands.Update(),
             getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
-            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+            getStateAndRefs<ReissuanceLock>(aliceNode, encumbered = true)[0]
         )
     }
 

@@ -24,7 +24,7 @@ class UnlockDummyStateRequiringAcceptance(
     @Suspendable
     override fun call(): SecureHash {
         val reissuanceLockRef = parseStateReference(reissuanceLockRefString)
-        val reissuanceLockStateAndRef = serviceHub.vaultService.queryBy<ReissuanceLock<DummyStateRequiringAcceptance>>(
+        val reissuanceLockStateAndRef = serviceHub.vaultService.queryBy<ReissuanceLock>(
             criteria = QueryCriteria.VaultQueryCriteria(stateRefs = listOf(reissuanceLockRef))
         ).states[0]
 

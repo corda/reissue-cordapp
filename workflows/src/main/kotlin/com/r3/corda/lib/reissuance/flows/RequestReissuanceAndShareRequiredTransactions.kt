@@ -20,8 +20,8 @@ import net.corda.core.utilities.unwrap
 class RequestReissuanceAndShareRequiredTransactions<T>(
     private val issuer: AbstractParty,
     private val stateRefsToReissue: List<StateRef>,
-    private val assetIssuanceCommand: CommandData,
-    private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
+    private val assetDestroyCommand: CommandData,
+    private val extraAssetDestroySigners: List<AbstractParty> = listOf(), // issuer is always a signer
     private val requester: AbstractParty? = null // requester needs to be provided when using accounts
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
@@ -70,7 +70,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
             it.send(transactionsToSend.size)
 
             transactionsToSend.forEach { signedTransaction ->
-                subFlow(SendTransactionFlow(it, signedTransaction, true))
+                subFlow(SendTransactionFlow(it, signedTransaction))
             }
         }
 
@@ -79,8 +79,8 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
                 sessions,
                 issuer,
                 stateRefsToReissue,
-                assetIssuanceCommand,
-                extraAssetIssuanceSigners,
+                assetDestroyCommand,
+                extraAssetDestroySigners,
                 requester,
                 notary
             )

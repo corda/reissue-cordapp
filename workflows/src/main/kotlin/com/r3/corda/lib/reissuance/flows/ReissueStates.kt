@@ -1,39 +1,56 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.workflows.ourIdentity
+import com.r3.corda.lib.reissuance.constants.Constants.REISSUANCE_LOCK_STATE_UNTIL_ONLY_SECONDS
+import com.r3.corda.lib.reissuance.constants.Constants.REISSUANCE_LOCK_TX_UNTIL_ONLY_SECONDS
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
 import com.r3.corda.lib.reissuance.schemas.ReissuanceDirection
 import com.r3.corda.lib.reissuance.services.ReissuedStatesService
-import com.r3.corda.lib.reissuance.states.ReissuableState
-import com.r3.corda.lib.reissuance.states.ReissuanceLock
-import com.r3.corda.lib.reissuance.states.ReissuanceRequest
-import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.TransactionState
-import net.corda.core.contracts.requireThat
+import com.r3.corda.lib.reissuance.states.*
+import net.corda.core.contracts.*
+import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SecureHash
+import net.corda.core.crypto.SignableData
+import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
-import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
-import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.serialization.deserialize
+import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.unwrap
+import java.time.Instant
 
 @InitiatingFlow
 @StartableByRPC
 class ReissueStates<T>(
     private val reissuanceRequestStateAndRef: StateAndRef<ReissuanceRequest>,
-    private val extraAssetExitCommandSigners: List<AbstractParty> = listOf(reissuanceRequestStateAndRef.state.data.issuer) // requester and notary signatures are always required
+    private val txAttachmentId: SecureHash,
+    private val assetCreateCommand: CommandData,
+    private val extraAssetCreateSigners: List<AbstractParty> = listOf(reissuanceRequestStateAndRef.state.data.issuer) // issuer is always a signer
 ): FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
     override fun call(): SecureHash {
+        val tx = serviceHub.attachments.openAttachment(txAttachmentId)?.let { attachment ->
+            attachment.openAsJAR().use {
+                var nextEntry = it.nextEntry
+                while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
+                    nextEntry = it.nextEntry
+                }
+                if(nextEntry != null) {
+                    it.readBytes().deserialize<WireTransaction>()
+                } else throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
+            }
+        } ?: throw IllegalArgumentException("Transaction with id $txAttachmentId not found")
+
         val reissuedStatesService = serviceHub.cordaService(ReissuedStatesService::class.java)
 
         val reissuanceRequest = reissuanceRequestStateAndRef.state.data
@@ -45,38 +62,39 @@ class ReissueStates<T>(
         require(issuerHost == ourIdentity) { "Issuer is not a valid account for the host" }
 
         // we don't use withExternalIds when querying a vault as a transaction can be only shared with a host
-
         @Suppress("UNCHECKED_CAST")
         val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(
-            criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reissuanceRequest.stateRefsToReissue)
+            criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reissuanceRequest.stateRefsToReissue.map { it.ref })
         ).states as List<StateAndRef<T>>
 
         reissuanceRequest.stateRefsToReissue.forEach {
             val dir = ReissuanceDirection.RECEIVED
-            require( !reissuedStatesService.hasStateRef(it, dir)) { "State ${it} has been already re-issued" }
-            reissuedStatesService.storeStateRef(it, dir)
+            require( !reissuedStatesService.hasStateRef(it.ref, dir)) { "State ${it} has been already re-issued" }
+            reissuedStatesService.storeStateRef(it.ref, dir)
         }
 
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
             "Cannot validate states to re-issue" }
 
-        require(!extraAssetExitCommandSigners.contains(notary)) {
-            "Notary is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }
-        require(!extraAssetExitCommandSigners.contains(requester)) {
-            "Requester is always a signer and shouldn't be passed in as a part of extraAssetExitCommandSigners" }
+        require(!extraAssetCreateSigners.contains(notary)) {
+            "Notary is always a signer and shouldn't be passed in as a part of extraAssetCreateCommandSigners" }
+        require(!extraAssetCreateSigners.contains(requester)) {
+            "Requester is always a signer and shouldn't be passed in as a part of extraAssetCreateCommandSigners" }
         val reissuanceLock = ReissuanceLock(
             reissuanceRequest.issuer,
             reissuanceRequest.requester,
-            statesToReissue,
-            extraAssetExitCommandSigners = extraAssetExitCommandSigners
+            SignableData(tx.id, SignatureMetadata(serviceHub.myInfo.platformVersion, Crypto.findSignatureScheme
+                (serviceHub.ourIdentity.owningKey).schemeNumberID)),
+            timeWindow = TimeWindow.untilOnly(Instant.now().plusSeconds(REISSUANCE_LOCK_STATE_UNTIL_ONLY_SECONDS))
         )
 
-        val lockSigners = listOf(issuer.owningKey)
-        val reissuedStatesSigners = reissuanceRequest.assetIssuanceSigners.map { it.owningKey }
+        val lockSigners = listOf(issuer.owningKey, requester.owningKey)
+        val reissuedStatesSigners = reissuanceRequest.assetDestroySigners.map { it.owningKey }
 
         val transactionBuilder = TransactionBuilder(notary = notary)
         transactionBuilder.addInputState(reissuanceRequestStateAndRef)
         transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Accept(), lockSigners)
+        transactionBuilder.addAttachment(txAttachmentId)
 
         var encumbrance = 1
         statesToReissue
@@ -94,16 +112,28 @@ class ReissueStates<T>(
                     encumbrance = encumbrance)
                 encumbrance += 1
             }
-        transactionBuilder.addCommand(reissuanceRequest.assetIssuanceCommand, reissuedStatesSigners)
+
+        val references = statesToReissue.map { it.ref.txhash }.distinct()
+            .mapNotNull { serviceHub.validatedTransactions.getTransaction(it) }
+            .map { it.references }.flatten()
+            .map { ref -> serviceHub.toStateAndRef<ContractState>(ref) }.distinct()
+
+        transactionBuilder.addCommand(assetCreateCommand, extraAssetCreateSigners.map { it
+            .owningKey }.plus(requester.owningKey))
 
         transactionBuilder.addOutputState(
             state = reissuanceLock,
             contract = ReissuanceLockContract.contractId,
             notary = notary,
-            encumbrance = 0)
+            encumbrance = 0
+        )
+        references.forEach {
+            transactionBuilder.addReferenceState(it.referenced())
+        }
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Create(), lockSigners)
+        transactionBuilder.setTimeWindow(TimeWindow.untilOnly(Instant.now().plusSeconds(REISSUANCE_LOCK_TX_UNTIL_ONLY_SECONDS)))
 
-        val localSigners = (lockSigners + reissuedStatesSigners)
+        val localSigners = (lockSigners + reissuedStatesSigners + serviceHub.ourIdentity.owningKey)
             .distinct()
             .filter { serviceHub.identityService.partyFromKey(it)!! == ourIdentity }
         transactionBuilder.verify(serviceHub)
@@ -111,7 +141,7 @@ class ReissueStates<T>(
 
         // as some of the participants might be signers and some might not, we are sending them a flag which informs
         // them if they are expected to sign the transaction or not
-        val signers = (reissuanceRequest.assetIssuanceSigners + issuer).distinct()
+        val signers = (reissuanceRequest.assetDestroySigners + issuer + requester).distinct()
         val otherParticipants = reissuanceRequest.participants.filter { !signers.contains(it) }
 
         val signersSessions = subFlow(GenerateRequiredFlowSessions(signers))
@@ -137,7 +167,7 @@ abstract class ReissueStatesResponder(
 ) : FlowLogic<SignedTransaction>() {
 
     lateinit var reissuanceRequest: ReissuanceRequest
-    lateinit var reissuanceLock: ReissuanceLock<*>
+    lateinit var reissuanceLock: ReissuanceLock
     lateinit var otherOutputs: List<TransactionState<*>>
 
     fun checkBasicReissuanceConstraints(stx: SignedTransaction) {
@@ -152,7 +182,7 @@ abstract class ReissueStatesResponder(
 
             val reissuanceLocks = ledgerTransaction.outputsOfType(ReissuanceLock::class.java)
             "ReissuanceLock is an output" using (reissuanceLocks.size == 1)
-            otherOutputs = ledgerTransaction.outputs.filter { it.data !is ReissuanceLock<*> }
+            otherOutputs = ledgerTransaction.outputs.filter { it.data !is ReissuanceLock }
             "Outputs other than ReissuanceLock are of the same type" using(
                 otherOutputs.map { it.data::class.java }.toSet().size == 1)
             "Outputs other than ReissuanceLock are encumbered" using otherOutputs.none { it.encumbrance == null }
@@ -160,8 +190,20 @@ abstract class ReissueStatesResponder(
             "Status or ReissuanceLock is ACTIVE" using (
                 reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
-            if (reissuanceLock.originalStates.first().state.data is ReissuableState<*>) {
-                reissuanceLock.originalStates.forEachIndexed { index, stateAndRef ->
+            val attachedTransactions = getAttachedWireTransaction(ledgerTransaction)
+
+            if (attachedTransactions.singleOrNull { it.id == reissuanceLock.txHash.txId } == null) {
+                throw IllegalArgumentException("Attached transaction doesn't match transaction from lock state")
+            }
+
+            val tx = attachedTransactions.single { it.id == reissuanceLock.txHash.txId }
+
+            val stateAndRefsToReissue = tx.inputs.map {
+                serviceHub.toStateAndRef<ContractState>(it)
+            }
+
+            if (stateAndRefsToReissue.first().state.data is ReissuableState<*>) {
+                stateAndRefsToReissue.forEachIndexed { index, stateAndRef ->
                     val state = stateAndRef.state.data as ReissuableState<ContractState>
                     val reissuedState = otherOutputs[index].data
                     "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
@@ -169,12 +211,34 @@ abstract class ReissueStatesResponder(
                 }
             } else {
                 "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                        reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+                    stateAndRefsToReissue.map { it.state.data } == otherOutputs.map { it.data })
             }
         }
     }
 
     abstract fun checkConstraints(stx: SignedTransaction)
+
+    private fun getAttachedWireTransaction(tx: LedgerTransaction): List<WireTransaction> {
+        val nonContractAttachments = tx.attachments.filter { it !is ContractAttachment }
+        "The transaction should have at least one non-contract attachment" using (nonContractAttachments.isNotEmpty())
+
+        val attachedWireTransaction = mutableListOf<WireTransaction>()
+        nonContractAttachments.forEach { attachment ->
+            val attachmentJar = attachment.openAsJAR()
+            var nextEntry = attachmentJar.nextEntry
+            while (nextEntry != null && !nextEntry.name.startsWith("WireTransaction")) {
+                nextEntry = attachmentJar.nextEntry
+            }
+
+            if(nextEntry != null) {
+                val transactionBytes = attachmentJar.readBytes()
+                attachedWireTransaction.add(transactionBytes.deserialize<WireTransaction>())
+            }
+
+        }
+
+        return attachedWireTransaction
+    }
 
     @Suspendable
     override fun call(): SignedTransaction {

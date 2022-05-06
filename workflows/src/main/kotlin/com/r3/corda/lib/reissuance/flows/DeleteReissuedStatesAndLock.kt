@@ -10,6 +10,7 @@ import net.corda.core.contracts.requireThat
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.node.services.AttachmentId
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.unwrap
@@ -17,11 +18,12 @@ import net.corda.core.utilities.unwrap
 @InitiatingFlow
 @StartableByRPC
 class DeleteReissuedStatesAndLock<T>(
-    private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock<T>>,
+    private val reissuanceLockStateAndRef: StateAndRef<ReissuanceLock>,
     private val reissuedStateAndRefs: List<StateAndRef<T>>,
     private val assetExitCommand: CommandData,
     private val assetExitSigners: List<AbstractParty> = listOf(reissuanceLockStateAndRef.state.data.requester,
-        reissuanceLockStateAndRef.state.data.issuer)
+        reissuanceLockStateAndRef.state.data.issuer),
+    private val txAttachmentId: AttachmentId
 ): FlowLogic<SecureHash>() where T: ContractState {
     @Suspendable
     override fun call(): SecureHash {
@@ -43,6 +45,7 @@ class DeleteReissuedStatesAndLock<T>(
 
         transactionBuilder.addInputState(reissuanceLockStateAndRef)
         transactionBuilder.addCommand(ReissuanceLockContract.Commands.Delete(), lockSignersKeys)
+        transactionBuilder.addAttachment(txAttachmentId)
 
         val signers = (lockSigners + assetExitSigners).distinct()
 
@@ -78,7 +81,7 @@ abstract class DeleteReissuedStatesAndLockResponder(
     private val otherSession: FlowSession
 ) : FlowLogic<SignedTransaction>() {
 
-    lateinit var reissuanceLockInput: ReissuanceLock<*>
+    lateinit var reissuanceLockInput: ReissuanceLock
     lateinit var otherInputs: List<StateAndRef<*>>
 
     fun checkBasicReissuanceConstraints(stx: SignedTransaction) {
@@ -87,11 +90,11 @@ abstract class DeleteReissuedStatesAndLockResponder(
             "There are at least 2 inputs" using (ledgerTransaction.inputs.size > 1)
             "There are no outputs" using (ledgerTransaction.outputs.isEmpty())
 
-            val reissuanceLockInputs = ledgerTransaction.inputsOfType<ReissuanceLock<*>>()
+            val reissuanceLockInputs = ledgerTransaction.inputsOfType<ReissuanceLock>()
             "There is exactly one input of type ReissuanceLock" using (reissuanceLockInputs.size == 1)
             reissuanceLockInput = reissuanceLockInputs[0]
 
-            otherInputs = ledgerTransaction.inputs.filter { it.state.data !is ReissuanceLock<*> }
+            otherInputs = ledgerTransaction.inputs.filter { it.state.data !is ReissuanceLock }
             "Inputs other than ReissuanceLock are of the same type" using(
                 otherInputs.map { it.state.data::class.java }.toSet().size == 1)
             "Inputs other than ReissuanceLock are encumbered" using otherInputs.none { it.state.encumbrance == null }
