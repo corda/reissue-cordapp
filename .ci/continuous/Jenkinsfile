@@ -10,10 +10,15 @@ GitUtils gitUtils = new GitUtils(this)
 
 pipeline {
     agent {
-        dockerfile {
-            filename '.ci/Dockerfile'
-            additionalBuildArgs "--build-arg USER=stresstester"
-            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
+        docker {
+            // Our custom docker image
+            image 'build-zulu-openjdk:8'
+            label 'docker'
+            registryUrl 'https://engineering-docker.software.r3.com/'
+            registryCredentialsId 'artifactory-credentials'
+            // Used to mount storage from the host as a volume to persist the cache between builds
+            args '-v /tmp:/host_tmp'
+            alwaysPull true
         }
     }
     options { timestamps() }
@@ -59,6 +64,23 @@ pipeline {
                     def modulesToScan = ['dummy_contracts', 'dummy_workflows', 'contracts', 'workflows']
                     modulesToScan.each { module ->
                         snykSecurityScan(env.SNYK_TOKEN, "--sub-project=$module --configuration-matching='^runtimeClasspath\$' --prune-repeated-subdependencies --debug --target-reference='${env.BRANCH_NAME}' --project-tags=Branch='${env.BRANCH_NAME.replaceAll("[^0-9|a-z|A-Z]+","_")}'", false, true)
+                    }
+                }
+            }
+        }
+
+        stage('Generate Snyk License Report') {
+            options { retry(2) }
+            // when {
+            //     expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
+            // }
+            steps {
+                snykLicenseGeneration(env.SNYK_TOKEN, env.C4_ENT_SNYK_ORG_ID)
+            }
+            post {
+                always {
+                    script {
+                        archiveArtifacts artifacts: 'snyk-license-report/*-snyk-license-report.html', allowEmptyArchive: true, fingerprint: true
                     }
                 }
             }
