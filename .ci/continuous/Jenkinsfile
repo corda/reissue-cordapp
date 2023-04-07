@@ -57,7 +57,7 @@ pipeline {
 
         stage('Snyk Security') {
             when {
-                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
+                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() || gitUtils.isMasterBranch() }
             }
             steps {
                 script {
@@ -72,7 +72,7 @@ pipeline {
         stage('Generate Snyk License Report') {
             options { retry(2) }
             when {
-                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
+                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() || gitUtils.isMasterBranch() }
             }
             steps {
                 snykLicenseGeneration(env.SNYK_TOKEN, env.C4_ENT_SNYK_ORG_ID)
