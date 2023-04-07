@@ -56,9 +56,9 @@ pipeline {
         }
 
         stage('Snyk Security') {
-            // when {
-            //     expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
-            // }
+            when {
+                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
+            }
             steps {
                 script {
                     def modulesToScan = ['dummy_contracts', 'dummy_workflows', 'contracts', 'workflows']
@@ -71,9 +71,9 @@ pipeline {
 
         stage('Generate Snyk License Report') {
             options { retry(2) }
-            // when {
-            //     expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
-            // }
+            when {
+                expression { gitUtils.isReleaseTag() || gitUtils.isReleaseCandidate() || gitUtils.isReleaseBranch() }
+            }
             steps {
                 snykLicenseGeneration(env.SNYK_TOKEN, env.C4_ENT_SNYK_ORG_ID)
             }
@@ -83,6 +83,15 @@ pipeline {
                         archiveArtifacts artifacts: 'snyk-license-report/*-snyk-license-report.html', allowEmptyArchive: true, fingerprint: true
                     }
                 }
+            }
+        }
+
+        stage('Snyk Delta') {
+            when {
+                changeRequest()
+            }
+            steps {
+                snykDeltaScan(env.SNYK_TOKEN, env.C4_ENT_SNYK_ORG_ID, "--configuration-matching='^runtimeClasspath\$'")
             }
         }
 
