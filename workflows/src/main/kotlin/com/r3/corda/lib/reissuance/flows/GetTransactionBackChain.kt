@@ -17,22 +17,25 @@ class GetTransactionBackChain(
         return getTransactionBackChain(transactionId, visitedTransactions, transactionsToVisitQueue)
     }
 
-    private fun getTransactionBackChain(
+    private tailrec fun getTransactionBackChain(
         transactionId: SecureHash,
         visitedTransactions: MutableSet<SecureHash>,
         transactionsToVisit: MutableSet<SecureHash>
     ): Set<SecureHash> {
-        val signedTransaction = serviceHub.validatedTransactions.getTransaction(transactionId)
-            ?: throw BackChainException("Cannot find transaction with id $transactionId")
+        val inputs = serviceHub.validatedTransactions.getTransaction(transactionId)?.inputs ?: run {
+            serviceHub.validatedTransactions.getEncryptedTransaction(transactionId)?.let { encryptedTx ->
+                    serviceHub.encryptedTransactionService.decryptInputAndRefsForNode(encryptedTx).inputs.map { it.ref }
+            }
+        } ?: throw BackChainException("Cannot find transaction with id $transactionId")
 
         transactionsToVisit.remove(transactionId)
         visitedTransactions.add(transactionId)
 
-        transactionsToVisit.addAll(signedTransaction.inputs.map { it.txhash })
+        transactionsToVisit.addAll(inputs.map { it.txhash })
 
-        if(transactionsToVisit.isEmpty())
-            return visitedTransactions
-        return getTransactionBackChain(transactionsToVisit.elementAt(0), visitedTransactions,
+        return if(transactionsToVisit.isEmpty())
+            visitedTransactions
+        else getTransactionBackChain(transactionsToVisit.elementAt(0), visitedTransactions,
             transactionsToVisit)
     }
 

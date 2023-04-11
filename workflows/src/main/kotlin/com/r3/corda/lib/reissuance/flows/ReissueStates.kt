@@ -1,9 +1,11 @@
 package com.r3.corda.lib.reissuance.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.utilities.getPreferredNotary
 import com.r3.corda.lib.reissuance.contracts.ReissuanceLockContract
 import com.r3.corda.lib.reissuance.contracts.ReissuanceRequestContract
+import com.r3.corda.lib.reissuance.schemas.ReissuanceDirection
+import com.r3.corda.lib.reissuance.services.ReissuedStatesService
+import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.ContractState
@@ -15,6 +17,9 @@ import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.internal.requiredContractClassName
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.DEFAULT_PAGE_NUM
+import net.corda.core.node.services.vault.DEFAULT_PAGE_SIZE
+import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -29,9 +34,11 @@ class ReissueStates<T>(
 
     @Suspendable
     override fun call(): SecureHash {
+        val reissuedStatesService = serviceHub.cordaService(ReissuedStatesService::class.java)
+
         val reissuanceRequest = reissuanceRequestStateAndRef.state.data
 
-        val notary = getPreferredNotary(serviceHub)
+        val notary = reissuanceRequestStateAndRef.state.notary
         val requester = reissuanceRequest.requester
         val issuer = reissuanceRequest.issuer
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
@@ -44,13 +51,10 @@ class ReissueStates<T>(
             criteria=QueryCriteria.VaultQueryCriteria(stateRefs = reissuanceRequest.stateRefsToReissue)
         ).states as List<StateAndRef<T>>
 
-        @Suppress("UNCHECKED_CAST")
-        val locks: List<StateAndRef<ReissuanceLock<T>>> =
-            serviceHub.vaultService.queryBy<ReissuanceLock<ContractState>>().states
-                as List<StateAndRef<ReissuanceLock<T>>>
-        val reissuedStatesRefs = locks.flatMap { it.state.data.originalStates }.map { it.ref }
         reissuanceRequest.stateRefsToReissue.forEach {
-            require(!reissuedStatesRefs.contains(it)) { "State ${it} has been already re-issued" }
+            val dir = ReissuanceDirection.RECEIVED
+            require( !reissuedStatesService.hasStateRef(it, dir)) { "State ${it} has been already re-issued" }
+            reissuedStatesService.storeStateRef(it, dir)
         }
 
         require(statesToReissue.size == reissuanceRequest.stateRefsToReissue.size) {
@@ -78,8 +82,13 @@ class ReissueStates<T>(
         statesToReissue
             .map { it.state.data }
             .forEach {
+                val outputState = if (it is ReissuableState<*>) {
+                    it.createReissuance()
+                } else {
+                    it
+                }
                 transactionBuilder.addOutputState(
-                    state = it,
+                    state = outputState,
                     contract = it.requiredContractClassName!!,
                     notary = notary,
                     encumbrance = encumbrance)
@@ -150,8 +159,18 @@ abstract class ReissueStatesResponder(
             reissuanceLock = reissuanceLocks[0]
             "Status or ReissuanceLock is ACTIVE" using (
                 reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
-            "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+
+            if (reissuanceLock.originalStates.first().state.data is ReissuableState<*>) {
+                reissuanceLock.originalStates.forEachIndexed { index, stateAndRef ->
+                    val state = stateAndRef.state.data as ReissuableState<ContractState>
+                    val reissuedState = otherOutputs[index].data
+                    "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                            state.isEqualForReissuance(reissuedState))
+                }
+            } else {
+                "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                        reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            }
         }
     }
 

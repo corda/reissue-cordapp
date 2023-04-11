@@ -20,7 +20,7 @@ class DeleteSimpleDummyState(
     @Suspendable
     override fun call(): SecureHash {
         val signers = listOf(ourIdentity.owningKey)
-        val notary = getPreferredNotary(serviceHub)
+        val notary = originalStateAndRef.state.notary
 
         val transactionBuilder = TransactionBuilder(notary = notary)
 

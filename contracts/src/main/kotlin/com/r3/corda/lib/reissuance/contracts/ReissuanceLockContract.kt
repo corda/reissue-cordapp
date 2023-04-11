@@ -1,5 +1,6 @@
 package com.r3.corda.lib.reissuance.contracts
 
+import com.r3.corda.lib.reissuance.states.ReissuableState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
@@ -84,8 +85,17 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                 reissuanceLock.status == ReissuanceLock.ReissuanceLockStatus.ACTIVE)
 
             // verify state data
-            "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
-                reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            if (firstReissuedState.state.data is ReissuableState<*>) {
+                reissuanceLock.originalStates.forEachIndexed { index, stateAndRef ->
+                    val state = stateAndRef.state.data as ReissuableState<ContractState>
+                    val reissuedState = otherOutputs[index].data
+                    "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                            state.isEqualForReissuance(reissuedState))
+                }
+            } else {
+                "StatesAndRef objects in ReissuanceLock must be the same as re-issued states" using (
+                        reissuanceLock.originalStates.map { it.state.data } == otherOutputs.map { it.data })
+            }
 
             // verify encumbrance
             reissuanceLock.originalStates.forEach {
@@ -94,7 +104,6 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             otherOutputs.forEach {
                 "Output other than ReissuanceRequest and ReissuanceLock must be encumbered" using (it.encumbrance  != null)
             }
-
         }
     }
 

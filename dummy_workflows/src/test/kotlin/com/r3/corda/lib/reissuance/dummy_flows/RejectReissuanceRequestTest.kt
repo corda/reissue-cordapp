@@ -53,6 +53,24 @@ class RejectReissuanceRequestTest: AbstractFlowTest() {
     }
 
     @Test
+    fun `SimpleDummyState re-issuance request is rejected on notary2`() {
+        initialiseParties()
+        createSimpleDummyStateOnNotary(aliceParty, notary2Party)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        rejectReissuanceRequested<SimpleDummyState>(issuerNode, reissuanceRequest)
+        verifyReissuanceRequestRejection<SimpleDummyState>()
+    }
+
+    @Test
     fun `DummyStateRequiringAcceptance re-issuance request is rejected`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)

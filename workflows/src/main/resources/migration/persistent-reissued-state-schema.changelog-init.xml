@@ -1,0 +1,21 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+    <changeSet author="R3.Corda" id="create_reissued_state_table_id">
+        <createTable tableName="reissued_state">
+            <column name="state_ref_hash" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="state_ref_index" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="direction" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="R3.Corda" id="reissued_state_pkey_id">
+        <addPrimaryKey columnNames="state_ref_hash, state_ref_index, direction" constraintName="reissued_state_pkey" tableName="reissued_state"/>
+    </changeSet>
+</databaseChangeLog>

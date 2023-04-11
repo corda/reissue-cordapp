@@ -63,7 +63,6 @@ abstract class AbstractFlowTest {
 
     lateinit var mockNet: InternalMockNetwork
 
-    lateinit var notaryNode: TestStartedNode
     lateinit var issuerNode: TestStartedNode
     lateinit var acceptorNode: TestStartedNode
     lateinit var aliceNode: TestStartedNode
@@ -101,9 +100,12 @@ abstract class AbstractFlowTest {
     lateinit var debbieLegalName: CordaX500Name
     lateinit var employeeLegalName: CordaX500Name
 
-    lateinit var allNotaries: List<TestStartedNode>
-
     lateinit var issuedTokenType: IssuedTokenType
+
+    val notary1Name = CordaX500Name("Notary1", "Zurich", "CH")
+    val notary2Name = CordaX500Name("Notary2", "Zurich", "CH")
+
+    lateinit var notary2Party : Party
 
     @Before
     fun setup() {
@@ -121,15 +123,19 @@ abstract class AbstractFlowTest {
                 findCordapp("com.r3.corda.lib.reissuance.flows"),
                 findCordapp("com.r3.corda.lib.reissuance.dummy_flows")
             ),
-            notarySpecs = listOf(MockNetworkNotarySpec(DUMMY_NOTARY_NAME, false)),
+            notarySpecs = listOf(notary1Name, notary2Name).map { MockNetworkNotarySpec(it) },
             initialNetworkParameters = testNetworkParameters(
                 minimumPlatformVersion = 8 // 4.6
             )
         )
 
-        allNotaries = mockNet.notaryNodes
-        notaryNode = mockNet.notaryNodes.first()
-        notaryParty = notaryNode.info.singleIdentity()
+        notaryParty = mockNet.notaryNodes.single {
+            it.info.singleIdentity().name == notary1Name
+        }.info.singleIdentity()
+
+        notary2Party = mockNet.notaryNodes.single {
+            it.info.singleIdentity().name == notary2Name
+        }.info.singleIdentity()
 
     }
 
@@ -283,6 +289,16 @@ abstract class AbstractFlowTest {
         return runFlow(
             issuerNode,
             CreateSimpleDummyState(owner)
+        )
+    }
+
+    fun createSimpleDummyStateOnNotary(
+        owner: Party,
+        notary : Party
+    ): SecureHash {
+        return runFlow(
+            issuerNode,
+            CreateSimpleDummyState(owner, notary)
         )
     }
 

@@ -21,32 +21,12 @@ class RequestReissuance<T>(
     private val stateRefsToReissue: List<StateRef>,
     private val assetIssuanceCommand: CommandData,
     private val extraAssetIssuanceSigners: List<AbstractParty> = listOf(), // issuer is always a signer
-    private val requester: AbstractParty? = null // requester needs to be provided when using accounts
+    private val requester: AbstractParty? = null, // requester needs to be provided when using accounts
+    private val notary : Party? = null
 ) : FlowLogic<SecureHash>() where T: ContractState {
 
     @Suspendable
     override fun call(): SecureHash {
-        if(requester != null) {
-            val requesterHost = serviceHub.identityService.partyFromKey(requester.owningKey)!!
-            require(requesterHost == ourIdentity) { "Requester is not a valid account for the host" }
-        }
-        val requesterAbstractParty: AbstractParty = requester ?: ourIdentity
-
-        require(!extraAssetIssuanceSigners.contains(issuer)) {
-            "Issuer is always a signer and shouldn't be passed in as a part of extraAssetIssuanceSigners" }
-        val issuanceSigners = listOf(issuer) + extraAssetIssuanceSigners
-
-        val signers = listOf(requesterAbstractParty.owningKey)
-
-        val reissuanceRequest = ReissuanceRequest(issuer, requesterAbstractParty, stateRefsToReissue,
-            assetIssuanceCommand, issuanceSigners)
-
-        val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
-        transactionBuilder.addOutputState(reissuanceRequest)
-        transactionBuilder.addCommand(ReissuanceRequestContract.Commands.Create(), signers)
-
-        transactionBuilder.verify(serviceHub)
-        val signedTransaction = serviceHub.signInitialTransaction(transactionBuilder, signers)
 
         val issuerHost: Party = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
         val sessions = listOfNotNull(
@@ -55,11 +35,16 @@ class RequestReissuance<T>(
         )
 
         return subFlow(
-            FinalityFlow(
-                transaction = signedTransaction,
-                sessions = sessions
+            RequestReissuanceNonInitiating<T>(
+                sessions,
+                issuer,
+                stateRefsToReissue,
+                assetIssuanceCommand,
+                extraAssetIssuanceSigners,
+                requester,
+                notary
             )
-        ).id
+        )
     }
 }
 
@@ -70,10 +55,7 @@ class RequestReissuanceResponder(
     @Suspendable
     override fun call() {
         subFlow(
-            ReceiveFinalityFlow(
-                otherSession,
-                statesToRecord = StatesToRecord.ALL_VISIBLE
-            )
+            RequestReissuanceNonInitiatingResponder(otherSession)
         )
     }
 }
