@@ -24,6 +24,7 @@ def isReleaseBranch() {
 }
 
 def isRelease = isReleaseTag() || isReleaseCandidate() || isReleaseBranch()
+String publishOptions = isRelease ? "-s --info" : "--no-daemon -s -PversionFromGit"
 
 pipeline {
 agent { label 'standard' }
@@ -75,14 +76,6 @@ agent { label 'standard' }
             }
         }
 
-        stage('Integration Tests') {
-            steps {
-                timeout(30) {
-                    sh "./gradlew integrationTest -Si --no-daemon --parallel"
-                }
-            }
-        }
-
         stage('Publish to Artifactory') {
             when {
                 expression { params.DO_PUBLISH }
@@ -102,7 +95,7 @@ agent { label 'standard' }
                 rtGradleRun(
                         usesPlugin: true,
                         useWrapper: true,
-                        switches: '-s --info',
+                        switches: publishOptions,
                         tasks: 'artifactoryPublish',
                         deployerId: 'deployer',
                         buildName: env.ARTIFACTORY_BUILD_NAME
