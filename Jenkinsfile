@@ -23,14 +23,32 @@ def isReleaseBranch() {
     return (env.BRANCH_NAME =~ /^release\/.*$/)
 }
 
-def isRelease = isReleaseTag() || isReleaseCandidate() || isReleaseBranch()
-String publishOptions = isRelease ? "-s --info" : "--no-daemon -s -PversionFromGit"
+def isRelease = isReleaseTag() || isReleaseCandidate()
+String publishOptions = isReleaseBranch() ? "-s --info" : "--no-daemon -s -PversionFromGit"
+
+/**
+ * Common Gradle arguments for all Gradle executions
+ */
+String COMMON_GRADLE_PARAMS = [
+        '--no-daemon',
+        '--stacktrace',
+        '--info',
+        /*
+        ** revert default behavour for `ignoreFailures` and
+        ** do not ignore test failures in PR builds
+        */
+        '-Ptests.ignoreFailures=false',
+        '-Pcompilation.warningsAsErrors=false',
+        '-Ptests.failFast=true',
+        '-Ddependx.branch.origin="${GIT_COMMIT}"',    // DON'T change quotation - GIT_COMMIT variable is substituted by SHELL!!!!
+        '-Ddependx.branch.target="${CHANGE_TARGET}"', // DON'T change quotation - CHANGE_TARGET variable is substituted by SHELL!!!!
+].join(' ')
 
 pipeline {
 agent { label 'standard' }
 
     parameters {
-        booleanParam name: 'DO_PUBLISH', defaultValue: isRelease, description: 'Publish artifacts to Artifactory?'
+        booleanParam name: 'DO_PUBLISH', defaultValue: (isRelease || isReleaseBranch()), description: 'Publish artifacts to Artifactory?'
     }
 
     options { timestamps() }
@@ -49,7 +67,12 @@ agent { label 'standard' }
     stages {
         stage('Build') {
             steps {
-                sh './gradlew assemble --parallel'
+                sh script: [
+                        './gradlew',
+                        COMMON_GRADLE_PARAMS,
+                        'assemble'
+                ].join(' ')
+
             }
         }
 
@@ -71,7 +94,12 @@ agent { label 'standard' }
         stage('Unit Tests') {
             steps {
                 timeout(30) {
-                    sh "./gradlew test -Si --no-daemon --parallel"
+                    sh script: [
+                            './gradlew',
+                            COMMON_GRADLE_PARAMS,
+                            'test'
+                    ].join(' ')
+
                 }
             }
         }
