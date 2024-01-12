@@ -75,7 +75,12 @@ allprojects { //Properties that you need to implementation your project (The app
         mavenCentral()
         maven { url "https://jitpack.io" }
         maven { url "${publicArtifactURL}/corda" }
-        maven { url "${publicArtifactURL}/corda-lib" }
+        maven {
+            url "${publicArtifactURL}/corda-lib"
+            mavenContent {
+                releasesOnly()
+            }
+        }
         maven { url "${publicArtifactURL}/corda-dependencies" }
         maven {
             url "${artifactoryContextUrl}/corda-dev"
