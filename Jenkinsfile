@@ -24,7 +24,7 @@ def isReleaseBranch() {
 }
 
 def isRelease = isReleaseTag() || isReleaseCandidate()
-String publishOptions = isReleaseBranch() ? "-s --info" : "--no-daemon -s -PversionFromGit"
+String publishOptions = (isReleaseBranch() || isRelease) ? "-s --info" : "--no-daemon -s -PversionFromGit"
 
 /**
  * Common Gradle arguments for all Gradle executions
