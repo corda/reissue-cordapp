@@ -1,5 +1,6 @@
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.quasar-utils'
+apply plugin: 'corda.common-publishing'
 
 cordapp {
     targetPlatformVersion corda_platform_version.toInteger()
@@ -50,4 +51,16 @@ dependencies {
 test {
     minHeapSize = "512m"
     maxHeapSize = "4096m"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId 'reissuance-cordapp-workflows'
+            artifact packageJavadoc
+            artifact packageSources
+
+            from components.cordapp
+        }
+    }
 }
