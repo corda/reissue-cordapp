@@ -1,5 +1,6 @@
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.quasar-utils'
+apply plugin: 'corda.common-publishing'
 
 cordapp {
     targetPlatformVersion corda_platform_version.toInteger()
@@ -22,4 +23,16 @@ dependencies {
 
     cordaProvided "$accounts_release_group:accounts-contracts:$accounts_release_version"
     cordaProvided "$tokens_release_group:tokens-contracts:$tokens_release_version"
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId 'reissuance-cordapp-contracts'
+            artifact packageJavadoc
+            artifact packageSources
+
+            from components.cordapp
+        }
+    }
 }
