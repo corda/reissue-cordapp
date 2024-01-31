@@ -34,7 +34,7 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
         val criteria = if(requester == null) refCriteria else {
             val accountUuid = serviceHub.accountService.accountIdForKey(requester.owningKey)
             require(accountUuid != null) { "UUID for $requester is not found" }
-            val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUuid!!))
+            val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUuid))
             refCriteria.and(accountCriteria)
         }
         @Suppress("UNCHECKED_CAST")

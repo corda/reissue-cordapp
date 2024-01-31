@@ -263,7 +263,7 @@ abstract class AbstractFlowTest {
         accountParty: AbstractParty,
         others: List<TestStartedNode>
     ) {
-        if (!host.info.legalIdentities[0].equals(accountInfo!!.host)) {
+        if (!host.info.legalIdentities[0].equals(accountInfo.host)) {
             throw IllegalArgumentException("hosts do not match")
         }
         for (other in others) {
@@ -407,7 +407,7 @@ abstract class AbstractFlowTest {
     fun getTokenQuantity(
         node: TestStartedNode
     ): Int {
-        return getTokens(node).sumBy { it.state.data.amount.quantity.toInt() }
+        return getTokens(node).sumOf { it.state.data.amount.quantity.toInt() }
     }
 
     fun issueTokens(
