@@ -67,7 +67,7 @@ class TransferTokens(
         holderParty: Party,
         newHolderParty: Party
     ): Pair<FungibleToken, FungibleToken?> {
-        val availableTokens = inputs.sumBy { it.state.data.amount.quantity.toInt() }
+        val availableTokens = inputs.sumOf { it.state.data.amount.quantity.toInt() }
         require(availableTokens >= tokensToTransfer) { "Insufficient tokens. Required $tokensToTransfer, but have $availableTokens" }
 
         val tokenToTransfer = FungibleToken(Amount(tokensToTransfer.toLong(), issuedTokenType), newHolderParty)

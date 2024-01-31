@@ -4,9 +4,7 @@ import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
-import net.corda.core.crypto.MerkleTree
-import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.componentHash
+import net.corda.core.crypto.*
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.*
 
@@ -14,6 +12,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
+        val digestService = DigestService(SecureHash.SHA2_256)
     }
 
     override fun verify(tx: LedgerTransaction) {
@@ -161,7 +160,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                         it.verify(attachedSignedTransaction.id))
                 }
                 "Requester is a signer of attached transaction ${attachedSignedTransaction.id}" using(
-                    attachedSignedTransaction.sigs.map { it.by }.contains(requester!!.owningKey))
+                    attachedSignedTransaction.sigs.map { it.by }.contains(requester.owningKey))
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
                 requiredExitCommandSigners.forEach { requiredSigner ->
@@ -196,7 +195,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
         requireThat {
             "Exactly one input of type ReissuanceLock is expected" using (reissuanceLockInputs.size == 1)
-            val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock<T>
+            val reissuanceLockInput = reissuanceLockInputs[0].state.data as ReissuanceLock<*>
             "Number of other inputs is equal to originalStates length" using (
                 otherInputs.size == reissuanceLockInput.originalStates.size)
             "No outputs are allowed" using tx.outputs.isEmpty()
@@ -247,14 +246,14 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
         val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
             wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed {
                 internalIndex, internalIt ->
-                componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
+                digestService.componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
             }.toMap()
         }
 
         val availableComponentHashes = wireTransaction.componentGroups.map {
             Pair(it.groupIndex, it.components.mapIndexed {
                 internalIndex, internalIt ->
-                componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
+                digestService.componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
         }.toMap()
 
         val groupsMerkleRoots: Map<Int, SecureHash> by lazy {

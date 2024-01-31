@@ -20,6 +20,7 @@ class DummyStateWithInvalidEqualsMethodContract: Contract {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun verifyCreateCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>

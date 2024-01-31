@@ -636,7 +636,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val transactionBuilder = TransactionBuilder(notary = aliceParty)
         transactionBuilder.addInputState(simpleDummyState)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
-        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+        aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -659,7 +659,7 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
         val transactionBuilder = TransactionBuilder(notary = aliceParty)
         transactionBuilder.addInputState(simpleDummyState)
         transactionBuilder.addCommand(DummyStateRequiringAcceptanceContract.Commands.Update(), listOf(aliceParty.owningKey))
-        val signedTransaction = aliceNode.services.signInitialTransaction(transactionBuilder)
+        aliceNode.services.signInitialTransaction(transactionBuilder)
     }
 
     @Test(expected = TransactionVerificationException::class)
