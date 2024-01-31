@@ -3,8 +3,8 @@ package com.r3.corda.lib.reissuance.contracts
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
-import net.corda.core.contracts.Requirements.using
 import net.corda.core.crypto.*
+import net.corda.core.contracts.Requirements.using
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.*
 
