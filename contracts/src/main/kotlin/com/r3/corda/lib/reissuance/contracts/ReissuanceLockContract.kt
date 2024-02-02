@@ -265,7 +265,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             val listOfLeaves = mutableListOf<SecureHash>()
             // Even if empty and not used, we should at least send oneHashes for each known
             // or received but unknown (thus, bigger than known ordinal) component groups.
-            for (i in 0..wireTransaction.componentGroups.map { it.groupIndex }.max()!!) {
+            for (i in 0..wireTransaction.componentGroups.map { it.groupIndex }.max()) {
                 val root = groupsMerkleRoots[i] ?: SecureHash.allOnesHash
                 listOfLeaves.add(root)
             }

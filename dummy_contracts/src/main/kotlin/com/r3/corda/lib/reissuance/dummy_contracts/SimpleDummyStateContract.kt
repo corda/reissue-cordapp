@@ -33,6 +33,7 @@ class SimpleDummyStateContract: Contract {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun verifyUpdateCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
