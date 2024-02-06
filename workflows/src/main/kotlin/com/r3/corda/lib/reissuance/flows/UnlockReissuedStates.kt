@@ -28,7 +28,7 @@ class UnlockReissuedStates<T>(
         val assetExitAttachments = assetExitTransactionIds.map { transactionId ->
             val signedTransaction = findSignedTransactionTrandsactionById(serviceHub, transactionId)
             require(signedTransaction != null) { "Transaction with id $transactionId not found" }
-            val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
+                val transactionByteArray = convertSignedTransactionToByteArray(signedTransaction)
             serviceHub.attachments.importAttachment(transactionByteArray.inputStream(), ourIdentity.toString(), null)
         }
 

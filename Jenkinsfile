@@ -38,7 +38,7 @@ String COMMON_GRADLE_PARAMS = [
         ** do not ignore test failures in PR builds
         */
         '-Ptests.ignoreFailures=false',
-        '-Pcompilation.warningsAsErrors=false',
+        '-Pcompilation.warningsAsErrors=true',
         '-Ptests.failFast=true',
         '-Ddependx.branch.origin="${GIT_COMMIT}"',    // DON'T change quotation - GIT_COMMIT variable is substituted by SHELL!!!!
         '-Ddependx.branch.target="${CHANGE_TARGET}"', // DON'T change quotation - CHANGE_TARGET variable is substituted by SHELL!!!!
