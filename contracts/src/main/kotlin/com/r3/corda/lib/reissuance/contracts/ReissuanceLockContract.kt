@@ -4,9 +4,9 @@ import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.states.ReissuanceRequest
 import net.corda.core.contracts.*
 import net.corda.core.contracts.Requirements.using
+import net.corda.core.crypto.DigestService
 import net.corda.core.crypto.MerkleTree
 import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.componentHash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.*
 
@@ -161,7 +161,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
                         it.verify(attachedSignedTransaction.id))
                 }
                 "Requester is a signer of attached transaction ${attachedSignedTransaction.id}" using(
-                    attachedSignedTransaction.sigs.map { it.by }.contains(requester!!.owningKey))
+                    attachedSignedTransaction.sigs.map { it.by }.contains(requester.owningKey))
                 "Attached transaction ${attachedSignedTransaction.id} is notarised" using(
                     attachedSignedTransaction.sigs.map { it.by }.contains(attachedSignedTransaction.notary!!.owningKey))
                 requiredExitCommandSigners.forEach { requiredSigner ->
@@ -187,6 +187,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
 
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun verifyDeleteCommand(
         tx: LedgerTransaction,
         command: CommandWithParties<Commands>
@@ -247,14 +248,14 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
         val availableComponentNonces: Map<Int, List<SecureHash>> by lazy {
             wireTransaction.componentGroups.map { Pair(it.groupIndex, it.components.mapIndexed {
                 internalIndex, internalIt ->
-                componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
+                DigestService.default.componentHash(internalIt, wireTransaction.privacySalt, it.groupIndex, internalIndex) })
             }.toMap()
         }
 
         val availableComponentHashes = wireTransaction.componentGroups.map {
             Pair(it.groupIndex, it.components.mapIndexed {
                 internalIndex, internalIt ->
-                componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
+                DigestService.default.componentHash(availableComponentNonces[it.groupIndex]!![internalIndex], internalIt) })
         }.toMap()
 
         val groupsMerkleRoots: Map<Int, SecureHash> by lazy {
@@ -266,7 +267,7 @@ class ReissuanceLockContract<T>: Contract where T: ContractState {
             val listOfLeaves = mutableListOf<SecureHash>()
             // Even if empty and not used, we should at least send oneHashes for each known
             // or received but unknown (thus, bigger than known ordinal) component groups.
-            for (i in 0..wireTransaction.componentGroups.map { it.groupIndex }.max()!!) {
+            for (i in 0..wireTransaction.componentGroups.map { it.groupIndex }.max()) {
                 val root = groupsMerkleRoots[i] ?: SecureHash.allOnesHash
                 listOfLeaves.add(root)
             }
