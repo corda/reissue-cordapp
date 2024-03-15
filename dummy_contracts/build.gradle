@@ -9,7 +9,7 @@ cordapp {
         name "re-issuance - dummy contracts"
         vendor "R3"
         licence "Apache License, Version 2.0"
-        versionId 1
+        versionId 2
     }
     signing {
         enabled false
