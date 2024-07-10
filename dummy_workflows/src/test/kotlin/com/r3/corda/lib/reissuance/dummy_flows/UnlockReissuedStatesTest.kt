@@ -13,7 +13,6 @@ import com.r3.corda.lib.reissuance.dummy_states.DummyStateWithInvalidEqualsMetho
 import com.r3.corda.lib.reissuance.dummy_states.SimpleDummyState
 import com.r3.corda.lib.reissuance.states.ReissuanceLock
 import com.r3.corda.lib.reissuance.utils.convertSignedTransactionToByteArray
-import com.r3.corda.lib.reissuance.utils.findSignedTransactionTrandsactionById
 import com.r3.corda.lib.tokens.contracts.commands.IssueTokenCommand
 import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -34,6 +33,22 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
     ): List<SecureHash> {
         val transactionIds = mutableListOf<SecureHash>()
         transactionIds.add(createState(aliceParty))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        transactionIds.add(updateState(aliceNode, bobParty))
+        transactionIds.add(updateState(bobNode, charlieParty))
+        transactionIds.add(updateState(charlieNode, aliceParty))
+        return transactionIds
+    }
+
+    private fun createStateAndGenerateBackChainOnNotary(
+        createState: (Party, Party) -> SecureHash,
+        updateState: (TestStartedNode, Party) -> SecureHash,
+        notary : Party
+    ): List<SecureHash> {
+        val transactionIds = mutableListOf<SecureHash>()
+        transactionIds.add(createState(aliceParty, notary))
         transactionIds.add(updateState(aliceNode, bobParty))
         transactionIds.add(updateState(bobNode, charlieParty))
         transactionIds.add(updateState(charlieNode, aliceParty))
@@ -116,6 +131,36 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
     fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted`() {
         initialiseParties()
         val transactionIds = createStateAndGenerateBackChain(::createSimpleDummyState, ::updateSimpleDummyState)
+        verifyTransactionBackChain(transactionIds)
+
+        val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
+        val requestReissuanceTransactionId = createReissuanceRequestAndShareRequiredTransactions(aliceNode,
+            statesToReissue, SimpleDummyStateContract.Commands.Create(), issuerParty)
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        val reissueStatesTransactionId = reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest,
+            listOf())
+
+        val exitTransactionId = deleteSimpleDummyState(aliceNode)
+        val unlockReissuedStatesTransactionId = unlockReissuedState(
+            aliceNode, listOf(exitTransactionId), SimpleDummyStateContract.Commands.Update(),
+            getStateAndRefs<SimpleDummyState>(aliceNode, encumbered = true),
+            getStateAndRefs<ReissuanceLock<SimpleDummyState>>(aliceNode, encumbered = true)[0]
+        )
+
+        verifyUnlockedStates(statesToReissue)
+        verifyTransactionBackChain(listOf(requestReissuanceTransactionId,
+            reissueStatesTransactionId, unlockReissuedStatesTransactionId))
+    }
+
+    @Test
+    fun `Re-issued SimpleDummyState is unencumbered after the original state is deleted on notary2`() {
+        initialiseParties()
+        val transactionIds = createStateAndGenerateBackChainOnNotary(
+            ::createSimpleDummyStateOnNotary,
+            ::updateSimpleDummyState,
+            notary2Party
+        )
         verifyTransactionBackChain(transactionIds)
 
         val statesToReissue = getStateAndRefs<SimpleDummyState>(aliceNode)
@@ -509,7 +554,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val updateTransactionId = updateSimpleDummyState(aliceNode, bobParty)
         val transactionByteArray = convertSignedTransactionToByteArray(
-            findSignedTransactionTrandsactionById(aliceNode.services, updateTransactionId)!!)
+            aliceNode.services.validatedTransactions.getTransaction(updateTransactionId)!!
+        )
 
         unlockReissuedStateUsingModifiedFlow<SimpleDummyState>(
             aliceNode,
@@ -719,7 +765,8 @@ class UnlockReissuedStatesTest: AbstractFlowTest() {
 
         val exitTransactionId = deleteSimpleDummyState(aliceNode)
         val exitTransactionByteArray = convertSignedTransactionToByteArray(
-            findSignedTransactionTrandsactionById(aliceNode.services, exitTransactionId)!!)
+            aliceNode.services.validatedTransactions.getTransaction(exitTransactionId)!!
+        )
 
         shareTransaction(aliceNode, bobParty, reissuanceTransactionId)
         shareTransaction(aliceNode, bobParty, exitTransactionId)

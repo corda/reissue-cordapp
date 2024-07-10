@@ -26,7 +26,7 @@ class UpdateSimpleDummyState(
 
         val signers = setOf(owner.owningKey, newOwner.owningKey).toList() // old and new owner might be the same
 
-        val transactionBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
+        val transactionBuilder = TransactionBuilder(notary = simpleDummyStateStateAndRef.state.notary)
         transactionBuilder.addInputState(simpleDummyStateStateAndRef)
         transactionBuilder.addOutputState(SimpleDummyState(newOwner))
         transactionBuilder.addCommand(SimpleDummyStateContract.Commands.Update(), signers)

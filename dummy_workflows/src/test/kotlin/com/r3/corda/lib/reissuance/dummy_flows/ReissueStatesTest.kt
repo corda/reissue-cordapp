@@ -61,6 +61,24 @@ class ReissueStatesTest: AbstractFlowTest() {
     }
 
     @Test
+    fun `SimpleDummyState is re-issued on notary 2`() {
+        initialiseParties()
+        createSimpleDummyStateOnNotary(aliceParty, notary2Party)
+
+        val simpleDummyState = getStateAndRefs<SimpleDummyState>(aliceNode)[0]
+        createReissuanceRequestAndShareRequiredTransactions(
+            aliceNode,
+            listOf(simpleDummyState),
+            SimpleDummyStateContract.Commands.Create(),
+            issuerParty
+        )
+
+        val reissuanceRequest = getStateAndRefs<ReissuanceRequest>(issuerNode)[0]
+        reissueRequestedStates<SimpleDummyState>(issuerNode, reissuanceRequest, listOf())
+        verifyStatesAfterReissuance<SimpleDummyState>()
+    }
+
+    @Test
     fun `DummyStateRequiringAcceptance is re-issued`() {
         initialiseParties()
         createDummyStateRequiringAcceptance(aliceParty)

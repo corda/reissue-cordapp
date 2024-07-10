@@ -12,6 +12,8 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.node.StatesToRecord
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.transactions.SignedTransaction
+import net.corda.core.utilities.unwrap
 
 @InitiatingFlow
 @StartableByRPC
@@ -25,21 +27,26 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
 
     @Suspendable
     override fun call(): SecureHash {
-        val requestReissuanceTransactionId = subFlow(
-            RequestReissuance<T>(issuer, stateRefsToReissue, assetIssuanceCommand, extraAssetIssuanceSigners, requester)
-        )
-        val requesterIdentity = requester ?: ourIdentity
 
+        require(stateRefsToReissue.isNotEmpty()) {
+            "stateRefsToReissue can not be empty"
+        }
         val refCriteria = QueryCriteria.VaultQueryCriteria(stateRefs = stateRefsToReissue)
-        val criteria = if(requester == null) refCriteria else {
+        val criteria = if (requester == null) refCriteria else {
             val accountUuid = serviceHub.accountService.accountIdForKey(requester.owningKey)
             require(accountUuid != null) { "UUID for $requester is not found" }
             val accountCriteria = QueryCriteria.VaultQueryCriteria().withExternalIds(listOf(accountUuid!!))
             refCriteria.and(accountCriteria)
         }
+
         @Suppress("UNCHECKED_CAST")
         val statesToReissue: List<StateAndRef<T>> = serviceHub.vaultService.queryBy<ContractState>(criteria).states
-            as List<StateAndRef<T>>
+                as List<StateAndRef<T>>
+
+        // there can only be a single notary in a reissuance request
+        val notary = statesToReissue.map { it.state.notary }.toSet().single()
+
+        val requesterIdentity = requester ?: ourIdentity
 
         // all states need to have the same participants
         val participants = statesToReissue[0].state.data.participants
@@ -47,20 +54,37 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
         val requesterHost = serviceHub.identityService.partyFromKey(requesterIdentity.owningKey)!!
         val issuerHost = serviceHub.identityService.partyFromKey(issuer.owningKey)!!
 
+        val transactionsToSend = mutableListOf<SignedTransaction>()
+        val sessions = (listOf(issuerHost) - requesterHost).map { initiateFlow(it) }
+
         // if issuer is a participant, they already have access to those transactions
-        if(!participants.contains(issuer) && requesterHost != issuerHost) {
+        if (!participants.contains(issuer) && requesterHost != issuerHost) {
             val transactionHashes = stateRefsToReissue.map { it.txhash }
-            val transactionsToSend = transactionHashes.map {
+            transactionsToSend.addAll(transactionHashes.map {
                 serviceHub.validatedTransactions.getTransaction(it)
                     ?: throw FlowException("Can't find transaction with hash $it")
-            }
+            })
+        }
+
+        sessions.forEach {
+            it.send(transactionsToSend.size)
 
             transactionsToSend.forEach { signedTransaction ->
-                val sendToSession = initiateFlow(issuerHost)
-                subFlow(SendTransactionFlow(sendToSession, signedTransaction))
+                subFlow(SendTransactionFlow(it, signedTransaction, true))
             }
         }
-        return requestReissuanceTransactionId
+
+        return subFlow(
+            RequestReissuanceNonInitiating<T>(
+                sessions,
+                issuer,
+                stateRefsToReissue,
+                assetIssuanceCommand,
+                extraAssetIssuanceSigners,
+                requester,
+                notary
+            )
+        )
     }
 
 }
@@ -69,9 +93,18 @@ class RequestReissuanceAndShareRequiredTransactions<T>(
 class ReceiveSignedTransaction(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        subFlow(ReceiveTransactionFlow(
-            otherSideSession = otherSession,
-            statesToRecord = StatesToRecord.ALL_VISIBLE
-        ))
+
+        val numTxToReceive = otherSession.receive<Int>().unwrap { it }
+
+        if (numTxToReceive > 0) {
+            (1..numTxToReceive).forEach { _ ->
+                subFlow(ReceiveTransactionFlow(
+                    otherSideSession = otherSession,
+                    statesToRecord = StatesToRecord.ALL_VISIBLE
+                ))
+            }
+        }
+
+        subFlow(RequestReissuanceNonInitiatingResponder(otherSession))
     }
 }
