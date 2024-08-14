@@ -7,7 +7,7 @@ buildscript { //properties that you need to build the project
         mavenLocal()
         mavenCentral()
         maven { url "${publicArtifactURL}/jcenter-backup" }
-        maven { url "${artifactory_contextUrl}/corda-releases" }
+        maven { url "${publicArtifactURL}/corda-releases" }
     }
 
     dependencies {
@@ -47,9 +47,10 @@ allprojects { //Properties that you need to compile your project (The applicatio
         mavenLocal()
         maven { url "${publicArtifactURL}/jcenter-backup" }
         mavenCentral()
-        maven { url "${artifactory_contextUrl}/corda" }
+        maven { url "${publicArtifactURL}/corda-releases" }
+        maven { url "${publicArtifactURL}/corda-dependencies" }
         maven { url "https://jitpack.io" }
-        maven { url "${artifactory_contextUrl}/corda-lib" }
+        maven { url "${publicArtifactURL}/corda-lib" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
