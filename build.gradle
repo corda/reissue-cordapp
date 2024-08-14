@@ -21,8 +21,8 @@ buildscript { //properties that you need to build the project
     repositories {
         mavenLocal()
         mavenCentral()
-        jcenter()
         maven { url "${publicArtifactURL}/corda-releases" }
+        maven { url "${publicArtifactURL}/jcenter-backup" }
     }
 
     dependencies {
@@ -72,7 +72,7 @@ allprojects { //Properties that you need to implementation your project (The app
 
     repositories {
         mavenLocal()
-        jcenter()
+        maven { url "${publicArtifactURL}/jcenter-backup" }
         mavenCentral()
         maven { url "https://jitpack.io" }
         maven { url "${publicArtifactURL}/corda" }
