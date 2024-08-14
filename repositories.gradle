@@ -1,7 +1,7 @@
 repositories {
     mavenLocal()
     mavenCentral()
-    jcenter()
+    maven { url 'https://download.corda.net/maven/jcenter-backup' }
     maven { url 'https://jitpack.io' }
     maven { url "$publicArtifactURL/corda-releases" }
     maven { url 'https://repo.gradle.org/gradle/libs-releases' }
