@@ -2,7 +2,8 @@ import groovy.transform.CompileStatic
 
 // plugin to cater for R3 vs Non R3 users building code base. R3 employees will leverage internal plugins non
 // R3 users will use standard Maven publishing conventions as provided by the Maven-publish gradle plugin
-if (System.getenv('CORDA_ARTIFACTORY_USERNAME') != null || project.hasProperty('cordaArtifactoryUsername')) {
+if (System.getenv('CORDA_ARTIFACTORY_USERNAME') != null || 
+    (project.hasProperty('cordaArtifactoryUsername') && project.getProperty('cordaArtifactoryUsername') != null)) {
     logger.info("Internal R3 user - resolving publication build dependencies from internal plugins")
     pluginManager.apply('com.r3.internal.gradle.plugins.r3Publish')
 } else {
