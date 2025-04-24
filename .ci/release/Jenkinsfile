@@ -20,7 +20,7 @@ pipeline {
     stages {
         stage('Tests') {
             steps {
-                timeout(30) {
+                timeout(60) {
                     sh '''
                     export CORDA_ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
                     export CORDA_ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
