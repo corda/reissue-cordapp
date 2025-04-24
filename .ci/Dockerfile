@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:8
+FROM azul/zulu-openjdk:17.0.14
 RUN apt-get update && apt-get install -y curl apt-transport-https \
                                                   ca-certificates \
                                                   curl \
